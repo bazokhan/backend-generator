@@ -1,3 +1,9 @@
+---
+layout: default
+title: Getting Started
+nav_order: 2
+---
+
 # Getting Started
 
 This guide walks you through installing and configuring TGraph Backend Generator in your project.

@@ -1,3 +1,10 @@
+---
+layout: default
+title: Extending Generated Code
+parent: Recipes
+nav_order: 4
+---
+
 # Extending Generated Code Recipe
 
 Advanced patterns for extending auto-generated code while maintaining regeneration safety.
@@ -487,18 +494,18 @@ const OrderFilters = [
 const BulkActions = () => (
   <>
     <BulkExportButton />
-    <BulkUpdateButton data={{ status: 'SHIPPED' }} label="Mark as Shipped" mutationMode="pessimistic" />
+    <BulkUpdateButton data={% raw %}{{ status: 'SHIPPED' }}{% endraw %} label="Mark as Shipped" mutationMode="pessimistic" />
   </>
 );
 
 export const OrderListCustom = () => (
-  <List filters={OrderFilters} sort={{ field: 'createdAt', order: 'DESC' }}>
+  <List filters={OrderFilters} sort={% raw %}{{ field: 'createdAt', order: 'DESC' }}{% endraw %}>
     <Datagrid rowClick="show" bulkActionButtons={<BulkActions />}>
       <TextField source="orderNumber" />
       <ReferenceField source="userId" reference="users">
         <TextField source="name" />
       </ReferenceField>
-      <NumberField source="total" options={{ style: 'currency', currency: 'USD' }} />
+      <NumberField source="total" options={% raw %}{{ style: 'currency', currency: 'USD' }}{% endraw %} />
       <OrderStatusField source="status" />
       <DateField source="createdAt" showTime />
       <DateField source="paidAt" showTime />

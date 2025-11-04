@@ -1,3 +1,10 @@
+---
+layout: default
+title: Utilities
+parent: API Reference
+nav_order: 3
+---
+
 # Utilities API
 
 Helper functions and utility classes for code generation.

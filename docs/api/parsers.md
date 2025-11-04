@@ -1,3 +1,10 @@
+---
+layout: default
+title: Parsers
+parent: API Reference
+nav_order: 2
+---
+
 # Parsers API
 
 Schema and code parsing utilities used internally by generators.

@@ -1,3 +1,10 @@
+---
+layout: default
+title: File Uploads
+parent: Recipes
+nav_order: 2
+---
+
 # File Upload Recipe
 
 Implement image and file uploads with automatic upload handling in your forms.
@@ -484,12 +491,12 @@ export const ProductImageUpload = ({ source }: { source: string }) => {
   return (
     <div
       {...getRootProps()}
-      style={{
+      style={% raw %}{{
         border: '2px dashed #ccc',
         padding: '20px',
         textAlign: 'center',
         cursor: 'pointer',
-      }}
+      }}{% endraw %}
     >
       <input {...getInputProps()} />
       {isDragActive ? <p>Drop the image here...</p> : <p>Drag and drop an image, or click to select</p>}
@@ -497,7 +504,7 @@ export const ProductImageUpload = ({ source }: { source: string }) => {
         <img
           src={typeof field.value === 'string' ? field.value : URL.createObjectURL(field.value)}
           alt="Preview"
-          style={{ maxWidth: '200px', marginTop: '10px' }}
+          style={% raw %}{{ maxWidth: '200px', marginTop: '10px' }}{% endraw %}
         />
       )}
     </div>

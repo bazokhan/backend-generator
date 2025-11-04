@@ -1,3 +1,10 @@
+---
+layout: default
+title: Overview
+parent: Architecture
+nav_order: 1
+---
+
 # Architecture Overview
 
 Understanding how TGraph Backend Generator works internally.

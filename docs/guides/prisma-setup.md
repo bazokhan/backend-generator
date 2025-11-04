@@ -1,3 +1,10 @@
+---
+layout: default
+title: Prisma Setup
+parent: Guides
+nav_order: 1
+---
+
 # Prisma Schema Setup
 
 Learn how to configure your Prisma schema for optimal code generation with TGraph Backend Generator.

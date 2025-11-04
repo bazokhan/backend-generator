@@ -1,3 +1,9 @@
+---
+layout: default
+title: Publishing
+nav_order: 11
+---
+
 # Publishing Guide
 
 Guide for publishing and maintaining `@tgraph/backend-generator` on npm.

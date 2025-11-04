@@ -1,3 +1,9 @@
+---
+layout: default
+title: Troubleshooting
+nav_order: 12
+---
+
 # Troubleshooting
 
 Common issues and solutions when using TGraph Backend Generator.

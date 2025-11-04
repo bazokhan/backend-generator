@@ -1,3 +1,9 @@
+---
+layout: default
+title: Contributing
+nav_order: 10
+---
+
 # Contributing Guide
 
 Thank you for considering contributing to TGraph Backend Generator!

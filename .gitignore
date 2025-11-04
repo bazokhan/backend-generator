@@ -11,3 +11,16 @@ coverage
 # npm pack artifacts
 *.tgz
 package/
+
+.jekyll-cache/
+_site/
+
+# docs
+docs/_site/
+docs/.jekyll-cache/
+docs/.sass-cache/
+docs/.jekyll-metadata
+docs/Gemfile.lock
+docs/Gemfile.lock.1
+docs/Gemfile.lock.1.1
+docs/Gemfile.lock.1.1.1

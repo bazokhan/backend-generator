@@ -1,3 +1,9 @@
+---
+layout: default
+title: CLI Reference
+nav_order: 6
+---
+
 # CLI Reference
 
 Complete reference for the `tgraph` command-line interface.

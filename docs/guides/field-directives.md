@@ -1,3 +1,10 @@
+---
+layout: default
+title: Field Directives
+parent: Guides
+nav_order: 2
+---
+
 # Field Directives
 
 Field directives are special comments that control how individual fields are generated across the entire toolchain: backend DTOs, services, and React Admin components.

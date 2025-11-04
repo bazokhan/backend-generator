@@ -1,3 +1,10 @@
+---
+layout: default
+title: Philosophy
+parent: Architecture
+nav_order: 2
+---
+
 # Philosophy & Principles
 
 The design principles and philosophy behind TGraph Backend Generator.

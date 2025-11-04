@@ -1,3 +1,11 @@
+---
+layout: default
+title: Home
+nav_order: 1
+description: "Transform your Prisma schema into production-ready NestJS APIs and React Admin dashboards"
+permalink: /
+---
+
 # TGraph Backend Generator
 
 Transform your Prisma schema into a complete NestJS backend and React Admin dashboard with a single command.

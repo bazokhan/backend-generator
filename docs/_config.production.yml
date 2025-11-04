@@ -1,0 +1,11 @@
+# Production configuration for GitHub Pages
+# This file overrides _config.yml settings for production
+
+# Use remote theme for GitHub Pages (comment out local theme)
+theme: null
+remote_theme: just-the-docs/just-the-docs
+
+# Production URLs
+baseurl: "/backend-generator"
+url: "https://trugraph.github.io"
+

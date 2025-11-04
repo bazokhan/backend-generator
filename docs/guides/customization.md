@@ -1,3 +1,10 @@
+---
+layout: default
+title: Customization
+parent: Guides
+nav_order: 4
+---
+
 # Customization Guide
 
 Learn how to extend and customize generated code while preserving the ability to regenerate safely.

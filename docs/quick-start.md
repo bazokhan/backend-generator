@@ -1,3 +1,9 @@
+---
+layout: default
+title: Quick Start
+nav_order: 3
+---
+
 # Quick Start
 
 Build a complete blog system with users and posts in under 5 minutes.

@@ -1,3 +1,9 @@
+---
+layout: default
+title: SDK Reference
+nav_order: 7
+---
+
 # SDK Reference
 
 Use TGraph Backend Generator programmatically in your own scripts and build pipelines.

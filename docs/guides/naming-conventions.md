@@ -1,3 +1,10 @@
+---
+layout: default
+title: Naming Conventions
+parent: Guides
+nav_order: 3
+---
+
 # Naming Conventions
 
 TGraph Backend Generator follows consistent naming patterns across backend and frontend code generation.

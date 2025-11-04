@@ -1,3 +1,10 @@
+---
+layout: default
+title: Basic CRUD
+parent: Recipes
+nav_order: 1
+---
+
 # Basic CRUD Recipe
 
 Generate a complete CRUD system from a Prisma model in minutes.

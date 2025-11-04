@@ -1,3 +1,10 @@
+---
+layout: default
+title: Configuration
+parent: API Reference
+nav_order: 4
+---
+
 # Configuration
 
 Complete configuration reference for TGraph Backend Generator.

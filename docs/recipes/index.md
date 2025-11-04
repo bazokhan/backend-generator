@@ -1,0 +1,18 @@
+---
+layout: default
+title: Recipes
+nav_order: 5
+has_children: true
+---
+
+# Recipes
+
+Practical step-by-step recipes for common use cases.
+
+## Available Recipes
+
+- **[Basic CRUD](./basic-crud)** - Generate a complete CRUD system
+- **[File Uploads](./file-uploads)** - Implement image and file upload handling
+- **[Custom Validation](./custom-validation)** - Add complex validation rules
+- **[Extending Generated Code](./extending-generated-code)** - Advanced extension patterns
+
