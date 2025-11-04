@@ -21,7 +21,7 @@ interface ParsedArguments {
 
 function printHelp(): void {
   const helpText = `
-schema-form-generator <command> [options]
+tgraph <command> [options]
 
 Commands:
   api         Generate NestJS modules, services, controllers, and update data provider

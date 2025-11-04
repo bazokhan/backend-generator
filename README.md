@@ -1,44 +1,126 @@
-# schema-form-generator
+# TGraph Backend Generator
 
-Transform a Prisma schema into a fully wired NestJS backend and React Admin dashboard with a single command. This toolkit discovers your project structure, scaffolds DTOs, services, controllers, and UI resources, and keeps your AppModule and data provider files in sync. Use it from the CLI or embed the generators in your own build pipeline.
+> Transform your Prisma schema into production-ready NestJS APIs and React Admin dashboards with a single command.
+
+[![npm version](https://img.shields.io/npm/v/@tgraph/backend-generator.svg)](https://www.npmjs.com/package/@tgraph/backend-generator)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
 ## Features
 
-- **API generation** – Build NestJS modules, controllers, services, DTOs, and update `AppModule` imports automatically.
-- **Dashboard generation** – Scaffold React Admin CRUD pages, studio routes, and field directive configurations.
-- **DTO generation** – Produce type-safe response DTOs tagged as auto-generated for safe regeneration.
-- **Smart project introspection** – Locate feature modules in `src/features` or `src/infrastructure`, preserving manual code while inserting auto-generated sections.
-- **Composable architecture** – Generator, parser, directive, and IO utilities are exposed for custom workflows.
-- **Ready-to-ship CLI** – Install once, run anywhere through the `schema-form-generator` command.
+- **Full-Stack Generation** – Generate NestJS controllers, services, DTOs, and React Admin pages from Prisma schemas
+- **Type Safety** – End-to-end TypeScript types from database to frontend
+- **Smart Introspection** – Automatically discovers your project structure
+- **Field Directives** – Fine-grained control with `@tg_format`, `@tg_upload`, `@tg_readonly`
+- **Safe Regeneration** – Preserves your custom code, regenerates boilerplate
+- **Convention Over Configuration** – Works out of the box with sensible defaults
 
-## Requirements
+## Quick Start
 
-- Node.js **18.0.0 or newer**
-- npm **9.x** or newer (or any package manager that supports Node 18+)
-- A NestJS + React Admin workspace that follows (or can be configured to follow) the folder standards outlined below.
+```bash
+# Install
+npm install --save-dev @tgraph/backend-generator
+
+# Mark your Prisma models
+// @tg_form()
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+# Generate everything
+npx tgraph all
+```
+
+**Result:** Complete CRUD API + admin dashboard in seconds.
+
+## What Gets Generated
+
+### Backend (NestJS)
+
+- ✅ REST controllers with pagination and search
+- ✅ Services with CRUD operations
+- ✅ DTOs with class-validator decorators
+- ✅ Automatic AppModule updates
+
+### Frontend (React Admin)
+
+- ✅ List/Edit/Create/Show pages
+- ✅ Studio pages (spreadsheet-like editing)
+- ✅ Type-appropriate inputs (date pickers, file uploads, etc.)
+- ✅ Relation handling with autocomplete
+
+## Example
+
+**Input (Prisma):**
+
+```prisma
+// @tg_form()
+model Post {
+  id        String   @id @default(uuid())
+  title     String   // @min(5) @max(200)
+  content   String
+  published Boolean  @default(false)
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  createdAt DateTime @default(now())
+}
+```
+
+**Output:** Instant admin system with working API and dashboard.
 
 ## Installation
 
-Install as a project dependency (recommended):
-
 ```bash
-npm install --save-dev schema-form-generator
+# Project dependency (recommended)
+npm install --save-dev @tgraph/backend-generator
+
+# Global installation
+npm install -g @tgraph/backend-generator
 ```
 
-Install globally to share the CLI across multiple projects:
+## Usage
 
 ```bash
-npm install --global schema-form-generator
+# Generate everything
+tgraph all
+
+# Generate only API
+tgraph api
+
+# Generate only dashboard
+tgraph dashboard
+
+# With options
+tgraph all --suffix Admin --no-update-data-provider
 ```
 
-The package ships precompiled JavaScript in `dist/` after running `npm run build`.
+## Requirements
+
+- Node.js 18.0.0 or newer
+- NestJS project with Prisma
+- React Admin dashboard (optional, for dashboard generation)
+
+## Documentation
+
+📚 **[Complete Documentation](./docs/index.md)**
+
+- [Getting Started](./docs/getting-started.md) – Installation and setup
+- [Quick Start Tutorial](./docs/quick-start.md) – Build a blog in 5 minutes
+- [Prisma Setup](./docs/guides/prisma-setup.md) – Configure your schema
+- [Field Directives](./docs/guides/field-directives.md) – Control generation behavior
+- [Recipes](./docs/recipes/basic-crud.md) – Practical examples
+- [CLI Reference](./docs/cli-reference.md) – All commands and options
+- [SDK Reference](./docs/sdk-reference.md) – Programmatic usage
+- [Troubleshooting](./docs/troubleshooting.md) – Common issues
 
 ## Configuration
 
-The package ships with a default `config.ts`:
+Create `config.ts` in your project root:
 
-```ts
-import type { Config } from '@tg-scripts/types';
+```typescript
+import type { Config } from '@tgraph/backend-generator';
 
 export const config: Config = {
   schemaPath: 'prisma/schema.prisma',
@@ -50,145 +132,94 @@ export const config: Config = {
 };
 ```
 
-Override values in two ways:
+Or use CLI flags to override on the fly.
 
-1. **Edit `config.ts`** in your project (recommended for shared defaults).
-2. **Pass CLI flags** when invoking commands (see the CLI reference below).
+## Programmatic Usage
 
-> ⚠️ The generators expect feature modules under `src/features/<kebab-name>` or `src/infrastructure/<kebab-name>`. Adjust `ModulePathResolver` if your layout differs.
+```typescript
+import { ApiGenerator, DashboardGenerator } from '@tgraph/backend-generator';
 
-## CLI Usage
+const generator = new ApiGenerator(config);
+await generator.generate();
 
-Run `schema-form-generator --help` to see usage:
-
-```
-schema-form-generator <command> [options]
-```
-
-### Commands
-
-- `api` – Generate NestJS modules, services, controllers, DTOs, and update data provider endpoints.
-- `dashboard` – Generate React Admin resources, studio pages, and field directive configuration.
-- `dtos` – Generate DTO response files only.
-- `all` – Run `api`, `dashboard`, and `dtos` sequentially with the same configuration.
-
-### Options
-
-| Flag | Description |
-|------|-------------|
-| `--schema <path>` | Override the Prisma schema path. |
-| `--dashboard <path>` | Override the React Admin dashboard source directory. |
-| `--dtos <path>` | Override the DTO output directory. |
-| `--suffix <name>` | Override the suffix appended to generated classes and files. |
-| `--admin` / `--no-admin` | Force admin or public mode (`Config.isAdmin`). |
-| `--update-data-provider` / `--no-update-data-provider` | Toggle automatic data provider updates. |
-| `-h`, `--help` | Display the help message. |
-
-### Examples
-
-Generate everything with defaults:
-
-```bash
-schema-form-generator all
+const dashboard = new DashboardGenerator(config);
+await dashboard.generate();
 ```
 
-Generate API files using a custom schema and DTO directory, skipping data provider updates:
+See [SDK Reference](./docs/sdk-reference.md) for complete API documentation.
 
-```bash
-schema-form-generator api \
-  --schema apps/core/prisma/schema.prisma \
-  --dtos apps/admin/src/dtos \
-  --no-update-data-provider
-```
-
-Generate dashboard pages for a public surface area:
-
-```bash
-schema-form-generator dashboard --no-admin
-```
-
-## Programmatic API
-
-Import generators directly to script custom workflows:
-
-```ts
-import {
-  ApiGenerator,
-  DashboardGenerator,
-  DtoGenerator,
-  ModulePathResolver,
-  NestAppModuleUpdater,
-  NestModuleUpdater,
-  DataProviderEndpointGenerator,
-  config as defaultConfig,
-} from 'schema-form-generator';
-
-(async () => {
-  const api = new ApiGenerator({ ...defaultConfig, suffix: 'Admin' });
-  await api.generate();
-
-  const dashboard = new DashboardGenerator(defaultConfig);
-  await dashboard.generate();
-
-  const dtos = new DtoGenerator({ ...defaultConfig, suffix: 'Public', isAdmin: false });
-  dtos.generate();
-})();
-```
-
-### Core building blocks
-
-- **Generators** (`ApiGenerator`, `DashboardGenerator`, `DtoGenerator`) orchestrate high-level flows.
-- **Parsers** (e.g., `PrismaSchemaParser`, `NestAppModuleParser`) analyze existing code to preserve manual edits.
-- **IO utilities** (`ModulePathResolver`) locate module files and folders on disk.
-- **Directive writers** (e.g., `buildFieldDirectiveFile`) encapsulate React Admin directive logic.
-- **Updater classes** (`NestAppModuleUpdater`, `NestModuleUpdater`, `DataProviderEndpointGenerator`) expose focused operations for manual integrations.
-
-You can mix and match these primitives to design bespoke pipelines or integrate with other generators.
-
-## Expected Project Layout
-
-The default heuristics assume the following structure (customize `ModulePathResolver` if needed):
+## Project Structure
 
 ```
-src/
-  app.module.ts
-  features/
-    user/
-      user.module.ts
-    post/
-      post.module.ts
-  infrastructure/
-    database/
-      database.module.ts
-dashboard/
-  src/
-    App.tsx
-    providers/
-      dataProvider.ts
+your-project/
+├── prisma/
+│   └── schema.prisma          # Source of truth
+├── src/
+│   ├── app.module.ts          # Auto-updated
+│   ├── features/
+│   │   └── user/
+│   │       ├── user.tg.controller.ts   # Generated
+│   │       ├── user.tg.service.ts      # Generated
+│   │       ├── create-user.tg.dto.ts   # Generated
+│   │       └── user.service.ts         # Your custom code
+│   └── dashboard/src/
+│       ├── App.tsx            # Auto-updated
+│       └── resources/
+│           └── users/
+│               ├── UserList.tsx        # Generated
+│               ├── UserEdit.tsx        # Generated
+│               └── ...
 ```
 
-- DTOs are generated alongside their owning module (e.g., `src/features/user`).
-- AppModule updates insert auto-generated import blocks bounded by `// AUTO-GENERATED IMPORTS START/END`.
-- Dashboard routes and resources are inserted between `AUTO-GENERATED` sentinel comments; manual content remains intact.
+## Field Directives
 
-## Development Scripts
+Control generation with special comments:
 
-Clone the repository and install dependencies, then:
+```prisma
+model User {
+  /// @tg_format(email)
+  email String @unique
 
-| Command | Description |
-|---------|-------------|
-| `npm run build` | Emit CommonJS bundles and declaration files to `dist/`. |
-| `npm test` | Run the Jest test suite (requires Node 18+). |
+  /// @tg_upload(image)
+  avatar String?
 
-> Jest snapshots live next to their corresponding spec files. When updating behaviour, run tests with `--updateSnapshot`.
+  /// @tg_readonly
+  ipAddress String?
+}
+```
 
-## Troubleshooting
+See [Field Directives Guide](./docs/guides/field-directives.md) for all directives.
 
-- **Missing modules** – The CLI prompts to create feature folders when a Prisma model has no matching module. Answer “y” to scaffold the module file automatically.
-- **Formatting issues** – The generators call the formatting helpers in `src/io/utils`. Ensure your workspace can run Prettier or adjust `formatGeneratedFile(s)` as needed.
-- **Non-standard structure** – Override `ModulePathResolver` or pass a custom implementation to your own scripts if modules live outside `src/features` or `src/infrastructure`.
-- **Node version errors** – Upgrade to Node 18+ to satisfy dependencies that rely on modern language features (optional chaining, `node:` protocol imports, etc.).
+## Philosophy
+
+TGraph Backend Generator follows these principles:
+
+- **Convention over Configuration** – Works out of the box
+- **Generate, Don't Replace** – Coexist with custom code
+- **Progressive Disclosure** – Start simple, add complexity as needed
+- **Type Safety First** – Compile-time error checking
+
+Read more in [Philosophy & Principles](./docs/architecture/philosophy.md).
+
+## Contributing
+
+Contributions are welcome! See [Contributing Guide](./docs/contributing.md).
+
+## Publishing
+
+For maintainers: See [Publishing Guide](./docs/publishing.md) for release process.
 
 ## License
 
-ISC © Current project authors. Use it in your own automation pipelines, extend it, or contribute back improvements.
+ISC
+
+## Links
+
+- [Documentation](./docs/index.md)
+- [GitHub Repository](https://github.com/YOUR_ORG/backend-generator)
+- [npm Package](https://www.npmjs.com/package/@tgraph/backend-generator)
+- [Issues](https://github.com/YOUR_ORG/backend-generator/issues)
+
+---
+
+**Made with ❤️ by the TGraph team**
