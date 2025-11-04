@@ -3,7 +3,13 @@ import { getResourceName } from '../../utils';
 
 type ComponentFieldConfig = {
   components: string[];
-  field: (field: PrismaField, enumValues?: string[], relatedModel?: PrismaModel, model?: PrismaModel, allModels?: PrismaModel[]) => string;
+  field: (
+    field: PrismaField,
+    enumValues?: string[],
+    relatedModel?: PrismaModel,
+    model?: PrismaModel,
+    allModels?: PrismaModel[],
+  ) => string;
 };
 
 type InputPropOptions = {
@@ -22,7 +28,13 @@ const buildInputProps = (field: PrismaField, options: InputPropOptions = {}): st
 
 export const FormComponentRelationField: ComponentFieldConfig = {
   components: ['ReferenceInput', 'ReferenceArrayInput', 'AutocompleteInput', 'AutocompleteArrayInput'],
-  field: (field: PrismaField, enumValues?: string[], relatedModel?: PrismaModel, model?: PrismaModel, allModels?: PrismaModel[]) => {
+  field: (
+    field: PrismaField,
+    enumValues?: string[],
+    relatedModel?: PrismaModel,
+    model?: PrismaModel,
+    allModels?: PrismaModel[],
+  ) => {
     const indent = '      ';
     const reference = getResourceName(field.baseType);
     const optionText = (allModels?.find((m) => m.name === field.baseType) || model)?.displayField;

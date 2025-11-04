@@ -18,6 +18,7 @@ This allows you to extend generated code without losing your customizations.
 Create a custom service that extends the generated service:
 
 **Generated Service:**
+
 ```typescript
 // user.tg.service.ts
 @Injectable()
@@ -37,6 +38,7 @@ export class UserTgService {
 ```
 
 **Custom Service:**
+
 ```typescript
 // user.service.ts
 import { UserTgService } from './user.tg.service';
@@ -69,6 +71,7 @@ export class UserService extends UserTgService {
 ```
 
 **Update Module:**
+
 ```typescript
 // user.module.ts
 @Module({
@@ -76,7 +79,7 @@ export class UserService extends UserTgService {
   controllers: [UserTgController, UserController],
   providers: [
     UserTgService,
-    UserService,  // Your custom service
+    UserService, // Your custom service
   ],
   exports: [UserService],
 })
@@ -88,6 +91,7 @@ export class UserModule {}
 Create custom controllers alongside generated ones:
 
 **Generated Controller:**
+
 ```typescript
 // user.tg.controller.ts
 @Controller('tg-api/users')
@@ -98,6 +102,7 @@ export class UserTgController {
 ```
 
 **Custom Controller:**
+
 ```typescript
 // user.controller.ts
 import { UserService } from './user.service';
@@ -126,6 +131,7 @@ export class UserController {
 ```
 
 This gives you two controllers:
+
 - `UserTgController` – Admin CRUD at `/tg-api/users`
 - `UserController` – Custom endpoints at `/users`
 
@@ -134,6 +140,7 @@ This gives you two controllers:
 Create custom DTOs alongside generated ones:
 
 **Generated DTOs:**
+
 ```typescript
 // create-user.tg.dto.ts
 export class CreateUserTgDto {
@@ -159,6 +166,7 @@ export class UpdateUserTgDto {
 ```
 
 **Custom DTOs:**
+
 ```typescript
 // create-user-with-profile.dto.ts
 import { CreateUserTgDto } from './create-user.tg.dto';
@@ -230,7 +238,7 @@ export class UserService extends UserTgService {
   async update(id: string, dto: UpdateUserTgDto): Promise<User> {
     const before = await this.findOne(id);
     const after = await super.update(id, dto);
-    
+
     await this.auditLog.log({
       action: 'USER_UPDATE',
       userId: id,
@@ -261,6 +269,7 @@ export class UserService extends UserTgService {
 Customize the generated list component:
 
 **Generated:**
+
 ```tsx
 // UserList.tsx
 export const UserList = () => (
@@ -276,6 +285,7 @@ export const UserList = () => (
 ```
 
 **Option 1: Edit in place** (will be overwritten on regeneration):
+
 ```tsx
 export const UserList = () => (
   <List>
@@ -294,6 +304,7 @@ export const UserList = () => (
 ```
 
 **Option 2: Create custom component** (preserved on regeneration):
+
 ```tsx
 // UserListCustom.tsx
 export const UserListCustom = () => {
@@ -322,10 +333,11 @@ export const UserListCustom = () => {
 ```
 
 Then update `App.tsx` to use your custom component:
+
 ```tsx
 <Resource
   name="users"
-  list={UserListCustom}  // Use custom component
+  list={UserListCustom} // Use custom component
   edit={UserEdit}
   create={UserCreate}
   show={UserShow}
@@ -348,7 +360,7 @@ export const UserEditCustom = () => (
         <TextInput source="lastName" required />
         <TextInput source="email" type="email" required />
       </FormTab>
-      
+
       <FormTab label="Profile">
         <FileInput source="avatar" accept="image/*">
           <ImageField source="src" title="title" />
@@ -356,7 +368,7 @@ export const UserEditCustom = () => (
         <TextInput source="bio" multiline rows={5} />
         <SelectInput source="role" choices={roleChoices} />
       </FormTab>
-      
+
       <FormTab label="Settings">
         <BooleanInput source="isActive" />
         <BooleanInput source="emailNotifications" />
@@ -392,7 +404,7 @@ export const AvatarField = ({ source }: { source: string }) => {
 <Datagrid>
   <AvatarField source="avatar" />
   <EmailField source="email" />
-</Datagrid>
+</Datagrid>;
 ```
 
 ### Custom Actions
@@ -408,7 +420,9 @@ const UserActions = () => (
     <ExportButton />
     <Button
       label="Import Users"
-      onClick={() => { /* Import logic */ }}
+      onClick={() => {
+        /* Import logic */
+      }}
     >
       <UploadIcon />
     </Button>
@@ -417,9 +431,7 @@ const UserActions = () => (
 
 export const UserList = () => (
   <List actions={<UserActions />}>
-    <Datagrid>
-      {/* columns */}
-    </Datagrid>
+    <Datagrid>{/* columns */}</Datagrid>
   </List>
 );
 ```
@@ -438,7 +450,7 @@ export const config: Config = {
   schemaPath: 'prisma/schema.prisma',
   dashboardPath: 'src/dashboard/src',
   dtosPath: 'src/dtos/generated',
-  suffix: 'Admin',  // Custom suffix
+  suffix: 'Admin', // Custom suffix
   isAdmin: true,
   updateDataProvider: true,
 };
@@ -478,7 +490,7 @@ import { ModulePathResolver } from '@tgraph/backend-generator';
 export class CustomModulePathResolver extends ModulePathResolver {
   protected getModulePaths(kebabName: string): string[] {
     return [
-      `src/modules/${kebabName}`,  // Custom path
+      `src/modules/${kebabName}`, // Custom path
       `src/domain/${kebabName}`,
       `src/features/${kebabName}`,
     ];
@@ -525,11 +537,7 @@ Create reusable decorator combinations:
 ```typescript
 // decorators/api-endpoint.decorator.ts
 export function ApiEndpoint(path: string) {
-  return applyDecorators(
-    Controller(path),
-    UseGuards(JwtAuthGuard, AdminGuard),
-    ApiTags(path.split('/').pop() || ''),
-  );
+  return applyDecorators(Controller(path), UseGuards(JwtAuthGuard, AdminGuard), ApiTags(path.split('/').pop() || ''));
 }
 
 // Usage
@@ -552,10 +560,7 @@ export class UserManagementService {
     private readonly permissionService: PermissionService,
   ) {}
 
-  async createUserWithRole(
-    userDto: CreateUserDto,
-    roleName: string,
-  ): Promise<User> {
+  async createUserWithRole(userDto: CreateUserDto, roleName: string): Promise<User> {
     const user = await this.userService.create(userDto);
     const role = await this.roleService.findByName(roleName);
     await this.permissionService.assignRole(user.id, role.id);
@@ -572,9 +577,7 @@ Add middleware to generated endpoints:
 // user.module.ts
 export class UserModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(LoggerMiddleware, RateLimitMiddleware)
-      .forRoutes(UserTgController);
+    consumer.apply(LoggerMiddleware, RateLimitMiddleware).forRoutes(UserTgController);
   }
 }
 ```
@@ -592,13 +595,13 @@ export class UserModule implements NestModule {
 
 ```typescript
 // Good
-UserService              // Custom service
-UserRegistrationDto      // Custom DTO
-UserListCustom           // Custom component
+UserService; // Custom service
+UserRegistrationDto; // Custom DTO
+UserListCustom; // Custom component
 
 // Avoid
-UserServiceCustom        // Unclear
-UserDto2                 // Non-descriptive
+UserServiceCustom; // Unclear
+UserDto2; // Non-descriptive
 ```
 
 ### 3. Extend, Don't Replace
@@ -606,12 +609,12 @@ UserDto2                 // Non-descriptive
 ```typescript
 // Good
 export class UserService extends UserTgService {
-  async customMethod() { }
+  async customMethod() {}
 }
 
 // Avoid - loses generated functionality
 export class UserService {
-  async customMethod() { }
+  async customMethod() {}
 }
 ```
 
@@ -656,4 +659,3 @@ tgraph all
 - **[Extending Generated Code Recipe](../recipes/extending-generated-code.md)** – Practical examples
 - **[SDK Reference](../sdk-reference.md)** – Programmatic API
 - **[Architecture Overview](../architecture/overview.md)** – System design
-

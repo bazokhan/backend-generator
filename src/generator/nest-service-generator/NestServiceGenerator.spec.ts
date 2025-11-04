@@ -178,7 +178,7 @@ describe('Nest Service Generator', () => {
   describe('searchType usage', () => {
     it('should generate searchable fields with correct types from searchType property', () => {
       const generator = new NestServiceGenerator({ suffix: 'Tg' });
-      
+
       const model: PrismaModel = {
         name: 'AuditLog',
         fields: [
@@ -260,27 +260,27 @@ describe('Nest Service Generator', () => {
       };
 
       const result = generator.generate(model);
-      
+
       // Verify that searchable fields include correct types
-      expect(result).toContain("fieldsToSearch: [");
+      expect(result).toContain('fieldsToSearch: [');
       expect(result).toContain("{ name: 'method', type: 'string' }");
       expect(result).toContain("{ name: 'statusCode', type: 'number' }");
       expect(result).toContain("{ name: 'duration', type: 'number' }");
       expect(result).toContain("{ name: 'timestamp', type: 'date' }");
-      
+
       // Verify that Json fields are excluded from fieldsToSearch (but may be in getSelectFields)
       // Check both occurrences of fieldsToSearch (in getList and getManyReference)
       const fieldsToSearchMatches = result.matchAll(/fieldsToSearch: \[([^\]]+)\]/g);
       const matchesArray = Array.from(fieldsToSearchMatches);
       expect(matchesArray.length).toBeGreaterThan(0);
       matchesArray.forEach((match) => {
-        expect(match[1]).not.toContain("requestBody");
+        expect(match[1]).not.toContain('requestBody');
       });
     });
 
     it('should exclude fields with null searchType', () => {
       const generator = new NestServiceGenerator({ suffix: 'Tg' });
-      
+
       const model: PrismaModel = {
         name: 'TestModel',
         fields: [
@@ -327,24 +327,24 @@ describe('Nest Service Generator', () => {
       };
 
       const result = generator.generate(model);
-      
+
       // Verify that only searchable fields are included in fieldsToSearch
       expect(result).toContain("{ name: 'id', type: 'string' }");
-      
+
       // Verify that non-searchable fields are excluded from fieldsToSearch
       // Check both occurrences of fieldsToSearch (in getList and getManyReference)
       const fieldsToSearchMatches = result.matchAll(/fieldsToSearch: \[([^\]]+)\]/g);
       const matchesArray = Array.from(fieldsToSearchMatches);
       expect(matchesArray.length).toBeGreaterThan(0);
       matchesArray.forEach((match) => {
-        expect(match[1]).not.toContain("metadata");
-        expect(match[1]).not.toContain("user");
+        expect(match[1]).not.toContain('metadata');
+        expect(match[1]).not.toContain('user');
       });
     });
 
     it('should handle excluded fields correctly', () => {
       const generator = new NestServiceGenerator({ suffix: 'Tg' });
-      
+
       const model: PrismaModel = {
         name: 'TestModel',
         fields: [
@@ -390,16 +390,16 @@ describe('Nest Service Generator', () => {
       };
 
       const result = generator.generate(model, { excludeFields: ['password'] });
-      
+
       // Verify that excluded fields are not in searchable fields
       expect(result).toContain("{ name: 'id', type: 'string' }");
       expect(result).toContain("{ name: 'email', type: 'string' }");
-      expect(result).not.toContain("password");
+      expect(result).not.toContain('password');
     });
 
     it('should handle all field types correctly in searchable fields', () => {
       const generator = new NestServiceGenerator({ suffix: 'Tg' });
-      
+
       const model: PrismaModel = {
         name: 'TestModel',
         fields: [
@@ -469,7 +469,7 @@ describe('Nest Service Generator', () => {
       };
 
       const result = generator.generate(model);
-      
+
       // Verify all types are correctly included
       expect(result).toContain("{ name: 'textField', type: 'string' }");
       expect(result).toContain("{ name: 'numberField', type: 'number' }");

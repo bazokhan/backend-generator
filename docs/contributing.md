@@ -16,22 +16,26 @@ Thank you for considering contributing to TGraph Backend Generator!
 1. **Fork the repository** on GitHub
 
 2. **Clone your fork:**
+
 ```bash
-git clone https://github.com/YOUR_USERNAME/backend-generator.git
+git clone https://github.com/trugraph/backend-generator.git
 cd backend-generator
 ```
 
 3. **Install dependencies:**
+
 ```bash
 npm install
 ```
 
 4. **Build the project:**
+
 ```bash
 npm run build
 ```
 
 5. **Run tests:**
+
 ```bash
 npm test
 ```
@@ -75,6 +79,7 @@ git checkout -b fix/bug-description
 ```
 
 Branch naming conventions:
+
 - `feature/` – New features
 - `fix/` – Bug fixes
 - `docs/` – Documentation changes
@@ -100,11 +105,13 @@ describe('MyFeature', () => {
 ```
 
 Run tests:
+
 ```bash
 npm test
 ```
 
 Update snapshots if needed:
+
 ```bash
 npm test -- --updateSnapshot
 ```
@@ -130,6 +137,7 @@ git commit -m "docs: update field directives guide"
 ```
 
 Commit message format:
+
 - `feat:` – New feature
 - `fix:` – Bug fix
 - `docs:` – Documentation changes
@@ -156,6 +164,7 @@ Then create a pull request on GitHub.
 - Use interfaces for object shapes
 
 **Good:**
+
 ```typescript
 interface Config {
   schemaPath: string;
@@ -168,6 +177,7 @@ function generate(config: Config): Promise<void> {
 ```
 
 **Bad:**
+
 ```typescript
 function generate(config: any) {
   // Implementation
@@ -206,19 +216,17 @@ src/generator/
 - Explain "why" not "what"
 
 **Good:**
+
 ```typescript
 /**
  * Generates a NestJS service with CRUD operations.
  * Handles pagination, search, and unique constraint errors.
- * 
+ *
  * @param model - The parsed Prisma model
  * @param config - Generation configuration
  * @returns Generated service code as string
  */
-export function generateService(
-  model: PrismaModel,
-  config: Config,
-): string {
+export function generateService(model: PrismaModel, config: Config): string {
   // Implementation
 }
 ```
@@ -230,16 +238,17 @@ export function generateService(
 - Include context in errors
 
 **Good:**
+
 ```typescript
 if (!fs.existsSync(schemaPath)) {
   throw new Error(
-    `Schema file not found: ${schemaPath}\n` +
-    `Make sure your Prisma schema exists at the specified path.`
+    `Schema file not found: ${schemaPath}\n` + `Make sure your Prisma schema exists at the specified path.`,
   );
 }
 ```
 
 **Bad:**
+
 ```typescript
 if (!fs.existsSync(schemaPath)) {
   throw new Error('File not found');
@@ -256,10 +265,10 @@ describe('ComponentName', () => {
     it('should do something specific', () => {
       // Arrange
       const input = createTestInput();
-      
+
       // Act
       const result = component.method(input);
-      
+
       // Assert
       expect(result).toBe(expected);
     });
@@ -283,6 +292,7 @@ it('should generate correct service code', () => {
 ```
 
 Update snapshots when intentionally changing output:
+
 ```bash
 npm test -- --updateSnapshot
 ```
@@ -290,11 +300,13 @@ npm test -- --updateSnapshot
 ### Test Coverage
 
 Aim for high test coverage:
+
 - New features should have tests
 - Bug fixes should include regression tests
 - Critical paths should have comprehensive tests
 
 Check coverage:
+
 ```bash
 npm test -- --coverage
 ```
@@ -306,6 +318,7 @@ npm test -- --coverage
 To add a new field directive (e.g., `@tg_currency`):
 
 1. Create directive class:
+
 ```typescript
 // src/directives/field/directives/TgCurrencyDirective.ts
 import { BaseFieldDirective } from '../BaseFieldDirective';
@@ -329,6 +342,7 @@ export class TgCurrencyDirective extends BaseFieldDirective {
 ```
 
 2. Register in manager:
+
 ```typescript
 // src/directives/field/FieldDirectiveManager.ts
 import { TgCurrencyDirective } from './directives/TgCurrencyDirective';
@@ -338,12 +352,13 @@ export class FieldDirectiveManager {
     new TgFormatDirective(),
     new TgUploadDirective(),
     new TgReadOnlyDirective(),
-    new TgCurrencyDirective(),  // Add here
+    new TgCurrencyDirective(), // Add here
   ];
 }
 ```
 
 3. Add to types:
+
 ```typescript
 // types.d.ts
 export interface PrismaField {
@@ -363,6 +378,7 @@ export interface PrismaField {
 To add a new generator:
 
 1. Create generator class:
+
 ```typescript
 // src/generator/my-generator/MyGenerator.ts
 import { IGenerator, Config } from '@tg-scripts/types';
@@ -377,6 +393,7 @@ export class MyGenerator implements IGenerator {
 ```
 
 2. Export in index.ts:
+
 ```typescript
 export { MyGenerator } from './src/generator/my-generator/MyGenerator';
 ```
@@ -392,6 +409,7 @@ export { MyGenerator } from './src/generator/my-generator/MyGenerator';
 ### When to Update Documentation
 
 Update documentation when:
+
 - Adding new features
 - Changing existing behavior
 - Fixing bugs that affect usage
@@ -428,18 +446,22 @@ Update documentation when:
 
 ```markdown
 ## Description
+
 Brief description of the changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 How was this tested?
 
 ## Checklist
+
 - [ ] Tests pass
 - [ ] Documentation updated
 - [ ] No breaking changes (or documented)
@@ -455,6 +477,7 @@ How was this tested?
 ## Release Process
 
 Releases follow semantic versioning:
+
 - `MAJOR.MINOR.PATCH`
 - Major: Breaking changes
 - Minor: New features (backward compatible)
@@ -488,6 +511,7 @@ Releases follow semantic versioning:
 ## Recognition
 
 Contributors are recognized in:
+
 - CONTRIBUTORS.md file
 - Release notes
 - Project README
@@ -499,4 +523,3 @@ Thank you for contributing! 🎉
 - **[Architecture Overview](./architecture/overview.md)** – Understand the system
 - **[Philosophy](./architecture/philosophy.md)** – Learn the principles
 - **[API Reference](./api/generators.md)** – Technical details
-

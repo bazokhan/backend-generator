@@ -47,6 +47,7 @@ enum Role {
 ```
 
 Key features:
+
 - `// @tg_form()` – Marks models for generation
 - `// @tg_label(name)` – Sets the display field for relations
 - `/// @tg_format(url)` – Validates URL fields
@@ -61,6 +62,7 @@ tgraph all
 ```
 
 This creates:
+
 - 4 controllers (User, Post with full CRUD)
 - 4 services with Prisma integration
 - 8 DTOs (Create + Update for each model)
@@ -135,6 +137,7 @@ export class CreateUserTgDto {
 ```
 
 Notice:
+
 - `@IsEmail()` from `@unique` constraint
 - `@IsUrl()` from `@tg_format(url)` directive
 - `@IsEnum()` for enum fields
@@ -181,6 +184,7 @@ export const PostEdit = () => (
 ```
 
 Notice:
+
 - Automatic relation handling with `ReferenceInput`
 - File upload for `coverImage` (from `@tg_upload(image)`)
 - Type-appropriate inputs (Boolean, DateTime, etc.)
@@ -320,4 +324,3 @@ tgraph dashboard  # Frontend only
 ```
 
 Generated files (`.tg.*`) are overwritten, but your custom code remains untouched.
-

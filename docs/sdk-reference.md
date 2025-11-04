@@ -11,12 +11,7 @@ npm install --save-dev @tgraph/backend-generator
 ## Basic Usage
 
 ```typescript
-import {
-  ApiGenerator,
-  DashboardGenerator,
-  DtoGenerator,
-  config as defaultConfig,
-} from '@tgraph/backend-generator';
+import { ApiGenerator, DashboardGenerator, DtoGenerator, config as defaultConfig } from '@tgraph/backend-generator';
 
 (async () => {
   // Generate API files
@@ -72,6 +67,7 @@ await generator.generate();
 ```
 
 **What it generates:**
+
 - Controllers with REST endpoints
 - Services with CRUD operations
 - Create/Update DTOs with validation
@@ -116,6 +112,7 @@ await generator.generate();
 ```
 
 **What it generates:**
+
 - List, Edit, Create, Show, Studio components
 - Field directive metadata
 - App.tsx resource registrations
@@ -166,7 +163,7 @@ Locates NestJS module files in your project.
 **Constructor:**
 
 ```typescript
-new ModulePathResolver()
+new ModulePathResolver();
 ```
 
 **Methods:**
@@ -194,9 +191,9 @@ if (moduleInfo) {
 
 ```typescript
 interface ModulePathInfo {
-  path: string;              // e.g., 'src/features/user'
+  path: string; // e.g., 'src/features/user'
   type: 'features' | 'infrastructure';
-  folderName: string;        // e.g., 'user'
+  folderName: string; // e.g., 'user'
 }
 ```
 
@@ -209,7 +206,7 @@ Updates `app.module.ts` with auto-generated imports.
 **Constructor:**
 
 ```typescript
-new NestAppModuleUpdater()
+new NestAppModuleUpdater();
 ```
 
 **Methods:**
@@ -232,6 +229,7 @@ await updater.update([
 ```
 
 **Behavior:**
+
 - Inserts imports between `// AUTO-GENERATED IMPORTS START/END` comments
 - Preserves manual imports
 - Creates sentinel comments if missing
@@ -245,7 +243,7 @@ Updates individual feature module files with providers/controllers.
 **Constructor:**
 
 ```typescript
-new NestModuleUpdater()
+new NestModuleUpdater();
 ```
 
 **Methods:**
@@ -276,7 +274,7 @@ Updates React Admin data provider with endpoint mappings.
 **Constructor:**
 
 ```typescript
-new DataProviderEndpointGenerator()
+new DataProviderEndpointGenerator();
 ```
 
 **Methods:**
@@ -299,6 +297,7 @@ await generator.update([
 ```
 
 **Behavior:**
+
 - Updates `endpointMap` in data provider file
 - Preserves custom endpoint mappings
 - Inserts between auto-generated comments
@@ -363,12 +362,7 @@ Create a custom generation script with pre/post hooks:
 
 ```typescript
 // scripts/generate.ts
-import {
-  ApiGenerator,
-  DashboardGenerator,
-  DtoGenerator,
-  config as defaultConfig,
-} from '@tgraph/backend-generator';
+import { ApiGenerator, DashboardGenerator, DtoGenerator, config as defaultConfig } from '@tgraph/backend-generator';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -523,10 +517,10 @@ async function safeGenerate() {
       console.error('❌ Generation failed:', error.message);
       console.error('Stack trace:', error.stack);
     }
-    
+
     // Send error to monitoring service
     await sendToSentry(error);
-    
+
     // Exit with error code
     process.exit(1);
   }
@@ -556,13 +550,13 @@ const config = {
 
 async function regenerate() {
   console.log('🔄 Regenerating...');
-  
+
   const api = new ApiGenerator(config);
   await api.generate();
-  
+
   const dashboard = new DashboardGenerator(config);
   await dashboard.generate();
-  
+
   console.log('✅ Done');
 }
 
@@ -604,17 +598,17 @@ const apps = [
 async function generateMonorepo() {
   for (const app of apps) {
     console.log(`\n📦 Generating for ${app.name}...`);
-    
+
     const config = {
       ...app,
       suffix: 'Tg',
       isAdmin: true,
       updateDataProvider: true,
     };
-    
+
     const api = new ApiGenerator(config);
     await api.generate();
-    
+
     const dashboard = new DashboardGenerator(config);
     await dashboard.generate();
   }
@@ -668,4 +662,3 @@ interface ModuleUpdates {
 - **[CLI Reference](./cli-reference.md)** – Command-line usage
 - **[API Documentation](./api/generators.md)** – Detailed API docs
 - **[Configuration Guide](./api/configuration.md)** – Advanced config
-

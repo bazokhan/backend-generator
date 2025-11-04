@@ -5,6 +5,7 @@ Implement image and file uploads with automatic upload handling in your forms.
 ## Goal
 
 Create a product model with:
+
 - Image thumbnail upload
 - Multiple product images (gallery)
 - PDF datasheet upload
@@ -16,13 +17,7 @@ First, implement a file upload endpoint in your backend:
 
 ```typescript
 // src/infrastructure/storage/upload.controller.ts
-import {
-  Controller,
-  Post,
-  UseInterceptors,
-  UploadedFile,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFile, UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -68,12 +63,12 @@ import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  
+
   // Serve uploaded files
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
-  
+
   await app.listen(3000);
 }
 bootstrap();
@@ -102,6 +97,7 @@ model Product {
 ```
 
 Key directives:
+
 - `/// @tg_upload(image)` – Image upload with preview
 - `/// @tg_upload(file)` – Generic file upload
 
@@ -161,22 +157,22 @@ export const ProductCreate = () => (
     <SimpleForm>
       <TextInput source="name" required />
       <TextInput source="description" multiline required />
-      
+
       {/* Single image upload with preview */}
       <FileInput source="thumbnail" accept="image/*">
         <ImageField source="src" title="title" />
       </FileInput>
-      
+
       {/* Multiple image upload */}
       <FileInput source="images" multiple accept="image/*">
         <ImageField source="src" title="title" />
       </FileInput>
-      
+
       {/* Generic file upload */}
       <FileInput source="datasheet">
         <FileField source="src" title="title" />
       </FileInput>
-      
+
       <NumberInput source="price" required />
       <NumberInput source="stock" />
     </SimpleForm>
@@ -192,19 +188,19 @@ export const ProductEdit = () => (
     <SimpleForm>
       <TextInput source="name" required />
       <TextInput source="description" multiline required />
-      
+
       <FileInput source="thumbnail" accept="image/*">
         <ImageField source="src" title="title" />
       </FileInput>
-      
+
       <FileInput source="images" multiple accept="image/*">
         <ImageField source="src" title="title" />
       </FileInput>
-      
+
       <FileInput source="datasheet">
         <FileField source="src" title="title" />
       </FileInput>
-      
+
       <NumberInput source="price" required />
       <NumberInput source="stock" />
     </SimpleForm>
@@ -244,27 +240,27 @@ When a user submits a form with file inputs:
 const create = async (resource, { data }) => {
   // Detect upload fields
   const directives = fieldDirectives[resource] || {};
-  
+
   for (const [field, directive] of Object.entries(directives)) {
     if (directive.tgUpload && data[field]) {
       if (data[field] instanceof File) {
         // Upload file
         const formData = new FormData();
         formData.append('file', data[field]);
-        
+
         const response = await fetch('/upload', {
           method: 'POST',
           body: formData,
         });
-        
+
         const result = await response.json();
-        
+
         // Replace File with URL
         data[field] = result.url;
       }
     }
   }
-  
+
   // Now call the actual API with clean data
   return httpClient.post(`/tg-api/${resource}`, data);
 };
@@ -293,6 +289,7 @@ curl -X POST http://localhost:3000/upload \
 ```
 
 Response:
+
 ```json
 {
   "url": "/uploads/file-1234567890.jpg",
@@ -344,7 +341,7 @@ export class UploadController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     const key = `uploads/${Date.now()}-${file.originalname}`;
-    
+
     await this.s3
       .putObject({
         Bucket: process.env.AWS_BUCKET,
@@ -485,18 +482,17 @@ export const ProductImageUpload = ({ source }: { source: string }) => {
   });
 
   return (
-    <div {...getRootProps()} style={{
-      border: '2px dashed #ccc',
-      padding: '20px',
-      textAlign: 'center',
-      cursor: 'pointer',
-    }}>
+    <div
+      {...getRootProps()}
+      style={{
+        border: '2px dashed #ccc',
+        padding: '20px',
+        textAlign: 'center',
+        cursor: 'pointer',
+      }}
+    >
       <input {...getInputProps()} />
-      {isDragActive ? (
-        <p>Drop the image here...</p>
-      ) : (
-        <p>Drag and drop an image, or click to select</p>
-      )}
+      {isDragActive ? <p>Drop the image here...</p> : <p>Drag and drop an image, or click to select</p>}
       {field.value && (
         <img
           src={typeof field.value === 'string' ? field.value : URL.createObjectURL(field.value)}
@@ -509,7 +505,7 @@ export const ProductImageUpload = ({ source }: { source: string }) => {
 };
 
 // Use in form
-<ProductImageUpload source="thumbnail" />
+<ProductImageUpload source="thumbnail" />;
 ```
 
 ## Best Practices
@@ -523,7 +519,7 @@ fileFilter: (req, file, callback) => {
     return callback(new Error('Invalid file type'), false);
   }
   callback(null, true);
-}
+};
 ```
 
 ### 2. Set Size Limits
@@ -541,7 +537,7 @@ limits: {
 filename: (req, file, callback) => {
   const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
   callback(null, uniqueSuffix + extname(file.originalname));
-}
+};
 ```
 
 ### 4. Clean Up Old Files
@@ -551,12 +547,12 @@ Implement cleanup when updating/deleting:
 ```typescript
 async update(id: string, dto: UpdateProductTgDto): Promise<Product> {
   const product = await this.findOne(id);
-  
+
   // If thumbnail changed, delete old one
   if (dto.thumbnail && product.thumbnail !== dto.thumbnail) {
     await this.deleteFile(product.thumbnail);
   }
-  
+
   return super.update(id, dto);
 }
 
@@ -570,7 +566,7 @@ private async deleteFile(url: string): Promise<void> {
 
 ```typescript
 @Controller('upload')
-@UseGuards(JwtAuthGuard)  // Require authentication
+@UseGuards(JwtAuthGuard) // Require authentication
 export class UploadController {
   // Only authenticated users can upload
 }
@@ -618,4 +614,3 @@ tgraph dashboard
 - **[Custom Validation](./custom-validation.md)** – Validate uploaded files
 - **[Extending Generated Code](./extending-generated-code.md)** – Add custom upload logic
 - **[Field Directives Guide](../guides/field-directives.md)** – Learn all directives
-

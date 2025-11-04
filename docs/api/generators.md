@@ -13,6 +13,7 @@ constructor(config: Config)
 ```
 
 **Parameters:**
+
 - `config` - Configuration object defining paths and options
 
 ### Methods
@@ -26,6 +27,7 @@ async generate(): Promise<void>
 ```
 
 **Process:**
+
 1. Parses Prisma schema
 2. Finds or creates module directories
 3. Generates controllers with REST endpoints
@@ -53,6 +55,7 @@ await generator.generate();
 ```
 
 **Generated Files:**
+
 ```
 src/features/user/
 ├── create-user.tg.dto.ts
@@ -66,6 +69,7 @@ src/dashboard/src/providers/dataProvider.ts (updated if enabled)
 ```
 
 **Throws:**
+
 - `Error` if schema file not found
 - `Error` if module directory cannot be created
 - `Error` if file write fails
@@ -83,6 +87,7 @@ constructor(config: Config)
 ```
 
 **Parameters:**
+
 - `config` - Configuration object
 
 ### Methods
@@ -96,6 +101,7 @@ async generate(): Promise<void>
 ```
 
 **Process:**
+
 1. Parses Prisma schema
 2. Extracts field directives
 3. Generates List components
@@ -125,6 +131,7 @@ await generator.generate();
 ```
 
 **Generated Files:**
+
 ```
 src/dashboard/src/resources/users/
 ├── UserList.tsx
@@ -139,6 +146,7 @@ src/dashboard/src/App.tsx (updated)
 ```
 
 **Throws:**
+
 - `Error` if schema file not found
 - `Error` if dashboard directory not found
 - `Error` if file write fails
@@ -156,6 +164,7 @@ constructor(config: Config)
 ```
 
 **Parameters:**
+
 - `config` - Configuration object
 
 ### Methods
@@ -169,6 +178,7 @@ generate(): void
 ```
 
 **Process:**
+
 1. Parses Prisma schema
 2. Generates response DTO for each model
 3. Includes relations and enums
@@ -190,6 +200,7 @@ generator.generate();
 ```
 
 **Generated Files:**
+
 ```
 src/dtos/generated/
 ├── user-response.dto.ts
@@ -217,6 +228,7 @@ export class UserResponseDto {
 ```
 
 **Throws:**
+
 - `Error` if schema file not found
 - `Error` if DTO directory cannot be created
 
@@ -272,6 +284,7 @@ Suffix appended to generated class names.
 **Example:** `'Admin'`, `'Public'`, `'Bz'`
 
 **Impact:**
+
 - Classes: `User{Suffix}Service`, `User{Suffix}Controller`
 - Files: `user.{suffix}.service.ts`, `user.{suffix}.controller.ts`
 
@@ -284,6 +297,7 @@ Whether to generate admin-only endpoints with authentication guards.
 **Example:** `false` for public APIs
 
 **Impact:**
+
 - `true`: Adds `@UseGuards(JwtAuthGuard, AdminGuard)`
 - `false`: Adds only `@UseGuards(JwtAuthGuard)` or no guards
 
@@ -398,13 +412,13 @@ try {
 
 **Common Errors:**
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `ENOENT` | File/directory not found | Check paths in config |
-| `EACCES` | Permission denied | Fix file permissions |
-| `Schema not found` | Invalid schema path | Verify schemaPath in config |
+| Error              | Cause                    | Solution                                 |
+| ------------------ | ------------------------ | ---------------------------------------- |
+| `ENOENT`           | File/directory not found | Check paths in config                    |
+| `EACCES`           | Permission denied        | Fix file permissions                     |
+| `Schema not found` | Invalid schema path      | Verify schemaPath in config              |
 | `Module not found` | Module directory missing | Create directory or answer 'y' to prompt |
-| `Parse error` | Invalid Prisma syntax | Fix Prisma schema syntax |
+| `Parse error`      | Invalid Prisma syntax    | Fix Prisma schema syntax                 |
 
 ---
 
@@ -419,10 +433,10 @@ class CustomApiGenerator extends ApiGenerator {
   async generate(): Promise<void> {
     // Pre-generation hook
     console.log('Starting custom generation...');
-    
+
     // Call parent
     await super.generate();
-    
+
     // Post-generation hook
     await this.customPostProcessing();
   }
@@ -519,4 +533,3 @@ await generator.generate();
 - **[Parsers API](./parsers.md)** – Schema parsing utilities
 - **[Utilities API](./utilities.md)** – Helper functions
 - **[Configuration](./configuration.md)** – Advanced configuration
-

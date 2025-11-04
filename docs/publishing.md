@@ -37,9 +37,7 @@ Your `package.json` is already configured:
   "bin": {
     "tgraph": "dist/cli.js"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepare": "npm run build",
@@ -57,21 +55,13 @@ Add these fields to `package.json`:
 {
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/backend-generator.git"
+    "url": "https://github.com/trugraph/backend-generator.git"
   },
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/backend-generator/issues"
+    "url": "https://github.com/trugraph/backend-generator/issues"
   },
-  "homepage": "https://github.com/YOUR_USERNAME/backend-generator#readme",
-  "keywords": [
-    "prisma",
-    "nestjs",
-    "react-admin",
-    "code-generator",
-    "crud",
-    "typescript",
-    "cli"
-  ],
+  "homepage": "https://github.com/trugraph/backend-generator#readme",
+  "keywords": ["prisma", "nestjs", "react-admin", "code-generator", "crud", "typescript", "cli"],
   "author": "Your Name <your.email@example.com>",
   "engines": {
     "node": ">=18.0.0",
@@ -85,23 +75,27 @@ Add these fields to `package.json`:
 ### First Time Publish
 
 1. **Login to npm:**
+
 ```bash
 npm login
 ```
 
 2. **Verify configuration:**
+
 ```bash
 npm whoami
 npm org ls tgraph
 ```
 
 3. **Test build:**
+
 ```bash
 npm run build
 npm test
 ```
 
 4. **Test package locally:**
+
 ```bash
 npm pack
 # Creates @tgraph-backend-generator-1.0.0.tgz
@@ -113,6 +107,7 @@ tgraph --help
 ```
 
 5. **Publish:**
+
 ```bash
 npm publish --access public
 ```
@@ -122,6 +117,7 @@ Note: The first publish of a scoped package requires `--access public`.
 ### Subsequent Publishes
 
 1. **Update version:**
+
 ```bash
 npm version patch  # 1.0.0 → 1.0.1
 # or
@@ -131,22 +127,26 @@ npm version major  # 1.1.0 → 2.0.0
 ```
 
 This automatically:
+
 - Updates `package.json` version
 - Creates a git commit
 - Creates a git tag
 
 2. **Build and test:**
+
 ```bash
 npm run build
 npm test
 ```
 
 3. **Publish:**
+
 ```bash
 npm publish
 ```
 
 4. **Push to GitHub:**
+
 ```bash
 git push && git push --tags
 ```
@@ -160,6 +160,7 @@ Follow [Semantic Versioning (SemVer)](https://semver.org/):
 Breaking changes that require user action:
 
 **Examples:**
+
 - Changing configuration structure
 - Removing exported functions
 - Changing CLI command names
@@ -175,6 +176,7 @@ npm version major
 New features, backward compatible:
 
 **Examples:**
+
 - Adding new field directives
 - Adding new CLI options
 - Adding new generators
@@ -190,6 +192,7 @@ npm version minor
 Bug fixes, backward compatible:
 
 **Examples:**
+
 - Fixing generation bugs
 - Improving error messages
 - Updating documentation
@@ -216,6 +219,7 @@ npm publish --tag alpha
 ```
 
 Users install with:
+
 ```bash
 npm install @tgraph/backend-generator@alpha
 ```
@@ -279,27 +283,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+
 - New features in development
 
 ### Changed
+
 - Changes to existing functionality
 
 ### Fixed
+
 - Bug fixes
 
 ## [1.1.0] - 2025-01-15
 
 ### Added
+
 - Added @tg_currency directive for currency fields
 - Added custom module path resolution
 
 ### Fixed
+
 - Fixed module updater edge case with empty files
 - Improved error messages for missing schemas
 
 ## [1.0.0] - 2025-01-01
 
 ### Added
+
 - Initial release
 - API generation for NestJS
 - Dashboard generation for React Admin
@@ -337,18 +347,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
-      
+
       - run: npm ci
-      
+
       - run: npm test
-      
+
       - run: npm run build
-      
+
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -367,6 +377,7 @@ jobs:
    - Paste token
 
 3. Publish by pushing tags:
+
 ```bash
 npm version minor
 git push && git push --tags
@@ -389,6 +400,7 @@ npm dist-tag rm @tgraph/backend-generator legacy
 ```
 
 Common tags:
+
 - `latest` (default)
 - `next` (upcoming major version)
 - `beta` (beta releases)
@@ -431,6 +443,7 @@ Or visit: https://www.npmjs.com/package/@tgraph/backend-generator
 ### Issues and Feedback
 
 Monitor:
+
 - npm package page comments
 - GitHub issues
 - GitHub discussions
@@ -487,6 +500,7 @@ tgraph all
 ### 2. Keep Documentation in Sync
 
 Before publishing:
+
 - Update README.md
 - Update docs/
 - Update CHANGELOG.md
@@ -495,6 +509,7 @@ Before publishing:
 ### 3. Backward Compatibility
 
 Maintain backward compatibility:
+
 - Don't remove features without deprecation period
 - Don't change default behavior in minor versions
 - Provide migration guides for major versions
@@ -502,6 +517,7 @@ Maintain backward compatibility:
 ### 4. Clear Communication
 
 When releasing:
+
 - Write clear changelog entries
 - Highlight breaking changes
 - Provide upgrade guides
@@ -516,6 +532,7 @@ npm install @tgraph/backend-generator@1.2.3
 ```
 
 Not:
+
 ```bash
 npm install @tgraph/backend-generator@^1.2.3
 ```
@@ -527,6 +544,7 @@ npm install @tgraph/backend-generator@^1.2.3
 **Cause:** No access to organization
 
 **Solution:**
+
 ```bash
 npm org ls tgraph
 # Add yourself if missing
@@ -538,6 +556,7 @@ npm org add YOUR_USERNAME tgraph
 **Cause:** Version already published
 
 **Solution:**
+
 ```bash
 npm version patch  # Bump version
 npm publish
@@ -548,6 +567,7 @@ npm publish
 **Cause:** 72-hour window passed
 
 **Solution:** Use deprecation instead:
+
 ```bash
 npm deprecate @tgraph/backend-generator@1.0.0 "Deprecated message"
 ```
@@ -557,4 +577,3 @@ npm deprecate @tgraph/backend-generator@1.0.0 "Deprecated message"
 - **[Contributing Guide](./contributing.md)** – Contribute to the project
 - **[Architecture](./architecture/overview.md)** – Understand the system
 - **[Troubleshooting](./troubleshooting.md)** – Common issues
-

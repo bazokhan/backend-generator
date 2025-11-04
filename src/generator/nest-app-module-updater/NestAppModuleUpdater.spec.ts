@@ -348,9 +348,7 @@ import { UserModule } from './user.module';
   });
 
   describe('updateImportStatements', () => {
-    const mods: Array<{ name: string; moduleType: GeneratedModuleFolder }> = [
-      { name: 'Auth', moduleType: 'features' },
-    ];
+    const mods: Array<{ name: string; moduleType: GeneratedModuleFolder }> = [{ name: 'Auth', moduleType: 'features' }];
 
     it('should update existing import block', () => {
       const content = `import { Module } from '@nestjs/common';

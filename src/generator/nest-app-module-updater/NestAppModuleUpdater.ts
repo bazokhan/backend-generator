@@ -15,10 +15,7 @@ export class NestAppModuleUpdater {
     return entries;
   }
 
-  public buildImportStatement(
-    modelName: string,
-    moduleType: GeneratedModuleFolder,
-  ): { name: string; line: string } {
+  public buildImportStatement(modelName: string, moduleType: GeneratedModuleFolder): { name: string; line: string } {
     const modelNameLower = toCamelCase(modelName);
     const line = `import { ${modelName}Module } from './${moduleType}/${toKebabCase(modelName)}/${modelNameLower}.module';`;
     return { name: `${modelName}Module`, line };
@@ -32,12 +29,10 @@ export class NestAppModuleUpdater {
     return [...existing, ...newEntries.filter((e) => !seen.has(e.name))];
   }
 
-  public findImportBlock(content: string):
-    | {
-        match: RegExpMatchArray;
-        block: string;
-      }
-    | null {
+  public findImportBlock(content: string): {
+    match: RegExpMatchArray;
+    block: string;
+  } | null {
     const blockRegex = /\/\/ AUTO-GENERATED IMPORTS START([\s\S]*?)\/\/ AUTO-GENERATED IMPORTS END/;
     const match = content.match(blockRegex);
     if (!match) {
@@ -46,12 +41,10 @@ export class NestAppModuleUpdater {
     return { match, block: match[1] ?? '' };
   }
 
-  public findLastImportStatement(content: string):
-    | {
-        index: number;
-        length: number;
-      }
-    | null {
+  public findLastImportStatement(content: string): {
+    index: number;
+    length: number;
+  } | null {
     const importRegex = /^import\s+.*?from\s+['"][^'"]+['"];$/gm;
     const matches = Array.from(content.matchAll(importRegex));
     if (matches.length === 0) {
@@ -127,20 +120,14 @@ export class NestAppModuleUpdater {
       .join('\n')}\n// AUTO-GENERATED IMPORTS END`;
 
     if (existingBlock) {
-      return content.replace(
-        /\/\/ AUTO-GENERATED IMPORTS START[\s\S]*?\/\/ AUTO-GENERATED IMPORTS END/,
-        importsBlock,
-      );
+      return content.replace(/\/\/ AUTO-GENERATED IMPORTS START[\s\S]*?\/\/ AUTO-GENERATED IMPORTS END/, importsBlock);
     }
 
     const lastImport = this.findLastImportStatement(content);
     return this.insertImportBlock(content, importsBlock, lastImport?.index ?? null);
   }
 
-  public updateImportsArray(
-    content: string,
-    mods: Array<{ name: string; moduleType: GeneratedModuleFolder }>,
-  ): string {
+  public updateImportsArray(content: string, mods: Array<{ name: string; moduleType: GeneratedModuleFolder }>): string {
     const parsedResult = this.parser.parse(content);
 
     if (!parsedResult.moduleBounds || !parsedResult.importsBounds) {

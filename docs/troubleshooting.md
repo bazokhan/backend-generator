@@ -13,11 +13,13 @@ Common issues and solutions when using TGraph Backend Generator.
 **1. If installed locally (project dependency):**
 
 Use npx:
+
 ```bash
 npx tgraph all
 ```
 
 Or add to `package.json` scripts:
+
 ```json
 {
   "scripts": {
@@ -27,6 +29,7 @@ Or add to `package.json` scripts:
 ```
 
 Then run:
+
 ```bash
 npm run generate
 ```
@@ -34,6 +37,7 @@ npm run generate
 **2. If installed globally:**
 
 Ensure npm global bin is in your PATH:
+
 ```bash
 # Check global bin location
 npm config get prefix
@@ -46,6 +50,7 @@ export PATH=$PATH:$(npm config get prefix)/bin
 ```
 
 **3. Reinstall:**
+
 ```bash
 npm uninstall -g @tgraph/backend-generator
 npm install -g @tgraph/backend-generator
@@ -75,6 +80,7 @@ npm install -g @tgraph/backend-generator
 **Solution (Windows):**
 
 Run terminal as Administrator, then:
+
 ```bash
 npm install -g @tgraph/backend-generator
 ```
@@ -86,6 +92,7 @@ npm install -g @tgraph/backend-generator
 ### Schema File Not Found
 
 **Problem:**
+
 ```
 ❌ Schema file not found: prisma/schema.prisma
 ```
@@ -93,16 +100,19 @@ npm install -g @tgraph/backend-generator
 **Solutions:**
 
 **1. Verify path:**
+
 ```bash
 ls prisma/schema.prisma
 ```
 
 **2. Specify correct path:**
+
 ```bash
 tgraph all --schema path/to/your/schema.prisma
 ```
 
 **3. Create schema:**
+
 ```bash
 mkdir prisma
 npx prisma init
@@ -117,11 +127,13 @@ npx prisma init
 **Solution:**
 
 1. **Validate schema:**
+
 ```bash
 npx prisma validate
 ```
 
 2. **Format schema:**
+
 ```bash
 npx prisma format
 ```
@@ -164,6 +176,7 @@ model User {
 ### Module Not Found
 
 **Problem:**
+
 ```
 ⚠️ No module found for User
 Do you want to create the module directory for User? (y/n):
@@ -174,11 +187,13 @@ Do you want to create the module directory for User? (y/n):
 **1. Answer 'y' to create automatically**
 
 **2. Create manually:**
+
 ```bash
 mkdir -p src/features/user
 ```
 
 **3. Or in infrastructure:**
+
 ```bash
 mkdir -p src/infrastructure/user
 ```
@@ -192,6 +207,7 @@ mkdir -p src/infrastructure/user
 **Solutions:**
 
 **1. Check file permissions:**
+
 ```bash
 chmod u+w src/features/user/user.module.ts
 ```
@@ -199,11 +215,13 @@ chmod u+w src/features/user/user.module.ts
 **2. Ensure valid TypeScript:**
 
 Module file must be valid TypeScript. Check for syntax errors:
+
 ```bash
 npx tsc --noEmit
 ```
 
 **3. Backup and regenerate:**
+
 ```bash
 cp src/features/user/user.module.ts src/features/user/user.module.ts.backup
 # Fix issues, then regenerate
@@ -221,6 +239,7 @@ tgraph api
 **Solutions:**
 
 **1. Install dependencies:**
+
 ```bash
 npm install
 npm install --save-dev @types/node
@@ -229,6 +248,7 @@ npm install --save-dev @types/node
 **2. Check tsconfig.json:**
 
 Ensure these settings:
+
 ```json
 {
   "compilerOptions": {
@@ -244,6 +264,7 @@ Ensure these settings:
 **3. Verify imports:**
 
 Check that all imported types are available:
+
 ```bash
 npm install class-validator class-transformer
 npm install @nestjs/common @nestjs/core
@@ -262,14 +283,15 @@ Check your configuration:
 ```typescript
 // config.ts
 export const config = {
-  schemaPath: 'prisma/schema.prisma',  // ← Verify this
-  dashboardPath: 'src/dashboard/src',   // ← And this
-  dtosPath: 'src/dtos/generated',       // ← And this
+  schemaPath: 'prisma/schema.prisma', // ← Verify this
+  dashboardPath: 'src/dashboard/src', // ← And this
+  dtosPath: 'src/dtos/generated', // ← And this
   // ...
 };
 ```
 
 Override with CLI:
+
 ```bash
 tgraph api --dtos src/features/user
 ```
@@ -283,6 +305,7 @@ tgraph api --dtos src/features/user
 **Solutions:**
 
 **1. Install Prettier:**
+
 ```bash
 npm install --save-dev prettier
 ```
@@ -301,6 +324,7 @@ npm install --save-dev prettier
 ```
 
 **3. Format manually:**
+
 ```bash
 npx prettier --write "src/**/*.ts"
 ```
@@ -318,11 +342,13 @@ npx prettier --write "src/**/*.ts"
 **1. Check imports:**
 
 Verify imports in `App.tsx`:
+
 ```typescript
 import { UserList, UserEdit, UserCreate, UserShow } from './resources/users';
 ```
 
 **2. Verify resource registration:**
+
 ```typescript
 <Resource
   name="users"
@@ -336,9 +362,10 @@ import { UserList, UserEdit, UserCreate, UserShow } from './resources/users';
 **3. Check data provider:**
 
 Ensure endpoint mapping exists:
+
 ```typescript
 const endpointMap = {
-  'users': 'tg-api/users',  // ← Must exist
+  users: 'tg-api/users', // ← Must exist
 };
 ```
 
@@ -351,6 +378,7 @@ const endpointMap = {
 **Solutions:**
 
 **1. Regenerate dashboard:**
+
 ```bash
 tgraph dashboard
 ```
@@ -409,6 +437,7 @@ avatar String?
 ```
 
 **3. Regenerate:**
+
 ```bash
 tgraph dashboard
 ```
@@ -424,6 +453,7 @@ tgraph dashboard
 **Solutions:**
 
 **1. Check server is running:**
+
 ```bash
 npm run start:dev
 ```
@@ -432,18 +462,19 @@ npm run start:dev
 
 ```typescript
 // Check this exists
-@Controller('tg-api/users')  // ← Must match request path
-export class UserTgController { }
+@Controller('tg-api/users') // ← Must match request path
+export class UserTgController {}
 ```
 
 **3. Check AppModule:**
 
 Ensure module is imported:
+
 ```typescript
 @Module({
   imports: [
     // AUTO-GENERATED IMPORTS START
-    UserModule,  // ← Must be here
+    UserModule, // ← Must be here
     // AUTO-GENERATED IMPORTS END
   ],
 })
@@ -451,6 +482,7 @@ export class AppModule {}
 ```
 
 **4. Restart server:**
+
 ```bash
 # Stop and restart
 npm run start:dev
@@ -467,19 +499,22 @@ npm run start:dev
 **1. Check guards:**
 
 Generated controllers require authentication:
+
 ```typescript
 @Controller('tg-api/users')
-@UseGuards(JwtAuthGuard, AdminGuard)  // ← These must be implemented
-export class UserTgController { }
+@UseGuards(JwtAuthGuard, AdminGuard) // ← These must be implemented
+export class UserTgController {}
 ```
 
 **2. Implement guards:**
 
 You must provide:
+
 - `JwtAuthGuard` - JWT authentication
 - `AdminGuard` - Admin role check
 
 **3. Or generate without admin:**
+
 ```bash
 tgraph api --no-admin
 ```
@@ -498,7 +533,7 @@ tgraph api --no-admin
 // Generated DTO
 export class CreateUserTgDto {
   @IsString()
-  @IsNotEmpty()  // ← Might be too strict
+  @IsNotEmpty() // ← Might be too strict
   name: string;
 }
 ```
@@ -512,6 +547,7 @@ model User {
 ```
 
 **3. Test with minimal data:**
+
 ```bash
 curl -X POST http://localhost:3000/tg-api/users \
   -H "Content-Type: application/json" \
@@ -529,6 +565,7 @@ curl -X POST http://localhost:3000/tg-api/users \
 **Solutions:**
 
 **1. Check flag syntax:**
+
 ```bash
 # ✅ Correct
 tgraph api --suffix Admin
@@ -540,6 +577,7 @@ tgraph --suffix Admin api
 Flags must come AFTER the command.
 
 **2. Use equals syntax:**
+
 ```bash
 tgraph api --suffix=Admin
 ```
@@ -547,9 +585,12 @@ tgraph api --suffix=Admin
 **3. Check config file:**
 
 CLI flags override config, but config must be valid:
+
 ```typescript
 // config.ts - must export 'config'
-export const config: Config = { /* ... */ };
+export const config: Config = {
+  /* ... */
+};
 ```
 
 ---
@@ -563,6 +604,7 @@ export const config: Config = { /* ... */ };
 **1. Check for prompts:**
 
 Look for user input prompts:
+
 ```
 Do you want to create the module directory for User? (y/n):
 ```
@@ -570,6 +612,7 @@ Do you want to create the module directory for User? (y/n):
 Answer the prompt or create directory beforehand.
 
 **2. Kill and restart:**
+
 ```bash
 # Ctrl+C to kill
 # Then run again
@@ -579,6 +622,7 @@ tgraph all
 **3. Check for infinite loops:**
 
 If it truly hangs, it's a bug. Report with:
+
 - Your schema
 - Command used
 - Console output
@@ -600,11 +644,13 @@ Only mark necessary models with `@tg_form()`.
 **2. Check file system:**
 
 Slow disk I/O can cause delays. Check available space:
+
 ```bash
 df -h  # Linux/Mac
 ```
 
 **3. Skip data provider updates:**
+
 ```bash
 tgraph api --no-update-data-provider
 ```
@@ -624,7 +670,7 @@ tgraph api --no-update-data-provider
 
 Check if someone else had the same problem:
 
-- GitHub Issues: https://github.com/YOUR_ORG/backend-generator/issues
+- GitHub Issues: https://github.com/trugraph/backend-generator/issues
 - Search closed issues too
 
 ### Ask for Help
@@ -636,6 +682,7 @@ If you can't find a solution:
 3. **Email:** For sensitive matters
 
 When asking, include:
+
 - Exact error message
 - Your Prisma schema (relevant parts)
 - Command you ran
@@ -646,11 +693,12 @@ When asking, include:
 
 When reporting bugs, include:
 
-```markdown
+````markdown
 **Description:**
 Brief description of the bug
 
 **To Reproduce:**
+
 1. Step 1
 2. Step 2
 3. See error
@@ -662,25 +710,31 @@ What should happen
 What actually happens
 
 **Environment:**
+
 - OS: [e.g., macOS 13.0]
 - Node: [e.g., 18.0.0]
 - npm: [e.g., 9.0.0]
 - Package version: [e.g., 1.2.3]
 
 **Schema:**
+
 ```prisma
 // Relevant parts of your schema
 ```
+````
 
 **Command:**
+
 ```bash
 tgraph all
 ```
 
 **Error Output:**
+
 ```
 [Paste full error here]
 ```
+
 ```
 
 ---
@@ -689,5 +743,6 @@ tgraph all
 
 - **[Getting Started](./getting-started.md)** – Start from scratch
 - **[Contributing](./contributing.md)** – Help improve the tool
-- **[GitHub Issues](https://github.com/YOUR_ORG/backend-generator/issues)** – Report bugs
+- **[GitHub Issues](https://github.com/trugraph/backend-generator/issues)** – Report bugs
 
+```

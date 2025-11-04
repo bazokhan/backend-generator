@@ -13,10 +13,10 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepare": "npm run build",
-    "test": "jest"
+    "test": "jest",
+    "format": "prettier --write ."
   },
-  "keywords": [],
-  "author": "",
+  "author": "Mohamed Elbaz",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
@@ -28,5 +28,22 @@
     "jest": "^30.2.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trugraph/backend-generator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/trugraph/backend-generator/issues"
+  },
+  "homepage": "https://github.com/trugraph/backend-generator#readme",
+  "keywords": [
+    "prisma",
+    "nestjs",
+    "react-admin",
+    "code-generator",
+    "crud",
+    "typescript",
+    "cli"
+  ]
 }

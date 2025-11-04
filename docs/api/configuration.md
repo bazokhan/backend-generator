@@ -29,13 +29,13 @@ Path to the Prisma schema file.
 
 ```typescript
 // Standard location
-schemaPath: 'prisma/schema.prisma'
+schemaPath: 'prisma/schema.prisma';
 
 // Monorepo
-schemaPath: 'apps/api/prisma/schema.prisma'
+schemaPath: 'apps/api/prisma/schema.prisma';
 
 // Custom location
-schemaPath: 'database/schema.prisma'
+schemaPath: 'database/schema.prisma';
 ```
 
 ---
@@ -52,13 +52,13 @@ Path to the React Admin dashboard source directory.
 
 ```typescript
 // Standard location
-dashboardPath: 'src/dashboard/src'
+dashboardPath: 'src/dashboard/src';
 
 // Monorepo
-dashboardPath: 'apps/admin/src'
+dashboardPath: 'apps/admin/src';
 
 // Custom location
-dashboardPath: 'frontend/admin/src'
+dashboardPath: 'frontend/admin/src';
 ```
 
 ---
@@ -75,13 +75,13 @@ Path to the DTO output directory.
 
 ```typescript
 // Standard location
-dtosPath: 'src/dtos/generated'
+dtosPath: 'src/dtos/generated';
 
 // Separate directory
-dtosPath: 'src/common/dtos'
+dtosPath: 'src/common/dtos';
 
 // Monorepo
-dtosPath: 'apps/api/src/dtos'
+dtosPath: 'apps/api/src/dtos';
 ```
 
 ---
@@ -95,6 +95,7 @@ Suffix appended to generated class names and files.
 **Required:** Yes
 
 **Impact:**
+
 - Class names: `User{Suffix}Service`, `User{Suffix}Controller`
 - DTOs: `CreateUser{Suffix}Dto`, `UpdateUser{Suffix}Dto`
 - Files: `user.{suffix}.service.ts`, `user.{suffix}.controller.ts`
@@ -103,19 +104,19 @@ Suffix appended to generated class names and files.
 
 ```typescript
 // Default
-suffix: 'Tg'
+suffix: 'Tg';
 // → UserTgService, user.tg.service.ts
 
 // Admin API
-suffix: 'Admin'
+suffix: 'Admin';
 // → UserAdminService, user.admin.service.ts
 
 // Business logic
-suffix: 'Bz'
+suffix: 'Bz';
 // → UserBzService, user.bz.service.ts
 
 // Public API
-suffix: 'Public'
+suffix: 'Public';
 // → UserPublicService, user.public.service.ts
 ```
 
@@ -132,27 +133,29 @@ Whether to generate admin-only endpoints with authentication guards.
 **Impact:**
 
 **When `true`:**
+
 ```typescript
 @Controller('tg-api/users')
 @UseGuards(JwtAuthGuard, AdminGuard)
-export class UserTgController { }
+export class UserTgController {}
 ```
 
 **When `false`:**
+
 ```typescript
 @Controller('api/users')
 @UseGuards(JwtAuthGuard)
-export class UserTgController { }
+export class UserTgController {}
 ```
 
 **Examples:**
 
 ```typescript
 // Admin API - requires admin role
-isAdmin: true
+isAdmin: true;
 
 // Public API - any authenticated user
-isAdmin: false
+isAdmin: false;
 ```
 
 ---
@@ -168,11 +171,13 @@ Whether to automatically update data provider endpoint mappings.
 **Impact:**
 
 **When `true`:**
+
 - Automatically updates `src/dashboard/src/providers/dataProvider.ts`
 - Adds endpoint mappings for generated resources
 - Preserves manual mappings
 
 **When `false`:**
+
 - Skips data provider updates
 - You must manually add endpoint mappings
 
@@ -180,10 +185,10 @@ Whether to automatically update data provider endpoint mappings.
 
 ```typescript
 // Auto-update data provider (recommended)
-updateDataProvider: true
+updateDataProvider: true;
 
 // Manual data provider management
-updateDataProvider: false
+updateDataProvider: false;
 ```
 
 ---
@@ -281,6 +286,7 @@ tgraph api \
 ```
 
 **Priority Order:**
+
 1. CLI flags (highest)
 2. Project config file
 3. Default config (lowest)
@@ -399,13 +405,13 @@ Add comments explaining non-standard paths:
 export const config: Config = {
   // Custom monorepo structure
   schemaPath: 'apps/api/prisma/schema.prisma',
-  
+
   // Separate admin dashboard
   dashboardPath: 'apps/admin-panel/src',
-  
+
   // Shared DTOs directory
   dtosPath: 'libs/shared/dtos',
-  
+
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
@@ -419,4 +425,3 @@ export const config: Config = {
 - **[Generators API](./generators.md)** – Generator classes
 - **[SDK Reference](../sdk-reference.md)** – Programmatic usage
 - **[CLI Reference](../cli-reference.md)** – Command-line usage
-

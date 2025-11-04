@@ -82,6 +82,7 @@ tgraph all  # Still same
 ```
 
 **Implementation:**
+
 - Auto-generated sections are clearly marked
 - Manual code is preserved
 - File writes are atomic
@@ -110,6 +111,7 @@ Errors are caught early with clear messages:
 ```
 
 **Implementation:**
+
 - Validate inputs before generation
 - Provide actionable error messages
 - Suggest solutions
@@ -192,6 +194,7 @@ System works even with partial data:
 ### Why Code Generation?
 
 **Benefits:**
+
 - **Consistency** – All endpoints follow same patterns
 - **Speed** – Generate in seconds vs. hours of manual work
 - **Maintenance** – Update schema, regenerate everything
@@ -199,6 +202,7 @@ System works even with partial data:
 - **Best Practices** – Generated code follows standards
 
 **Trade-offs:**
+
 - Learning curve for schema directives
 - Less flexibility than manual code (mitigated by extension)
 - Requires discipline to avoid editing generated files
@@ -217,12 +221,14 @@ Code generation is NOT appropriate for:
 ### Generated vs. Custom Code
 
 **Generated Code Is:**
+
 - Predictable
 - Consistent
 - Safe to regenerate
 - Follows conventions
 
 **Custom Code Is:**
+
 - Business-specific
 - Flexible
 - Preserved across regeneration
@@ -247,7 +253,12 @@ export class CreateUserTgDto {
 }
 
 // Not generated - unclear, inconsistent
-export class Dto{constructor(public n,public e){}}
+export class Dto {
+  constructor(
+    public n,
+    public e,
+  ) {}
+}
 ```
 
 ### 2. Minimal Dependencies
@@ -279,7 +290,7 @@ Generated files include inline documentation:
 /**
  * Auto-generated DTO for creating User records.
  * DO NOT EDIT MANUALLY - changes will be overwritten.
- * 
+ *
  * To customize, extend this class in a separate file.
  */
 export class CreateUserTgDto {
@@ -407,4 +418,3 @@ Built for long-term maintenance:
 - **[Architecture Overview](./overview.md)** – System design
 - **[Contributing](../contributing.md)** – Join the project
 - **[SDK Reference](../sdk-reference.md)** – Build extensions
-

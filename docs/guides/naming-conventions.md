@@ -29,34 +29,34 @@ model blogpost { }
 
 REST endpoints use **kebab-case-plural**:
 
-| Model | Endpoint |
-|-------|----------|
-| `User` | `/tg-api/users` |
-| `BlogPost` | `/tg-api/blog-posts` |
+| Model             | Endpoint                     |
+| ----------------- | ---------------------------- |
+| `User`            | `/tg-api/users`              |
+| `BlogPost`        | `/tg-api/blog-posts`         |
 | `CustomFieldType` | `/tg-api/custom-field-types` |
 
 **Example:**
 
 ```typescript
 @Controller('tg-api/custom-field-types')
-export class CustomFieldTypeTgController { }
+export class CustomFieldTypeTgController {}
 ```
 
 ### File Names
 
 TypeScript files use **camelCase** with `.tg.` suffix:
 
-| Model | Controller | Service |
-|-------|------------|---------|
-| `User` | `user.tg.controller.ts` | `user.tg.service.ts` |
-| `BlogPost` | `blogPost.tg.controller.ts` | `blogPost.tg.service.ts` |
+| Model             | Controller                         | Service                         |
+| ----------------- | ---------------------------------- | ------------------------------- |
+| `User`            | `user.tg.controller.ts`            | `user.tg.service.ts`            |
+| `BlogPost`        | `blogPost.tg.controller.ts`        | `blogPost.tg.service.ts`        |
 | `CustomFieldType` | `customFieldType.tg.controller.ts` | `customFieldType.tg.service.ts` |
 
 **DTO Files:**
 
-| Model | Create DTO | Update DTO |
-|-------|------------|------------|
-| `User` | `create-user.tg.dto.ts` | `update-user.tg.dto.ts` |
+| Model      | Create DTO                   | Update DTO                   |
+| ---------- | ---------------------------- | ---------------------------- |
+| `User`     | `create-user.tg.dto.ts`      | `update-user.tg.dto.ts`      |
 | `BlogPost` | `create-blog-post.tg.dto.ts` | `update-blog-post.tg.dto.ts` |
 
 ### Class Names
@@ -65,16 +65,16 @@ Classes use **PascalCase** with suffix:
 
 ```typescript
 // Model: User
-export class CreateUserTgDto { }
-export class UpdateUserTgDto { }
-export class UserTgService { }
-export class UserTgController { }
+export class CreateUserTgDto {}
+export class UpdateUserTgDto {}
+export class UserTgService {}
+export class UserTgController {}
 
 // Model: BlogPost
-export class CreateBlogPostTgDto { }
-export class UpdateBlogPostTgDto { }
-export class BlogPostTgService { }
-export class BlogPostTgController { }
+export class CreateBlogPostTgDto {}
+export class UpdateBlogPostTgDto {}
+export class BlogPostTgService {}
+export class BlogPostTgController {}
 ```
 
 The suffix (default `Tg`) is configurable via the `suffix` option.
@@ -121,9 +121,9 @@ src/dashboard/src/resources/
 
 Component files use **PascalCase**:
 
-| Model | List | Edit | Create | Show |
-|-------|------|------|--------|------|
-| `User` | `UserList.tsx` | `UserEdit.tsx` | `UserCreate.tsx` | `UserShow.tsx` |
+| Model      | List               | Edit               | Create               | Show               |
+| ---------- | ------------------ | ------------------ | -------------------- | ------------------ |
+| `User`     | `UserList.tsx`     | `UserEdit.tsx`     | `UserCreate.tsx`     | `UserShow.tsx`     |
 | `BlogPost` | `BlogPostList.tsx` | `BlogPostEdit.tsx` | `BlogPostCreate.tsx` | `BlogPostShow.tsx` |
 
 ### Component Names
@@ -132,12 +132,12 @@ Component names use **PascalCase**:
 
 ```tsx
 // Model: User
-export const UserList = () => { };
-export const UserEdit = () => { };
+export const UserList = () => {};
+export const UserEdit = () => {};
 
 // Model: BlogPost
-export const BlogPostList = () => { };
-export const BlogPostEdit = () => { };
+export const BlogPostList = () => {};
+export const BlogPostEdit = () => {};
 ```
 
 ## Data Provider Mapping
@@ -146,10 +146,10 @@ The data provider maps resources to endpoints:
 
 ```typescript
 const endpointMap: Record<string, string> = {
-  'users': 'tg-api/users',
+  users: 'tg-api/users',
   'blog-posts': 'tg-api/blog-posts',
   'custom-field-types': 'tg-api/custom-field-types',
-  
+
   // Custom endpoints can still be added manually
   'feature-flags': 'admin/feature-flags',
 };
@@ -172,6 +172,7 @@ model CustomFieldType {
 ### Generated Backend
 
 **Files:**
+
 ```
 src/features/custom-field-type/
 ├── create-custom-field-type.tg.dto.ts
@@ -181,22 +182,25 @@ src/features/custom-field-type/
 ```
 
 **Controller:**
+
 ```typescript
 @Controller('tg-api/custom-field-types')
-export class CustomFieldTypeTgController { }
+export class CustomFieldTypeTgController {}
 ```
 
 **Classes:**
+
 ```typescript
-export class CreateCustomFieldTypeTgDto { }
-export class UpdateCustomFieldTypeTgDto { }
-export class CustomFieldTypeTgService { }
-export class CustomFieldTypeTgController { }
+export class CreateCustomFieldTypeTgDto {}
+export class UpdateCustomFieldTypeTgDto {}
+export class CustomFieldTypeTgService {}
+export class CustomFieldTypeTgController {}
 ```
 
 ### Generated Frontend
 
 **Folder:**
+
 ```
 src/dashboard/src/resources/custom-field-types/
 ├── CustomFieldTypeList.tsx
@@ -208,6 +212,7 @@ src/dashboard/src/resources/custom-field-types/
 ```
 
 **Resource:**
+
 ```tsx
 <Resource
   name="custom-field-types"
@@ -219,11 +224,13 @@ src/dashboard/src/resources/custom-field-types/
 ```
 
 **Route:**
+
 ```tsx
 <Route path="custom-field-types/studio" element={<CustomFieldTypeStudio />} />
 ```
 
 **Data Provider:**
+
 ```typescript
 endpointMap['custom-field-types'] = 'tg-api/custom-field-types';
 ```
@@ -237,9 +244,9 @@ All naming transformations use these utilities from `src/scripts/naming-utils.ts
 Returns the API endpoint path:
 
 ```typescript
-getApiEndpoint('User')            // 'tg-api/users'
-getApiEndpoint('BlogPost')        // 'tg-api/blog-posts'
-getApiEndpoint('CustomFieldType') // 'tg-api/custom-field-types'
+getApiEndpoint('User'); // 'tg-api/users'
+getApiEndpoint('BlogPost'); // 'tg-api/blog-posts'
+getApiEndpoint('CustomFieldType'); // 'tg-api/custom-field-types'
 ```
 
 ### getResourceName(modelName)
@@ -247,9 +254,9 @@ getApiEndpoint('CustomFieldType') // 'tg-api/custom-field-types'
 Returns the frontend resource name:
 
 ```typescript
-getResourceName('User')            // 'users'
-getResourceName('BlogPost')        // 'blog-posts'
-getResourceName('CustomFieldType') // 'custom-field-types'
+getResourceName('User'); // 'users'
+getResourceName('BlogPost'); // 'blog-posts'
+getResourceName('CustomFieldType'); // 'custom-field-types'
 ```
 
 ### toKebabCase(str)
@@ -257,9 +264,9 @@ getResourceName('CustomFieldType') // 'custom-field-types'
 Converts PascalCase to kebab-case:
 
 ```typescript
-toKebabCase('User')            // 'user'
-toKebabCase('BlogPost')        // 'blog-post'
-toKebabCase('CustomFieldType') // 'custom-field-type'
+toKebabCase('User'); // 'user'
+toKebabCase('BlogPost'); // 'blog-post'
+toKebabCase('CustomFieldType'); // 'custom-field-type'
 ```
 
 ### pluralize(str)
@@ -267,9 +274,9 @@ toKebabCase('CustomFieldType') // 'custom-field-type'
 Simple English pluralization:
 
 ```typescript
-pluralize('user')     // 'users'
-pluralize('post')     // 'posts'
-pluralize('category') // 'categories'
+pluralize('user'); // 'users'
+pluralize('post'); // 'posts'
+pluralize('category'); // 'categories'
 ```
 
 ## Customization
@@ -287,6 +294,7 @@ export const config: Config = {
 ```
 
 Generates:
+
 - `CreateUserAdminDto`
 - `UserAdminService`
 - `UserAdminController`
@@ -318,13 +326,15 @@ tgraph dashboard
 Search for old endpoint formats and update them:
 
 **Old:**
+
 ```typescript
-fetch('/tg-api/customFieldType')
+fetch('/tg-api/customFieldType');
 ```
 
 **New:**
+
 ```typescript
-fetch('/tg-api/custom-field-types')
+fetch('/tg-api/custom-field-types');
 ```
 
 ### Step 4: Update Tests
@@ -483,10 +493,10 @@ endpointMap['blog-posts'] = 'tg-api/blog-posts';  // ✓ Matches
 
 ```typescript
 // Generated class
-export class BlogPostTgService { }
+export class BlogPostTgService {}
 
 // Import
-import { BlogPostTgService } from './blogPost.tg.service';  // ✓ Correct
+import { BlogPostTgService } from './blogPost.tg.service'; // ✓ Correct
 ```
 
 ## Next Steps
@@ -494,4 +504,3 @@ import { BlogPostTgService } from './blogPost.tg.service';  // ✓ Correct
 - **[Prisma Setup](./prisma-setup.md)** – Configure your schema
 - **[Customization](./customization.md)** – Extend generated code
 - **[API Reference](../api/generators.md)** – Understand the generation pipeline
-

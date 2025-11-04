@@ -5,6 +5,7 @@ Add complex validation rules beyond basic Prisma constraints.
 ## Goal
 
 Implement advanced validation for a user registration system:
+
 - Strong password requirements
 - Email domain whitelist
 - Username format validation
@@ -186,11 +187,7 @@ Create reusable custom validators:
 
 ```typescript
 // validators/is-strong-password.validator.ts
-import {
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-  ValidationArguments,
-} from 'class-validator';
+import { ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
 
 @ValidatorConstraint({ name: 'isStrongPassword', async: false })
 export class IsStrongPasswordConstraint implements ValidatorConstraintInterface {
@@ -224,11 +221,7 @@ Validate against database:
 
 ```typescript
 // validators/is-unique-email.validator.ts
-import {
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-  ValidationArguments,
-} from 'class-validator';
+import { ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 
@@ -272,11 +265,7 @@ Validate related fields:
 
 ```typescript
 // validators/is-password-match.validator.ts
-import {
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-  ValidationArguments,
-} from 'class-validator';
+import { ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
 
 @ValidatorConstraint({ name: 'isPasswordMatch', async: false })
 export class IsPasswordMatchConstraint implements ValidatorConstraintInterface {
@@ -322,13 +311,13 @@ export class UpdateUserDto {
   newPassword?: string;
 
   // Required only if newPassword is provided
-  @ValidateIf(o => o.newPassword !== undefined)
+  @ValidateIf((o) => o.newPassword !== undefined)
   @IsString()
   @IsNotEmpty({ message: 'Current password is required when changing password' })
   currentPassword?: string;
 
   // Must match newPassword if provided
-  @ValidateIf(o => o.newPassword !== undefined)
+  @ValidateIf((o) => o.newPassword !== undefined)
   @Validate(IsPasswordMatchConstraint)
   confirmNewPassword?: string;
 }
@@ -341,11 +330,7 @@ Implement business rule validation in services:
 ```typescript
 // user.service.ts
 import { UserTgService } from './user.tg.service';
-import {
-  BadRequestException,
-  ConflictException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class UserService extends UserTgService {
@@ -392,9 +377,7 @@ export class UserService extends UserTgService {
     const domain = email.split('@')[1];
 
     if (!allowedDomains.includes(domain)) {
-      throw new BadRequestException(
-        `Email must be from one of: ${allowedDomains.join(', ')}`,
-      );
+      throw new BadRequestException(`Email must be from one of: ${allowedDomains.join(', ')}`);
     }
 
     // Check if taken
@@ -424,11 +407,7 @@ export class UserService extends UserTgService {
     }
   }
 
-  async updatePassword(
-    userId: string,
-    currentPassword: string,
-    newPassword: string,
-  ): Promise<void> {
+  async updatePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
     const user = await this.findOne(userId);
 
     // Verify current password
@@ -545,9 +524,7 @@ describe('UserService', () => {
         age: 25,
       };
 
-      await expect(service.register(dto)).rejects.toThrow(
-        'Username is not allowed',
-      );
+      await expect(service.register(dto)).rejects.toThrow('Username is not allowed');
     });
 
     it('should reject invalid email domains', async () => {
@@ -560,9 +537,7 @@ describe('UserService', () => {
         age: 25,
       };
 
-      await expect(service.register(dto)).rejects.toThrow(
-        'Email must be from one of',
-      );
+      await expect(service.register(dto)).rejects.toThrow('Email must be from one of');
     });
 
     it('should reject underage users', async () => {
@@ -575,9 +550,7 @@ describe('UserService', () => {
         age: 17,
       };
 
-      await expect(service.register(dto)).rejects.toThrow(
-        'You must be at least 18 years old',
-      );
+      await expect(service.register(dto)).rejects.toThrow('You must be at least 18 years old');
     });
 
     it('should successfully register valid user', async () => {
@@ -631,6 +604,7 @@ Don't repeat validation logic—create custom validators.
 ### 5. Test Edge Cases
 
 Test validation with:
+
 - Empty values
 - Boundary values
 - Invalid formats
@@ -642,4 +616,3 @@ Test validation with:
 - **[Extending Generated Code](./extending-generated-code.md)** – Advanced patterns
 - **[Basic CRUD](./basic-crud.md)** – Start simpler
 - **[Field Directives](../guides/field-directives.md)** – Built-in validation
-

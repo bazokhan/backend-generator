@@ -44,6 +44,7 @@ In the Post form, the author dropdown will display user names instead of IDs.
 ### Label Field Fallback
 
 If no `@tg_label` is specified, the generator uses this heuristic:
+
 1. `name`
 2. `title`
 3. `email`
@@ -173,6 +174,7 @@ enum Status {
 Generates:
 
 **DTO:**
+
 ```typescript
 export class CreateUserTgDto {
   @IsString()
@@ -190,6 +192,7 @@ export class CreateUserTgDto {
 ```
 
 **Dashboard:**
+
 ```tsx
 <SelectInput
   source="role"
@@ -261,6 +264,7 @@ model User {
 ```
 
 **Create DTO:**
+
 ```typescript
 export class CreateUserTgDto {
   @IsString()
@@ -327,6 +331,7 @@ model Post {
 ```
 
 **Dashboard:**
+
 - `publishedAt` → `DateTimeInput` (user-editable)
 - `createdAt` → Read-only display
 - `updatedAt` → Auto-managed by Prisma
@@ -341,6 +346,7 @@ model Settings {
 ```
 
 Generates:
+
 - **DTO:** `metadata?: any`
 - **Dashboard:** `JsonInput` component with validation
 
@@ -358,15 +364,16 @@ model User {
 ```
 
 **Create DTO:**
+
 ```typescript
 export class CreateUserTgDto {
   @IsEnum(Role)
   @IsOptional()
-  role?: Role;  // Optional because it has a default
+  role?: Role; // Optional because it has a default
 
   @IsBoolean()
   @IsOptional()
-  isActive?: boolean;  // Optional
+  isActive?: boolean; // Optional
 
   // createdAt excluded - managed by Prisma
 }
@@ -527,4 +534,3 @@ This generates a complete, production-ready admin system with validation, file u
 - **[Field Directives](./field-directives.md)** – Learn all available field directives
 - **[Custom Validation](../recipes/custom-validation.md)** – Advanced validation patterns
 - **[Naming Conventions](./naming-conventions.md)** – Understand how names are transformed
-

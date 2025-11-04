@@ -46,12 +46,14 @@ TGraph Backend Generator is built on a modular, composable architecture with cle
 **Purpose:** Extract structured data from Prisma schemas and existing code.
 
 **Components:**
+
 - `PrismaSchemaParser` - Parses entire schema file
 - `PrismaFieldParser` - Parses individual field declarations
 - `PrismaRelationsParser` - Enriches schema with relation metadata
 - `NestAppModuleParser` - Parses NestJS module files
 
 **Flow:**
+
 ```
 Prisma Schema → SchemaParser → ParsedSchema
                 ↓
@@ -65,6 +67,7 @@ Prisma Schema → SchemaParser → ParsedSchema
 **Purpose:** Process field-level hints that control generation behavior.
 
 **Components:**
+
 - `BaseFieldDirective` - Abstract base class
 - `TgFormatDirective` - Handles `@tg_format()`
 - `TgUploadDirective` - Handles `@tg_upload()`
@@ -72,6 +75,7 @@ Prisma Schema → SchemaParser → ParsedSchema
 - `FieldDirectiveManager` - Coordinates all directives
 
 **Flow:**
+
 ```
 Field with Doc Comment
   ↓
@@ -87,6 +91,7 @@ Enhanced PrismaField
 **Purpose:** Create code files from parsed schema data.
 
 **Components:**
+
 - `ApiGenerator` - Orchestrates backend generation
 - `DashboardGenerator` - Orchestrates frontend generation
 - `DtoGenerator` - Generates response DTOs
@@ -96,6 +101,7 @@ Enhanced PrismaField
 - `ReactComponentsGenerator` - Generates React Admin components
 
 **Flow:**
+
 ```
 ApiGenerator
   ├─> Parse Schema
@@ -112,11 +118,13 @@ ApiGenerator
 **Purpose:** Safely modify existing code files while preserving manual content.
 
 **Components:**
+
 - `NestAppModuleUpdater` - Updates app.module.ts
 - `NestModuleUpdater` - Updates individual module files
 - `DataProviderEndpointGenerator` - Updates data provider
 
 **Strategy:**
+
 - Use sentinel comments to mark auto-generated sections
 - Parse existing code before modifying
 - Preserve manual code outside sentinel comments
@@ -127,6 +135,7 @@ ApiGenerator
 **Purpose:** Provide shared functionality across components.
 
 **Components:**
+
 - `ModulePathResolver` - Locates module directories
 - Naming utilities - Consistent name transformations
 - File system utilities - Safe file operations
@@ -395,4 +404,3 @@ class CustomModuleUpdater extends NestModuleUpdater {
 - **[Philosophy](./philosophy.md)** – Design principles
 - **[Contributing](../contributing.md)** – Contribute to the project
 - **[SDK Reference](../sdk-reference.md)** – Extend the system
-

@@ -29,6 +29,7 @@ tgraph api [options]
 ```
 
 **What it generates:**
+
 - Controllers (`*.tg.controller.ts`)
 - Services (`*.tg.service.ts`)
 - Create DTOs (`create-*.tg.dto.ts`)
@@ -60,6 +61,7 @@ tgraph dashboard [options]
 ```
 
 **What it generates:**
+
 - List components (`*List.tsx`)
 - Edit components (`*Edit.tsx`)
 - Create components (`*Create.tsx`)
@@ -92,6 +94,7 @@ tgraph dtos [options]
 ```
 
 **What it generates:**
+
 - Response DTOs for API endpoints
 - Type-safe response objects
 - Files marked as auto-generated
@@ -196,6 +199,7 @@ tgraph api --suffix Admin
 ```
 
 **Impact:**
+
 - Class names: `User{Suffix}Service`, `User{Suffix}Controller`
 - DTOs: `CreateUser{Suffix}Dto`, `UpdateUser{Suffix}Dto`
 - Files: `user.{suffix}.service.ts`, `user.{suffix}.controller.ts`
@@ -215,6 +219,7 @@ tgraph api --admin
 ```
 
 **Impact:**
+
 - Controllers use `@UseGuards(JwtAuthGuard, AdminGuard)`
 - Endpoints are admin-only
 - Generated routes are prefixed with `tg-api/`
@@ -232,6 +237,7 @@ tgraph api --no-admin
 ```
 
 **Impact:**
+
 - Controllers use only `@UseGuards(JwtAuthGuard)` (if any)
 - Endpoints are user-accessible
 - May use different route prefix
@@ -398,10 +404,10 @@ npm run generate
 
 ## Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 1 | Error occurred (check console output) |
+| Code | Meaning                               |
+| ---- | ------------------------------------- |
+| 0    | Success                               |
+| 1    | Error occurred (check console output) |
 
 ---
 
@@ -429,11 +435,13 @@ tgraph all
 **Solutions:**
 
 1. **Local installation** – Use npx:
+
    ```bash
    npx tgraph all
    ```
 
 2. **Global installation** – Install globally:
+
    ```bash
    npm install -g @tgraph/backend-generator
    ```
@@ -478,6 +486,7 @@ mkdir -p src/features/user
 **Solutions:**
 
 1. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -553,4 +562,3 @@ jobs:
 - **[SDK Reference](./sdk-reference.md)** – Programmatic API
 - **[Configuration Guide](./api/configuration.md)** – Advanced configuration
 - **[Troubleshooting](./troubleshooting.md)** – Common issues
-

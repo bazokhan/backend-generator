@@ -5,6 +5,7 @@ Advanced patterns for extending auto-generated code while maintaining regenerati
 ## Philosophy
 
 TGraph Backend Generator follows a **separation of concerns** where:
+
 - `.tg.*` files = Auto-generated, safe to overwrite
 - Custom files = Your business logic, preserved forever
 
@@ -147,9 +148,9 @@ export class OrderService extends OrderTgService {
 
     const stats = {
       total: orders.length,
-      pending: orders.filter(o => o.status === OrderStatus.PENDING).length,
-      paid: orders.filter(o => o.status === OrderStatus.PAID).length,
-      shipped: orders.filter(o => o.status === OrderStatus.SHIPPED).length,
+      pending: orders.filter((o) => o.status === OrderStatus.PENDING).length,
+      paid: orders.filter((o) => o.status === OrderStatus.PAID).length,
+      shipped: orders.filter((o) => o.status === OrderStatus.SHIPPED).length,
       totalSpent: orders.reduce((sum, o) => sum + o.total, 0),
     };
 
@@ -210,13 +211,9 @@ export class OrderController {
   }
 
   @Put(':id/pay')
-  async pay(
-    @Param('id') orderId: string,
-    @Body() dto: PaymentDto,
-    @CurrentUser() user: User,
-  ) {
+  async pay(@Param('id') orderId: string, @Body() dto: PaymentDto, @CurrentUser() user: User) {
     const order = await this.orderService.findOne(orderId);
-    
+
     // Verify ownership
     if (order.userId !== user.id) {
       throw new ForbiddenException('Not your order');
@@ -226,13 +223,9 @@ export class OrderController {
   }
 
   @Put(':id/cancel')
-  async cancel(
-    @Param('id') orderId: string,
-    @Body() dto: CancelOrderDto,
-    @CurrentUser() user: User,
-  ) {
+  async cancel(@Param('id') orderId: string, @Body() dto: CancelOrderDto, @CurrentUser() user: User) {
     const order = await this.orderService.findOne(orderId);
-    
+
     // Verify ownership
     if (order.userId !== user.id) {
       throw new ForbiddenException('Not your order');
@@ -244,7 +237,7 @@ export class OrderController {
   @Get(':id/track')
   async track(@Param('id') orderId: string, @CurrentUser() user: User) {
     const order = await this.orderService.findOne(orderId);
-    
+
     // Verify ownership
     if (order.userId !== user.id) {
       throw new ForbiddenException('Not your order');
@@ -256,6 +249,7 @@ export class OrderController {
 ```
 
 Now you have:
+
 - `/tg-api/orders` – Admin CRUD endpoints
 - `/orders` – User-facing custom endpoints
 
@@ -493,11 +487,7 @@ const OrderFilters = [
 const BulkActions = () => (
   <>
     <BulkExportButton />
-    <BulkUpdateButton
-      data={{ status: 'SHIPPED' }}
-      label="Mark as Shipped"
-      mutationMode="pessimistic"
-    />
+    <BulkUpdateButton data={{ status: 'SHIPPED' }} label="Mark as Shipped" mutationMode="pessimistic" />
   </>
 );
 
@@ -524,7 +514,7 @@ Update `App.tsx`:
 ```tsx
 <Resource
   name="orders"
-  list={OrderListCustom}  // Use custom component
+  list={OrderListCustom} // Use custom component
   edit={OrderEdit}
   create={OrderCreate}
   show={OrderShow}
@@ -540,11 +530,7 @@ Add request/response processing:
 export class OrderModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(
-        LoggerMiddleware,
-        RateLimitMiddleware,
-        RequestIdMiddleware,
-      )
+      .apply(LoggerMiddleware, RateLimitMiddleware, RequestIdMiddleware)
       .forRoutes(OrderController, OrderTgController);
   }
 }
@@ -568,7 +554,7 @@ export class OrderOwnershipGuard implements CanActivate {
     if (!orderId) return true; // Not a single-resource route
 
     const order = await this.orderService.findOne(orderId);
-    
+
     // Admin can access all
     if (user.role === 'ADMIN') return true;
 
@@ -693,10 +679,10 @@ describe('OrderService', () => {
 
   describe('cancel', () => {
     it('should cancel order and refund', async () => {
-      const order = { 
-        id: '1', 
-        status: OrderStatus.PAID, 
-        paymentId: 'pay123' 
+      const order = {
+        id: '1',
+        status: OrderStatus.PAID,
+        paymentId: 'pay123'
       };
 
       jest.spyOn(service, 'findOne').mockResolvedValue(order as any);
@@ -740,4 +726,3 @@ Focus tests on your custom logic, not generated CRUD.
 - **[Custom Validation](./custom-validation.md)** – Validation patterns
 - **[File Uploads](./file-uploads.md)** – Upload handling
 - **[Customization Guide](../guides/customization.md)** – More patterns
-

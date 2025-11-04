@@ -4,7 +4,7 @@ import { execSync } from 'child_process';
 import { DashboardGenerator } from './generate-dashboard';
 import { promptUser } from './src/io/utils/user-prompt';
 import { getResourceName } from './src/generator/utils/naming';
-import type { Config} from '@tg-scripts/types';
+import type { Config } from '@tg-scripts/types';
 
 const config: Config = {
   schemaPath: 'prisma/schema.prisma',
@@ -148,7 +148,6 @@ export default App;
   });
 
   describe('Constructor', () => {
-
     it('should set schemaPath to prisma/schema.prisma', async () => {
       const gen = new DashboardGenerator(config);
 
@@ -231,10 +230,7 @@ export default App;
     it('should read schema file with correct path', async () => {
       await generator.generate();
 
-      expect(mockFs.readFileSync).toHaveBeenCalledWith(
-        'prisma/schema.prisma',
-        'utf-8',
-      );
+      expect(mockFs.readFileSync).toHaveBeenCalledWith('prisma/schema.prisma', 'utf-8');
     });
 
     it('should parse schema content', async () => {

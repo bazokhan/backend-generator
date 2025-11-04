@@ -18,25 +18,28 @@ export const buildFieldDirectiveMetadata = (models: PrismaModel[]): FieldDirecti
 
   models.forEach((model) => {
     const resourceName = getResourceName(model.name);
-    const fieldsWithDirectives = model.fields.reduce<Record<string, FieldDirectiveMetadata[string][string]>>((acc, field) => {
-      const fieldConfig: FieldDirectiveMetadata[string][string] = {};
+    const fieldsWithDirectives = model.fields.reduce<Record<string, FieldDirectiveMetadata[string][string]>>(
+      (acc, field) => {
+        const fieldConfig: FieldDirectiveMetadata[string][string] = {};
 
-      if (field.tgFormat) {
-        fieldConfig.format = field.tgFormat;
-      }
-      if (field.tgUpload) {
-        fieldConfig.upload = { type: field.tgUpload };
-      }
-      if (field.tgReadOnly) {
-        fieldConfig.readOnly = true;
-      }
+        if (field.tgFormat) {
+          fieldConfig.format = field.tgFormat;
+        }
+        if (field.tgUpload) {
+          fieldConfig.upload = { type: field.tgUpload };
+        }
+        if (field.tgReadOnly) {
+          fieldConfig.readOnly = true;
+        }
 
-      if (Object.keys(fieldConfig).length > 0) {
-        acc[field.name] = fieldConfig;
-      }
+        if (Object.keys(fieldConfig).length > 0) {
+          acc[field.name] = fieldConfig;
+        }
 
-      return acc;
-    }, {});
+        return acc;
+      },
+      {},
+    );
 
     if (Object.keys(fieldsWithDirectives).length > 0) {
       result[resourceName] = fieldsWithDirectives;

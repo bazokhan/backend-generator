@@ -216,9 +216,9 @@ ISC
 ## Links
 
 - [Documentation](./docs/index.md)
-- [GitHub Repository](https://github.com/YOUR_ORG/backend-generator)
+- [GitHub Repository](https://github.com/trugraph/backend-generator)
 - [npm Package](https://www.npmjs.com/package/@tgraph/backend-generator)
-- [Issues](https://github.com/YOUR_ORG/backend-generator/issues)
+- [Issues](https://github.com/trugraph/backend-generator/issues)
 
 ---
 

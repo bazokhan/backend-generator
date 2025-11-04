@@ -17,7 +17,12 @@ describe('NestModuleUpdater', () => {
     });
 
     it('should generate correct import statements for compound model name', () => {
-      const result = updater.generateModuleImportStatements('CustomFieldType', 'customFieldType', namingSuffix, fileSuffix);
+      const result = updater.generateModuleImportStatements(
+        'CustomFieldType',
+        'customFieldType',
+        namingSuffix,
+        fileSuffix,
+      );
       expect(result.controllerImport).toBe(
         "import { CustomFieldTypeTgController } from './customFieldType.tg.controller';",
       );
@@ -25,7 +30,12 @@ describe('NestModuleUpdater', () => {
     });
 
     it('should generate correct import statements for model with multiple words', () => {
-      const result = updater.generateModuleImportStatements('ProjectInstance', 'projectInstance', namingSuffix, fileSuffix);
+      const result = updater.generateModuleImportStatements(
+        'ProjectInstance',
+        'projectInstance',
+        namingSuffix,
+        fileSuffix,
+      );
       expect(result.controllerImport).toBe(
         "import { ProjectInstanceTgController } from './projectInstance.tg.controller';",
       );
@@ -324,7 +334,12 @@ import { UsersService } from './users/users.service';
 })
 export class AppModule {};`;
 
-      const imports = updater.generateModuleImportStatements('CustomFieldType', 'customFieldType', namingSuffix, fileSuffix);
+      const imports = updater.generateModuleImportStatements(
+        'CustomFieldType',
+        'customFieldType',
+        namingSuffix,
+        fileSuffix,
+      );
       let result = updater.addImportsToModule(realModule, [imports.controllerImport, imports.serviceImport]);
       result = updater.addToArrayInModule(result, 'controllers', ['CustomFieldTypeTgController']);
       result = updater.addToArrayInModule(result, 'providers', ['CustomFieldTypeTgService']);

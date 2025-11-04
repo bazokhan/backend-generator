@@ -25,11 +25,13 @@ model User {
 Controls string field formatting and validation.
 
 **Syntax:**
+
 ```prisma
 /// @tg_format(email|url|password|tel)
 ```
 
 **Supported formats:**
+
 - `email` – Email validation and email input
 - `url` – URL validation and URL input
 - `password` – Password input (hidden)
@@ -89,11 +91,13 @@ export class CreateUserTgDto {
 Enables file upload functionality for string fields that store file paths or URLs.
 
 **Syntax:**
+
 ```prisma
 /// @tg_upload(image|file)
 ```
 
 **Supported types:**
+
 - `image` – Image files with preview (adds `accept="image/*"`)
 - `file` – Any file type
 
@@ -127,6 +131,7 @@ model Product {
 **Data Provider Behavior:**
 
 When a form is submitted:
+
 1. The `FileInput` value (a File object) is detected
 2. The file is uploaded to `POST /upload` endpoint
 3. The response URL replaces the File object
@@ -142,11 +147,11 @@ export class CreateProductTgDto {
 
   @IsString()
   @IsOptional()
-  thumbnail?: string;  // Receives URL string
+  thumbnail?: string; // Receives URL string
 
   @IsString()
   @IsOptional()
-  datasheet?: string;  // Receives URL string
+  datasheet?: string; // Receives URL string
 }
 ```
 
@@ -171,6 +176,7 @@ export class UploadController {
 Marks a field as read-only, preventing it from being edited in forms.
 
 **Syntax:**
+
 ```prisma
 /// @tg_readonly
 ```
@@ -213,6 +219,7 @@ Read-only fields are stripped from create/update payloads:
 ```
 
 **Use Cases:**
+
 - Audit fields (IP address, user agent)
 - Computed fields
 - System-managed fields
@@ -452,6 +459,7 @@ email String
 **Problem:** File upload fails or sends File object to API.
 
 **Solution:**
+
 1. Verify `POST /upload` endpoint exists
 2. Check `fieldDirectives.generated.ts` includes your field
 3. Ensure data provider is configured correctly
@@ -461,6 +469,7 @@ email String
 **Problem:** Field marked `@tg_readonly` can still be edited.
 
 **Solution:**
+
 1. Regenerate dashboard: `tgraph dashboard`
 2. Verify `fieldDirectives.generated.ts` contains the field
 3. Check data provider is using the directive metadata
@@ -472,4 +481,3 @@ email String
 - **[Prisma Setup](./prisma-setup.md)** – Learn about model-level directives
 - **[Customization](./customization.md)** – Extend generated components
 - **[File Uploads Recipe](../recipes/file-uploads.md)** – Complete upload implementation
-

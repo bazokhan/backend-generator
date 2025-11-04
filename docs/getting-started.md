@@ -70,6 +70,7 @@ your-project/
 ```
 
 The generator looks for modules in:
+
 - `src/features/<module-name>/`
 - `src/infrastructure/<module-name>/`
 
@@ -94,14 +95,14 @@ export const config: Config = {
 
 ### Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `schemaPath` | string | `'prisma/schema.prisma'` | Path to your Prisma schema |
-| `dashboardPath` | string | `'src/dashboard/src'` | React Admin source directory |
-| `dtosPath` | string | `'src/dtos/generated'` | DTO output directory |
-| `suffix` | string | `'Tg'` | Suffix for generated classes |
-| `isAdmin` | boolean | `true` | Generate admin-only endpoints |
-| `updateDataProvider` | boolean | `true` | Auto-update data provider |
+| Option               | Type    | Default                  | Description                   |
+| -------------------- | ------- | ------------------------ | ----------------------------- |
+| `schemaPath`         | string  | `'prisma/schema.prisma'` | Path to your Prisma schema    |
+| `dashboardPath`      | string  | `'src/dashboard/src'`    | React Admin source directory  |
+| `dtosPath`           | string  | `'src/dtos/generated'`   | DTO output directory          |
+| `suffix`             | string  | `'Tg'`                   | Suffix for generated classes  |
+| `isAdmin`            | boolean | `true`                   | Generate admin-only endpoints |
+| `updateDataProvider` | boolean | `true`                   | Auto-update data provider     |
 
 You can override these via CLI flags (see [CLI Reference](./cli-reference.md)).
 
@@ -132,6 +133,7 @@ tgraph all
 ```
 
 This will:
+
 1. Parse your Prisma schema
 2. Generate NestJS controllers, services, and DTOs
 3. Generate React Admin dashboard pages
@@ -143,6 +145,7 @@ This will:
 After generation, you should see:
 
 ### Backend Files
+
 ```
 src/features/user/
 ├── create-user.tg.dto.ts      # Create DTO
@@ -152,6 +155,7 @@ src/features/user/
 ```
 
 ### Dashboard Files
+
 ```
 src/dashboard/src/resources/users/
 ├── UserList.tsx
@@ -163,6 +167,7 @@ src/dashboard/src/resources/users/
 ```
 
 ### Updated Files
+
 - `src/app.module.ts` – Imports added between `// AUTO-GENERATED IMPORTS START/END`
 - `src/dashboard/src/App.tsx` – Resources and routes added
 - `src/dashboard/src/providers/dataProvider.ts` – Endpoint mappings added
@@ -208,6 +213,7 @@ Navigate to `/users` to see the generated admin pages.
 ### Module Not Found
 
 If you see:
+
 ```
 ⚠️ No module found for User
 Do you want to create the module directory for User? (y/n):
@@ -238,4 +244,3 @@ Run `npm install` to ensure all peer dependencies are installed, then check your
 ```
 
 For more help, see [Troubleshooting](./troubleshooting.md).
-

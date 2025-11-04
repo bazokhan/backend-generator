@@ -134,7 +134,7 @@ describe('ReactComponentsGenerator', () => {
 
     const allModels = [projectTypeModel, iconModel];
     const enums = new Map<string, string[]>();
-    
+
     // Run parser to set isRelation, foreignKeyName, etc.
     const parser = new PrismaRelationsParser();
     parser.parse({ models: allModels, enums });
@@ -867,18 +867,39 @@ describe('ReactComponentsGenerator', () => {
 
         const enumField = makeField({ name: 'status', type: 'Status', isEnum: true });
 
-        expect(FormComponentRelationField.field(relationField, undefined, userModel, undefined, [userModel])).toMatchSnapshot();
+        expect(
+          FormComponentRelationField.field(relationField, undefined, userModel, undefined, [userModel]),
+        ).toMatchSnapshot();
         expect(FormComponentEnumField.field(enumField, enumValues)).toMatchSnapshot();
         expect(FormComponentBooleanField.field(makeField({ name: 'active', type: 'Boolean' }))).toMatchSnapshot();
         expect(FormComponentNumberField.field(makeField({ name: 'age', type: 'Int' }))).toMatchSnapshot();
         expect(FormComponentDateTimeField.field(makeField({ name: 'createdAt', type: 'DateTime' }))).toMatchSnapshot();
         expect(FormComponentJsonField.field(makeField({ name: 'metadata', type: 'Json' }))).toMatchSnapshot();
         expect(FormComponentBytesField.field(makeField({ name: 'attachment', type: 'Bytes' }))).toMatchSnapshot();
-        expect(FormComponentUrlField.field({ ...makeField({ name: 'website', type: 'String' }), tgFormat: 'url' as const })).toMatchSnapshot();
-        expect(FormComponentEmailField.field({ ...makeField({ name: 'email', type: 'String' }), tgFormat: 'email' as const })).toMatchSnapshot();
-        expect(FormComponentPasswordField.field({ ...makeField({ name: 'password', type: 'String' }), tgFormat: 'password' as const })).toMatchSnapshot();
-        expect(FormComponentTelField.field({ ...makeField({ name: 'phone', type: 'String' }), tgFormat: 'tel' as const })).toMatchSnapshot();
-        expect(FormComponentFileUploadField.field({ ...makeField({ name: 'file', type: 'String' }), tgUpload: 'file' as const })).toMatchSnapshot();
+        expect(
+          FormComponentUrlField.field({ ...makeField({ name: 'website', type: 'String' }), tgFormat: 'url' as const }),
+        ).toMatchSnapshot();
+        expect(
+          FormComponentEmailField.field({
+            ...makeField({ name: 'email', type: 'String' }),
+            tgFormat: 'email' as const,
+          }),
+        ).toMatchSnapshot();
+        expect(
+          FormComponentPasswordField.field({
+            ...makeField({ name: 'password', type: 'String' }),
+            tgFormat: 'password' as const,
+          }),
+        ).toMatchSnapshot();
+        expect(
+          FormComponentTelField.field({ ...makeField({ name: 'phone', type: 'String' }), tgFormat: 'tel' as const }),
+        ).toMatchSnapshot();
+        expect(
+          FormComponentFileUploadField.field({
+            ...makeField({ name: 'file', type: 'String' }),
+            tgUpload: 'file' as const,
+          }),
+        ).toMatchSnapshot();
         expect(FormComponentStringField.field(makeField({ name: 'name', type: 'String' }))).toMatchSnapshot();
       });
 
@@ -906,14 +927,20 @@ describe('ReactComponentsGenerator', () => {
       it('should snapshot all show field configs', () => {
         const enumValues = ['ACTIVE', 'INACTIVE'];
 
-        expect(ShowComponentRelationField.field(makeField({ name: 'author', type: 'User', isRelation: true }))).toMatchSnapshot();
-        expect(ShowComponentEnumField.field(makeField({ name: 'status', type: 'Status', isEnum: true }), enumValues)).toMatchSnapshot();
+        expect(
+          ShowComponentRelationField.field(makeField({ name: 'author', type: 'User', isRelation: true })),
+        ).toMatchSnapshot();
+        expect(
+          ShowComponentEnumField.field(makeField({ name: 'status', type: 'Status', isEnum: true }), enumValues),
+        ).toMatchSnapshot();
         expect(ShowComponentDateTimeField.field(makeField({ name: 'createdAt', type: 'DateTime' }))).toMatchSnapshot();
         expect(ShowComponentBooleanField.field(makeField({ name: 'active', type: 'Boolean' }))).toMatchSnapshot();
         expect(ShowComponentNumberField.field(makeField({ name: 'age', type: 'Int' }))).toMatchSnapshot();
         expect(ShowComponentJsonField.field(makeField({ name: 'metadata', type: 'Json' }))).toMatchSnapshot();
         expect(ShowComponentBytesField.field(makeField({ name: 'attachment', type: 'Bytes' }))).toMatchSnapshot();
-        expect(ShowComponentUrlField.field({ ...makeField({ name: 'website', type: 'String' }), tgFormat: 'url' as const })).toMatchSnapshot();
+        expect(
+          ShowComponentUrlField.field({ ...makeField({ name: 'website', type: 'String' }), tgFormat: 'url' as const }),
+        ).toMatchSnapshot();
         expect(ShowComponentStringField.field(makeField({ name: 'name', type: 'String' }))).toMatchSnapshot();
       });
 
@@ -929,13 +956,17 @@ describe('ReactComponentsGenerator', () => {
         });
 
         expect(ListComponentRelationField.field(relationField, undefined, userModel)).toMatchSnapshot();
-        expect(ListComponentEnumField.field(makeField({ name: 'status', type: 'Status', isEnum: true }), enumValues)).toMatchSnapshot();
+        expect(
+          ListComponentEnumField.field(makeField({ name: 'status', type: 'Status', isEnum: true }), enumValues),
+        ).toMatchSnapshot();
         expect(ListComponentDateTimeField.field(makeField({ name: 'createdAt', type: 'DateTime' }))).toMatchSnapshot();
         expect(ListComponentBooleanField.field(makeField({ name: 'active', type: 'Boolean' }))).toMatchSnapshot();
         expect(ListComponentNumberField.field(makeField({ name: 'age', type: 'Int' }))).toMatchSnapshot();
         expect(ListComponentJsonField.field(makeField({ name: 'metadata', type: 'Json' }))).toMatchSnapshot();
         expect(ListComponentBytesField.field(makeField({ name: 'attachment', type: 'Bytes' }))).toMatchSnapshot();
-        expect(ListComponentUrlField.field({ ...makeField({ name: 'website', type: 'String' }), tgFormat: 'url' as const })).toMatchSnapshot();
+        expect(
+          ListComponentUrlField.field({ ...makeField({ name: 'website', type: 'String' }), tgFormat: 'url' as const }),
+        ).toMatchSnapshot();
         expect(ListComponentStringField.field(makeField({ name: 'name', type: 'String' }))).toMatchSnapshot();
       });
     });

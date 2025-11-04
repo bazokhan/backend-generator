@@ -152,8 +152,8 @@ function resolveConfig(overrides: CliOptions): Config {
     updateDataProvider:
       typeof overrides.updateDataProvider === 'boolean'
         ? overrides.updateDataProvider
-        : defaultConfig.updateDataProvider ?? false,
-    isAdmin: typeof overrides.isAdmin === 'boolean' ? overrides.isAdmin : defaultConfig.isAdmin ?? false,
+        : (defaultConfig.updateDataProvider ?? false),
+    isAdmin: typeof overrides.isAdmin === 'boolean' ? overrides.isAdmin : (defaultConfig.isAdmin ?? false),
   };
 
   return merged;

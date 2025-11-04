@@ -20,7 +20,7 @@ parser.load(schemaContent);
 const parsed = parser.parse();
 
 console.log(parsed.models); // Array of models
-console.log(parsed.enums);  // Map of enum names to values
+console.log(parsed.enums); // Map of enum names to values
 ```
 
 ### Methods
@@ -34,6 +34,7 @@ Loads schema content into the parser.
 Parses the loaded schema and returns structured data.
 
 **Returns:**
+
 ```typescript
 interface ParsedSchema {
   models: PrismaModel[];
@@ -67,6 +68,7 @@ const field = parser.parse('name String @unique', '/// @tg_format(email)');
 Parses a field line with optional doc comment.
 
 **Returns:**
+
 ```typescript
 interface PrismaField {
   name: string;
@@ -248,7 +250,7 @@ relationsParser.parse(parsed);
 for (const model of parsed.models) {
   console.log(model.name);
   console.log(model.displayField);
-  
+
   for (const field of model.fields) {
     if (field.isRelation) {
       console.log(`  ${field.name} -> ${field.type}`);
@@ -264,18 +266,18 @@ for (const model of parsed.models) {
 Parsers automatically map Prisma types to TypeScript types:
 
 | Prisma Type | TypeScript Type | Search Type |
-|-------------|-----------------|-------------|
-| `String` | `string` | `'string'` |
-| `Int` | `number` | `'number'` |
-| `Float` | `number` | `'number'` |
-| `Decimal` | `number` | `'number'` |
-| `BigInt` | `bigint` | `'number'` |
-| `Boolean` | `boolean` | `'boolean'` |
-| `DateTime` | `Date` | `'date'` |
-| `Json` | `any` | `null` |
-| `Bytes` | `Buffer` | `null` |
-| Enums | Enum name | `'string'` |
-| Relations | Model name | `null` |
+| ----------- | --------------- | ----------- |
+| `String`    | `string`        | `'string'`  |
+| `Int`       | `number`        | `'number'`  |
+| `Float`     | `number`        | `'number'`  |
+| `Decimal`   | `number`        | `'number'`  |
+| `BigInt`    | `bigint`        | `'number'`  |
+| `Boolean`   | `boolean`       | `'boolean'` |
+| `DateTime`  | `Date`          | `'date'`    |
+| `Json`      | `any`           | `null`      |
+| `Bytes`     | `Buffer`        | `null`      |
+| Enums       | Enum name       | `'string'`  |
+| Relations   | Model name      | `null`      |
 
 ---
 
@@ -392,4 +394,3 @@ for (const model of parsed.models) {
 - **[Generators API](./generators.md)** – Generator classes
 - **[Utilities API](./utilities.md)** – Helper functions
 - **[Configuration](./configuration.md)** – Configuration options
-

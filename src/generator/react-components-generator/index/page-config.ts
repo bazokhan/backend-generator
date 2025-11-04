@@ -12,4 +12,3 @@ export { ${model.name}Show } from './${model.name}Show';
 export { ${model.name}Studio } from './${model.name}Studio';
 `;
 }
-

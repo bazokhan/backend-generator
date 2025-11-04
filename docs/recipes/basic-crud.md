@@ -5,6 +5,7 @@ Generate a complete CRUD system from a Prisma model in minutes.
 ## Goal
 
 Create a fully functional blog post management system with:
+
 - REST API endpoints
 - Validated DTOs
 - Admin dashboard pages
@@ -58,6 +59,7 @@ tgraph all
 ### Backend Files
 
 **Controller** (`post.tg.controller.ts`):
+
 ```typescript
 @Controller('tg-api/posts')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -92,6 +94,7 @@ export class PostTgController {
 ```
 
 **Create DTO** (`create-post.tg.dto.ts`):
+
 ```typescript
 export class CreatePostTgDto {
   @IsString()
@@ -118,6 +121,7 @@ export class CreatePostTgDto {
 ```
 
 **Update DTO** (`update-post.tg.dto.ts`):
+
 ```typescript
 export class UpdatePostTgDto {
   @IsString()
@@ -144,6 +148,7 @@ export class UpdatePostTgDto {
 ```
 
 **Service** (`post.tg.service.ts`):
+
 ```typescript
 @Injectable()
 export class PostTgService {
@@ -211,6 +216,7 @@ export class PostTgService {
 ### Dashboard Files
 
 **List** (`PostList.tsx`):
+
 ```tsx
 export const PostList = () => (
   <List>
@@ -228,6 +234,7 @@ export const PostList = () => (
 ```
 
 **Edit** (`PostEdit.tsx`):
+
 ```tsx
 export const PostEdit = () => (
   <Edit>
@@ -243,6 +250,7 @@ export const PostEdit = () => (
 ```
 
 **Create** (`PostCreate.tsx`):
+
 ```tsx
 export const PostCreate = () => (
   <Create>
@@ -286,6 +294,7 @@ curl http://localhost:3000/tg-api/posts?page=1&limit=10 \
 ```
 
 Response:
+
 ```json
 {
   "data": [
@@ -351,6 +360,7 @@ npm run dev
 Navigate to http://localhost:5173/posts
 
 You can:
+
 - View all posts in a table
 - Search posts by title or content
 - Sort by any column
@@ -487,21 +497,13 @@ Create `PostListCustom.tsx`:
 
 ```tsx
 export const PostListCustom = () => {
-  const filters = [
-    <TextInput source="q" label="Search" alwaysOn />,
-    <BooleanInput source="published" />,
-  ];
+  const filters = [<TextInput source="q" label="Search" alwaysOn />, <BooleanInput source="published" />];
 
   return (
     <List filters={filters}>
       <Datagrid rowClick="edit">
         <TextField source="title" />
-        <FunctionField
-          label="Preview"
-          render={(record: any) =>
-            record.content?.substring(0, 100) + '...'
-          }
-        />
+        <FunctionField label="Preview" render={(record: any) => record.content?.substring(0, 100) + '...'} />
         <BooleanField source="published" />
         <NumberField source="viewCount" />
         <DateField source="createdAt" showTime />
@@ -518,4 +520,3 @@ export const PostListCustom = () => {
 - **[File Uploads](./file-uploads.md)** – Add image uploads
 - **[Custom Validation](./custom-validation.md)** – Complex validation rules
 - **[Extending Generated Code](./extending-generated-code.md)** – Advanced patterns
-

@@ -21,7 +21,7 @@
     "noUncheckedIndexedAccess": true,
     "strict": true,
     "skipLibCheck": true,
-    "moduleDetection": "force",
+    "moduleDetection": "force"
   },
   "include": ["**/*.ts", "**/*.d.ts", "jest.config.mjs"],
   "exclude": ["dist", "node_modules", "**/*.spec.ts", "__snapshots__", "__mocks__"]

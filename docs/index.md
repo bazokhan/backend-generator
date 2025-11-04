@@ -20,33 +20,39 @@ TGraph Backend Generator is a powerful CLI toolkit that automatically generates 
 ## Quick Links
 
 ### Getting Started
+
 - [Installation & Setup](./getting-started.md)
 - [Quick Start Tutorial](./quick-start.md)
 
 ### Guides
+
 - [Prisma Schema Setup](./guides/prisma-setup.md)
 - [Field Directives](./guides/field-directives.md)
 - [Naming Conventions](./guides/naming-conventions.md)
 - [Customization](./guides/customization.md)
 
 ### Recipes
+
 - [Basic CRUD Generation](./recipes/basic-crud.md)
 - [File Upload Fields](./recipes/file-uploads.md)
 - [Custom Validation](./recipes/custom-validation.md)
 - [Extending Generated Code](./recipes/extending-generated-code.md)
 
 ### Reference
+
 - [CLI Reference](./cli-reference.md)
 - [SDK Reference](./sdk-reference.md)
 - [API Documentation](./api/generators.md)
 
 ### Contributing
+
 - [Architecture Overview](./architecture/overview.md)
 - [Philosophy & Principles](./architecture/philosophy.md)
 - [Contributing Guide](./contributing.md)
 - [Publishing Guide](./publishing.md)
 
 ### Help
+
 - [Troubleshooting](./troubleshooting.md)
 
 ## Installation
@@ -104,6 +110,7 @@ tgraph all
 ```
 
 You get:
+
 - NestJS controller with REST endpoints (`/tg-api/users`)
 - Service with CRUD operations
 - Create/Update DTOs with validation
@@ -132,4 +139,3 @@ ISC
 ---
 
 Ready to get started? Head to the [Getting Started Guide](./getting-started.md).
-

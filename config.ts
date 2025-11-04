@@ -1,4 +1,4 @@
-import type { Config} from '@tg-scripts/types';
+import type { Config } from '@tg-scripts/types';
 
 export const config: Config = {
   schemaPath: 'prisma/schema.prisma',

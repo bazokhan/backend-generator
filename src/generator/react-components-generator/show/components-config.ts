@@ -84,4 +84,3 @@ export const ShowComponentStringField: ComponentFieldConfig = {
     return `${indent}<RecordField source="${field.name}">\n${indent}  <TextField source="${field.name}" />\n${indent}</RecordField>`;
   },
 };
-

@@ -9,7 +9,7 @@ Locates and resolves NestJS module paths in your project.
 ### Constructor
 
 ```typescript
-new ModulePathResolver()
+new ModulePathResolver();
 ```
 
 ### Methods
@@ -19,18 +19,21 @@ new ModulePathResolver()
 Finds the module directory for a given model name.
 
 **Parameters:**
+
 - `modelName` - PascalCase model name (e.g., 'User', 'BlogPost')
 
 **Returns:**
+
 ```typescript
 interface ModulePathInfo {
-  path: string;              // e.g., 'src/features/user'
+  path: string; // e.g., 'src/features/user'
   type: 'features' | 'infrastructure';
-  folderName: string;        // e.g., 'user'
+  folderName: string; // e.g., 'user'
 }
 ```
 
 **Search Order:**
+
 1. `src/features/{kebab-case-name}/`
 2. `src/infrastructure/{kebab-case-name}/`
 
@@ -55,7 +58,7 @@ Updates `app.module.ts` with auto-generated imports while preserving manual code
 ### Constructor
 
 ```typescript
-new NestAppModuleUpdater()
+new NestAppModuleUpdater();
 ```
 
 ### Methods
@@ -65,6 +68,7 @@ new NestAppModuleUpdater()
 Updates AppModule with the given module imports.
 
 **Parameters:**
+
 - `modules` - Array of module names and paths
 
 **Example:**
@@ -79,6 +83,7 @@ await updater.update([
 ```
 
 **Behavior:**
+
 - Creates `// AUTO-GENERATED IMPORTS START/END` comments if missing
 - Replaces content between sentinel comments
 - Preserves all manual imports and code
@@ -114,7 +119,7 @@ Updates individual module files with providers and controllers.
 ### Constructor
 
 ```typescript
-new NestModuleUpdater()
+new NestModuleUpdater();
 ```
 
 ### Methods
@@ -124,6 +129,7 @@ new NestModuleUpdater()
 Updates a module file with new providers/controllers.
 
 **Parameters:**
+
 - `modulePath` - Path to module file
 - `updates` - Object containing providers, controllers, imports, exports
 
@@ -149,6 +155,7 @@ await updater.update('src/features/user/user.module.ts', {
 ```
 
 **Behavior:**
+
 - Preserves existing providers/controllers
 - Adds new ones without duplicates
 - Maintains module structure
@@ -163,7 +170,7 @@ Updates React Admin data provider with endpoint mappings.
 ### Constructor
 
 ```typescript
-new DataProviderEndpointGenerator()
+new DataProviderEndpointGenerator();
 ```
 
 ### Methods
@@ -173,6 +180,7 @@ new DataProviderEndpointGenerator()
 Updates the data provider endpoint map.
 
 **Parameters:**
+
 - `resources` - Array of resource names and endpoint paths
 
 **Example:**
@@ -193,11 +201,11 @@ await generator.update([
 const endpointMap: Record<string, string> = {
   // Manual mappings preserved
   'feature-flags': 'admin/feature-flags',
-  
+
   // AUTO-GENERATED MAPPINGS START
-  'users': 'tg-api/users',
-  'posts': 'tg-api/posts',
-  'comments': 'tg-api/comments',
+  users: 'tg-api/users',
+  posts: 'tg-api/posts',
+  comments: 'tg-api/comments',
   // AUTO-GENERATED MAPPINGS END
 };
 ```
@@ -213,9 +221,9 @@ Internal utilities for consistent naming transformations.
 Converts PascalCase to kebab-case.
 
 ```typescript
-toKebabCase('User')            // 'user'
-toKebabCase('BlogPost')        // 'blog-post'
-toKebabCase('CustomFieldType') // 'custom-field-type'
+toKebabCase('User'); // 'user'
+toKebabCase('BlogPost'); // 'blog-post'
+toKebabCase('CustomFieldType'); // 'custom-field-type'
 ```
 
 ### `pluralize(str: string): string`
@@ -223,10 +231,10 @@ toKebabCase('CustomFieldType') // 'custom-field-type'
 Simple English pluralization.
 
 ```typescript
-pluralize('user')     // 'users'
-pluralize('post')     // 'posts'
-pluralize('category') // 'categories'
-pluralize('person')   // 'people'
+pluralize('user'); // 'users'
+pluralize('post'); // 'posts'
+pluralize('category'); // 'categories'
+pluralize('person'); // 'people'
 ```
 
 ### `getApiEndpoint(modelName: string): string`
@@ -234,9 +242,9 @@ pluralize('person')   // 'people'
 Returns the API endpoint path.
 
 ```typescript
-getApiEndpoint('User')            // 'tg-api/users'
-getApiEndpoint('BlogPost')        // 'tg-api/blog-posts'
-getApiEndpoint('CustomFieldType') // 'tg-api/custom-field-types'
+getApiEndpoint('User'); // 'tg-api/users'
+getApiEndpoint('BlogPost'); // 'tg-api/blog-posts'
+getApiEndpoint('CustomFieldType'); // 'tg-api/custom-field-types'
 ```
 
 ### `getResourceName(modelName: string): string`
@@ -244,9 +252,9 @@ getApiEndpoint('CustomFieldType') // 'tg-api/custom-field-types'
 Returns the frontend resource name.
 
 ```typescript
-getResourceName('User')            // 'users'
-getResourceName('BlogPost')        // 'blog-posts'
-getResourceName('CustomFieldType') // 'custom-field-types'
+getResourceName('User'); // 'users'
+getResourceName('BlogPost'); // 'blog-posts'
+getResourceName('CustomFieldType'); // 'custom-field-types'
 ```
 
 ---
@@ -316,10 +324,7 @@ await ensureDirectoryExists('src/features/user');
 Writes file and formats it.
 
 ```typescript
-await writeGeneratedFile(
-  'src/features/user/user.tg.service.ts',
-  serviceContent
-);
+await writeGeneratedFile('src/features/user/user.tg.service.ts', serviceContent);
 ```
 
 ### `readFile(filePath: string): Promise<string>`
@@ -365,7 +370,7 @@ await formatGeneratedFile(filePath);
 try {
   const resolver = new ModulePathResolver();
   const modulePath = await resolver.resolve('User');
-  
+
   if (!modulePath) {
     console.warn('Module not found, creating...');
     await ensureDirectoryExists('src/features/user');
@@ -396,4 +401,3 @@ if (!fs.existsSync(modulePath.path)) {
 - **[Generators API](./generators.md)** – Generator classes
 - **[Parsers API](./parsers.md)** – Schema parsing
 - **[Configuration](./configuration.md)** – Configuration options
-
