@@ -1,0 +1,31 @@
+# Source files
+*.ts
+!*.d.ts
+tsconfig.json
+jest.config.mjs
+
+# Tests
+*.spec.ts
+__mocks__/
+__snapshots__/
+coverage/
+
+# Development
+.github/
+docs/
+.prettierrc
+.eslintrc
+.cursor/
+
+# Keep only README
+*.md
+!README.md
+
+# Git
+.git
+.gitignore
+
+# npm pack artifacts
+*.tgz
+package/
+

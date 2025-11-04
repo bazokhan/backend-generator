@@ -70,11 +70,136 @@ Add these fields to `package.json`:
 }
 ```
 
+## Pre-Publish Checklist
+
+Complete this checklist before your first publish:
+
+### Required Files
+
+- [ ] **LICENSE file** - Create ISC license file in root
+- [ ] **README.md** - Complete and up-to-date ✓
+- [ ] **.gitignore** - Includes `*.tgz` and `package/`
+- [ ] **.npmignore** (optional) - See below for recommended content
+
+### Code Quality
+
+- [ ] **Build succeeds** - Run `npm run build` without errors
+- [ ] **Tests pass** - Run `npm test` with all tests passing
+- [ ] **No TypeScript errors** - Run `npx tsc --noEmit`
+- [ ] **Source maps disabled** - Set `sourceMap: false` in tsconfig.json
+
+### Package Configuration
+
+- [ ] **Version set** - Start with `0.0.1` or `1.0.0`
+- [ ] **Author filled** - Add your name in package.json
+- [ ] **Repository URLs** - GitHub URLs are correct
+- [ ] **Keywords added** - For npm discoverability
+- [ ] **Engines specified** - Node/npm version requirements
+- [ ] **Files array** - Only includes `dist/`
+
+### Testing
+
+- [ ] **Pack locally** - Run `npm pack` and inspect contents
+- [ ] **Extract and verify** - Check what files are included
+- [ ] **Test installation** - Install packed version in test project
+- [ ] **CLI works** - Run `tgraph --help` in test project
+- [ ] **Imports work** - Test SDK imports in test project
+
+### Repository
+
+- [ ] **Git repository created** - On GitHub/GitLab
+- [ ] **All changes committed** - Clean working directory
+- [ ] **Tag created** - `git tag v0.0.1`
+- [ ] **Pushed to remote** - `git push && git push --tags`
+
+### npm Setup
+
+- [ ] **npm account** - Created at npmjs.com
+- [ ] **Logged in** - Run `npm login`
+- [ ] **Organization created** - `@tgraph` org exists
+- [ ] **Access verified** - Run `npm org ls tgraph`
+- [ ] **Write permissions** - You're a member of @tgraph
+
+### Recommended: .npmignore
+
+Create `.npmignore` in root:
+
+```
+# Source files
+*.ts
+!*.d.ts
+tsconfig.json
+jest.config.mjs
+
+# Tests
+*.spec.ts
+__mocks__/
+__snapshots__/
+coverage/
+
+# Development
+.github/
+docs/
+.prettierrc
+.eslintrc
+
+# Keep only README
+*.md
+!README.md
+
+# Git
+.git
+.gitignore
+```
+
+This ensures only production files are published.
+
+### Local Testing Process
+
+1. **Build:**
+   ```bash
+   npm run build
+   ```
+
+2. **Pack:**
+   ```bash
+   npm pack
+   # Creates @tgraph-backend-generator-0.0.1.tgz
+   ```
+
+3. **Extract and inspect:**
+   ```bash
+   tar -xzf @tgraph-backend-generator-0.0.1.tgz
+   cd package
+   ls -la
+   # Verify only dist/ and README.md are present
+   ```
+
+4. **Test in another project:**
+   ```bash
+   cd ../test-project
+   npm install ../backend-generator/@tgraph-backend-generator-0.0.1.tgz
+   
+   # Test CLI
+   npx tgraph --help
+   
+   # Test SDK
+   node -e "const { ApiGenerator } = require('@tgraph/backend-generator'); console.log('✓ Import works');"
+   ```
+
+5. **Clean up test artifacts:**
+   ```bash
+   rm @tgraph-backend-generator-0.0.1.tgz
+   rm -rf package/
+   ```
+
 ## Publishing Workflow
 
 ### First Time Publish
 
-1. **Login to npm:**
+1. **Complete pre-publish checklist above** ✓
+
+2. **Login to npm:**
 
 ```bash
 npm login

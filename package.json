@@ -13,21 +13,16 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepare": "npm run build",
+    "prepublishOnly": "npm test",
     "test": "jest",
     "format": "prettier --write ."
   },
   "author": "Mohamed Elbaz",
   "license": "ISC",
   "type": "commonjs",
-  "devDependencies": {
-    "@swc/core": "^1.7.0",
-    "@swc/jest": "^0.2.36",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^24.10.0",
-    "esbuild-register": "^3.6.0",
-    "jest": "^30.2.0",
-    "prettier": "^3.6.2",
-    "typescript": "^5.9.3"
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
   "repository": {
     "type": "git",
@@ -45,5 +40,15 @@
     "crud",
     "typescript",
     "cli"
-  ]
+  ],
+  "devDependencies": {
+    "@swc/core": "^1.7.0",
+    "@swc/jest": "^0.2.36",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.10.0",
+    "esbuild-register": "^3.6.0",
+    "jest": "^30.2.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3"
+  }
 }

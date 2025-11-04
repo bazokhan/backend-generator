@@ -7,3 +7,7 @@ coverage
 .env.test.local
 .env.production.local
 .cursor
+
+# npm pack artifacts
+*.tgz
+package/
