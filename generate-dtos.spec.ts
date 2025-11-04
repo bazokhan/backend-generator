@@ -14,7 +14,6 @@ const config: Config = {
 // Mock all dependencies
 jest.mock('fs');
 jest.mock('./src/generator/utils/auto-text');
-jest.mock('./src/file-operations');
 jest.mock('./src/io/utils/format-files');
 
 // Mock console methods to avoid cluttering test output

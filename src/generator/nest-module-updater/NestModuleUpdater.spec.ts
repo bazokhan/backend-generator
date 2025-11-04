@@ -1,22 +1,23 @@
-import {
-  generateModuleImportStatements,
-  addImportsToModule,
-  addToArrayInModule,
-  findArrayInModule,
-} from './module-updates';
+import { NestModuleUpdater } from './NestModuleUpdater';
 
-describe('Module Updates', () => {
+describe('NestModuleUpdater', () => {
   const namingSuffix = 'Tg';
   const fileSuffix = 'tg';
-  describe('generateTgImportStatements', () => {
+  let updater: NestModuleUpdater;
+
+  beforeEach(() => {
+    updater = new NestModuleUpdater();
+  });
+
+  describe('generateModuleImportStatements', () => {
     it('should generate correct import statements for simple model name', () => {
-      const result = generateModuleImportStatements('User', 'user', namingSuffix, fileSuffix);
+      const result = updater.generateModuleImportStatements('User', 'user', namingSuffix, fileSuffix);
       expect(result.controllerImport).toBe("import { UserTgController } from './user.tg.controller';");
       expect(result.serviceImport).toBe("import { UserTgService } from './user.tg.service';");
     });
 
     it('should generate correct import statements for compound model name', () => {
-      const result = generateModuleImportStatements('CustomFieldType', 'customFieldType', namingSuffix, fileSuffix);
+      const result = updater.generateModuleImportStatements('CustomFieldType', 'customFieldType', namingSuffix, fileSuffix);
       expect(result.controllerImport).toBe(
         "import { CustomFieldTypeTgController } from './customFieldType.tg.controller';",
       );
@@ -24,7 +25,7 @@ describe('Module Updates', () => {
     });
 
     it('should generate correct import statements for model with multiple words', () => {
-      const result = generateModuleImportStatements('ProjectInstance', 'projectInstance', namingSuffix, fileSuffix);
+      const result = updater.generateModuleImportStatements('ProjectInstance', 'projectInstance', namingSuffix, fileSuffix);
       expect(result.controllerImport).toBe(
         "import { ProjectInstanceTgController } from './projectInstance.tg.controller';",
       );
@@ -38,7 +39,7 @@ describe('Module Updates', () => {
   controllers: [AppController, UserController],
   providers: [AppService]
 })`;
-      const result = findArrayInModule(content, 'controllers');
+      const result = updater.findArrayInModule(content, 'controllers');
       expect(result).not.toBeNull();
       expect(result?.start).toBeGreaterThan(-1);
       expect(result?.end).toBeGreaterThan(result!.start);
@@ -49,7 +50,7 @@ describe('Module Updates', () => {
   controllers: [AppController],
   providers: [AppService, UserService]
 })`;
-      const result = findArrayInModule(content, 'providers');
+      const result = updater.findArrayInModule(content, 'providers');
       expect(result).not.toBeNull();
       expect(result?.start).toBeGreaterThan(-1);
       expect(result?.end).toBeGreaterThan(result!.start);
@@ -57,7 +58,7 @@ describe('Module Updates', () => {
 
     it('should return null if module decorator not found', () => {
       const content = `export class AppModule {}`;
-      const result = findArrayInModule(content, 'controllers');
+      const result = updater.findArrayInModule(content, 'controllers');
       expect(result).toBeNull();
     });
 
@@ -65,14 +66,14 @@ describe('Module Updates', () => {
       const content = `@Module({
   controllers: [AppController]
 })`;
-      const result = findArrayInModule(content, 'providers');
+      const result = updater.findArrayInModule(content, 'providers');
       expect(result).toBeNull();
     });
 
     it('should return null if module brace is unmatched', () => {
       const content = `@Module({
   controllers: [AppController]`;
-      const result = findArrayInModule(content, 'controllers');
+      const result = updater.findArrayInModule(content, 'controllers');
       expect(result).toBeNull();
     });
 
@@ -80,7 +81,7 @@ describe('Module Updates', () => {
       const content = `@Module({
   imports: [ConfigModule]
 })`;
-      const result = findArrayInModule(content, 'controllers');
+      const result = updater.findArrayInModule(content, 'controllers');
       expect(result).toBeNull();
     });
 
@@ -89,7 +90,7 @@ describe('Module Updates', () => {
   controllers:
   providers: [AppService]
 })`;
-      const result = findArrayInModule(content, 'controllers');
+      const result = updater.findArrayInModule(content, 'controllers');
       expect(result).toBeNull();
     });
 
@@ -97,7 +98,7 @@ describe('Module Updates', () => {
       const content = `@Module({
   controllers: [AppController
 })`;
-      const result = findArrayInModule(content, 'controllers');
+      const result = updater.findArrayInModule(content, 'controllers');
       expect(result).toBeNull();
     });
 
@@ -106,7 +107,7 @@ describe('Module Updates', () => {
   controllers: [{ controller: AppController }],
   providers: [AppService]
 })`;
-      const result = findArrayInModule(content, 'controllers');
+      const result = updater.findArrayInModule(content, 'controllers');
       expect(result).not.toBeNull();
     });
 
@@ -115,7 +116,7 @@ describe('Module Updates', () => {
   controllers: [],
   providers: [AppService]
 })`;
-      const result = findArrayInModule(content, 'controllers');
+      const result = updater.findArrayInModule(content, 'controllers');
       expect(result).not.toBeNull();
       const arrayContent = content.substring(result!.start + 1, result!.end);
       expect(arrayContent.trim()).toBe('');
@@ -126,12 +127,12 @@ describe('Module Updates', () => {
     it('should add imports when they do not exist', () => {
       const content = `import { AppService } from './app.service';
 
-export class AppModule {}`;
+export class AppModule {};`;
       const imports = [
         "import { UserTgController } from './user.tg.controller';",
         "import { UserTgService } from './user.tg.service';",
       ];
-      const result = addImportsToModule(content, imports);
+      const result = updater.addImportsToModule(content, imports);
 
       expect(result).toContain(imports[0]);
       expect(result).toContain(imports[1]);
@@ -142,22 +143,22 @@ export class AppModule {}`;
       const content = `import { AppService } from './app.service';
 import { UserTgController } from './user.tg.controller';
 
-export class AppModule {}`;
+export class AppModule {};`;
       const imports = [
         "import { UserTgController } from './user.tg.controller';",
         "import { UserTgService } from './user.tg.service';",
       ];
-      const result = addImportsToModule(content, imports);
+      const result = updater.addImportsToModule(content, imports);
 
       const matches = (result.match(/UserTgController/g) || []).length;
-      expect(matches).toBe(1); // Should only appear once
-      expect(result).toContain(imports[1]); // New import should be added
+      expect(matches).toBe(1);
+      expect(result).toContain(imports[1]);
     });
 
     it('should add imports at the beginning when no imports exist', () => {
-      const content = `export class AppModule {}`;
+      const content = `export class AppModule {};`;
       const imports = ["import { UserTgController } from './user.tg.controller';"];
-      const result = addImportsToModule(content, imports);
+      const result = updater.addImportsToModule(content, imports);
 
       expect(result).toMatch(/^import \{ UserTgController \}/m);
     });
@@ -165,11 +166,10 @@ export class AppModule {}`;
     it('should handle import statements with invalid format', () => {
       const content = `import { AppService } from './app.service';
 
-export class AppModule {}`;
+export class AppModule {};`;
       const imports = ['invalid import statement format', 'also invalid'];
-      const result = addImportsToModule(content, imports);
+      const result = updater.addImportsToModule(content, imports);
 
-      // Should still add invalid imports (defensive: if we can't parse, add it)
       expect(result).toContain('invalid import statement format');
       expect(result).toContain('also invalid');
     });
@@ -178,9 +178,9 @@ export class AppModule {}`;
       const content = `import { AppService } from './app.service';
 import { AppController } from './app.controller';
 
-export class AppModule {}`;
+export class AppModule {};`;
       const imports = ["import { UserTgController } from './user.tg.controller';"];
-      const result = addImportsToModule(content, imports);
+      const result = updater.addImportsToModule(content, imports);
 
       expect(result.indexOf(imports[0])).toBeGreaterThan(result.indexOf('import { AppController }'));
     });
@@ -189,12 +189,12 @@ export class AppModule {}`;
       const content = `import { UserTgController } from './user.tg.controller';
 import { UserTgService } from './user.tg.service';
 
-export class AppModule {}`;
+export class AppModule {};`;
       const imports = [
         "import { UserTgController } from './user.tg.controller';",
         "import { UserTgService } from './user.tg.service';",
       ];
-      const result = addImportsToModule(content, imports);
+      const result = updater.addImportsToModule(content, imports);
 
       expect(result).toBe(content);
     });
@@ -206,7 +206,7 @@ export class AppModule {}`;
   controllers: [],
   providers: [AppService]
 })`;
-      const result = addToArrayInModule(content, 'controllers', ['UserTgController']);
+      const result = updater.addToArrayInModule(content, 'controllers', ['UserTgController']);
 
       expect(result).toContain('UserTgController');
       expect(result).toMatch(/controllers:\s*\[UserTgController\]/);
@@ -217,7 +217,7 @@ export class AppModule {}`;
   controllers: [AppController],
   providers: [AppService]
 })`;
-      const result = addToArrayInModule(content, 'controllers', ['UserTgController']);
+      const result = updater.addToArrayInModule(content, 'controllers', ['UserTgController']);
 
       expect(result).toContain('UserTgController');
       expect(result).toContain('AppController');
@@ -229,7 +229,7 @@ export class AppModule {}`;
   controllers: [AppController, UserTgController],
   providers: [AppService]
 })`;
-      const result = addToArrayInModule(content, 'controllers', ['UserTgController']);
+      const result = updater.addToArrayInModule(content, 'controllers', ['UserTgController']);
 
       const matches = (result.match(/UserTgController/g) || []).length;
       expect(matches).toBe(1);
@@ -240,7 +240,7 @@ export class AppModule {}`;
   controllers: [AppController],
   providers: [AppService]
 })`;
-      const result = addToArrayInModule(content, 'controllers', ['UserTgController', 'ProjectTgController']);
+      const result = updater.addToArrayInModule(content, 'controllers', ['UserTgController', 'ProjectTgController']);
 
       expect(result).toContain('UserTgController');
       expect(result).toContain('ProjectTgController');
@@ -252,7 +252,7 @@ export class AppModule {}`;
   controllers: [AppController],
   providers: [AppService]
 })`;
-      const result = addToArrayInModule(content, 'providers', ['UserTgService']);
+      const result = updater.addToArrayInModule(content, 'providers', ['UserTgService']);
 
       expect(result).toContain('UserTgService');
       expect(result).toMatch(/providers:\s*\[AppService,\s*UserTgService\]/);
@@ -262,7 +262,7 @@ export class AppModule {}`;
       const content = `@Module({
   controllers: [AppController]
 })`;
-      const result = addToArrayInModule(content, 'providers', ['UserTgService']);
+      const result = updater.addToArrayInModule(content, 'providers', ['UserTgService']);
 
       expect(result).toBe(content);
     });
@@ -271,7 +271,7 @@ export class AppModule {}`;
       const content = `@Module({
   controllers: [UserTgController]
 })`;
-      const result = addToArrayInModule(content, 'controllers', ['UserTgController']);
+      const result = updater.addToArrayInModule(content, 'controllers', ['UserTgController']);
 
       expect(result).toBe(content);
     });
@@ -281,7 +281,7 @@ export class AppModule {}`;
   controllers: [{ provide: APP_CONTROLLER, useClass: AppController }],
   providers: [AppService]
 })`;
-      const result = addToArrayInModule(content, 'controllers', ['UserTgController']);
+      const result = updater.addToArrayInModule(content, 'controllers', ['UserTgController']);
 
       expect(result).toContain('UserTgController');
       expect(result).toContain('APP_CONTROLLER');
@@ -298,12 +298,12 @@ import { AppService } from './app.service';
   controllers: [AppController],
   providers: [AppService]
 })
-export class AppModule {}`;
+export class AppModule {};`;
 
-      const imports = generateModuleImportStatements('User', 'user', namingSuffix, fileSuffix);
-      let result = addImportsToModule(content, [imports.controllerImport, imports.serviceImport]);
-      result = addToArrayInModule(result, 'controllers', ['UserTgController']);
-      result = addToArrayInModule(result, 'providers', ['UserTgService']);
+      const imports = updater.generateModuleImportStatements('User', 'user', namingSuffix, fileSuffix);
+      let result = updater.addImportsToModule(content, [imports.controllerImport, imports.serviceImport]);
+      result = updater.addToArrayInModule(result, 'controllers', ['UserTgController']);
+      result = updater.addToArrayInModule(result, 'providers', ['UserTgService']);
 
       expect(result).toMatchSnapshot();
     });
@@ -322,12 +322,12 @@ import { UsersService } from './users/users.service';
   providers: [AppService, UsersService],
   exports: []
 })
-export class AppModule {}`;
+export class AppModule {};`;
 
-      const imports = generateModuleImportStatements('CustomFieldType', 'customFieldType', namingSuffix, fileSuffix);
-      let result = addImportsToModule(realModule, [imports.controllerImport, imports.serviceImport]);
-      result = addToArrayInModule(result, 'controllers', ['CustomFieldTypeTgController']);
-      result = addToArrayInModule(result, 'providers', ['CustomFieldTypeTgService']);
+      const imports = updater.generateModuleImportStatements('CustomFieldType', 'customFieldType', namingSuffix, fileSuffix);
+      let result = updater.addImportsToModule(realModule, [imports.controllerImport, imports.serviceImport]);
+      result = updater.addToArrayInModule(result, 'controllers', ['CustomFieldTypeTgController']);
+      result = updater.addToArrayInModule(result, 'providers', ['CustomFieldTypeTgService']);
 
       expect(result).toMatchSnapshot();
     });

@@ -1,7 +1,6 @@
 import * as fs from 'fs';
-import { findModulePath, getModuleFileName } from './file-operations';
+import { ModulePathResolver } from './ModulePathResolver';
 
-// Mock fs at module level, but use real implementations by default
 jest.mock('fs', () => {
   const actualFs = jest.requireActual('fs');
   return {
@@ -11,13 +10,18 @@ jest.mock('fs', () => {
   };
 });
 
-describe('File Operations', () => {
+describe('ModulePathResolver', () => {
+  let resolver: ModulePathResolver;
+
+  beforeEach(() => {
+    resolver = new ModulePathResolver();
+  });
+
   describe('findModulePath', () => {
     it('should find module in features directory', () => {
       const baseDir = process.cwd();
-      const result = findModulePath('User', baseDir);
+      const result = resolver.findModulePath('User', baseDir);
 
-      // Check if result structure is correct
       if (result) {
         expect(result).toHaveProperty('path');
         expect(result).toHaveProperty('type');
@@ -28,10 +32,9 @@ describe('File Operations', () => {
 
     it('should try multiple naming variations', () => {
       const baseDir = process.cwd();
-      const result1 = findModulePath('FeatureFlag', baseDir);
-      const result2 = findModulePath('CustomFieldType', baseDir);
+      const result1 = resolver.findModulePath('FeatureFlag', baseDir);
+      const result2 = resolver.findModulePath('CustomFieldType', baseDir);
 
-      // These might find modules or return null, just check structure if found
       if (result1) {
         expect(result1).toHaveProperty('path');
         expect(result1).toHaveProperty('type');
@@ -44,21 +47,21 @@ describe('File Operations', () => {
 
     it('should return null for non-existent modules', () => {
       const baseDir = process.cwd();
-      const result = findModulePath('NonExistentModuleName123', baseDir);
+      const result = resolver.findModulePath('NonExistentModuleName123', baseDir);
       expect(result).toBeNull();
     });
   });
 
   describe('getModuleFileName', () => {
     it('should return empty string for non-existent path', () => {
-      const result = getModuleFileName('/non/existent/path');
+      const result = resolver.getModuleFileName('/non/existent/path');
       expect(result).toBe('');
     });
 
     it('should find module file in features directory', () => {
       const baseDir = process.cwd();
       const usersPath = `${baseDir}/src/features/users`;
-      const result = getModuleFileName(usersPath);
+      const result = resolver.getModuleFileName(usersPath);
 
       if (fs.existsSync(usersPath)) {
         expect(result).toMatch(/\.module\.ts$/);
@@ -68,11 +71,10 @@ describe('File Operations', () => {
     it('should return empty string when no module file exists', () => {
       const mockFs = fs as jest.Mocked<typeof fs>;
 
-      // Mock existsSync to return true, and readdirSync to return files without .module.ts
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readdirSync.mockReturnValue(['some-other-file.ts', 'another.ts'] as any);
 
-      const result = getModuleFileName('/some/path');
+      const result = resolver.getModuleFileName('/some/path');
 
       expect(result).toBe('');
       expect(mockFs.existsSync).toHaveBeenCalledWith('/some/path');
@@ -83,12 +85,10 @@ describe('File Operations', () => {
   describe('findModulePath variations', () => {
     it('should try different naming variations', () => {
       const baseDir = process.cwd();
-
-      // Test with various model names that might exist
       const testCases = ['User', 'FeatureFlag', 'CustomFieldType', 'ProjectInstance'];
 
       testCases.forEach((modelName) => {
-        const result = findModulePath(modelName, baseDir);
+        const result = resolver.findModulePath(modelName, baseDir);
         if (result) {
           expect(result.path).toBeTruthy();
           expect(result.type).toMatch(/^(features|infrastructure)$/);

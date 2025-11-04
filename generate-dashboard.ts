@@ -258,13 +258,3 @@ export class DashboardGenerator {
     console.log('✅ App component updated with new resources');
   }
 }
-
-// Run the generator
-// istanbul ignore next - CLI execution block, not testable in unit tests
-if (!process.env.JEST_WORKER_ID && !process.env.NODE_ENV?.includes('test')) {
-  const generator = new DashboardGenerator(config);
-  generator.generate().catch((error) => {
-    console.error('❌ Fatal error:', error);
-    process.exit(1);
-  });
-}

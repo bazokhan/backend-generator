@@ -108,10 +108,3 @@ export class DtoGenerator {
     // Files are already formatted individually, but we format index.ts again for consistency
   }
 }
-
-// Run the generator (skip in test environments)
-// istanbul ignore next - CLI execution block, not testable in unit tests
-if (!process.env.JEST_WORKER_ID && !process.env.NODE_ENV?.includes('test')) {
-  const generator = new DtoGenerator(config);
-  generator.generate();
-}

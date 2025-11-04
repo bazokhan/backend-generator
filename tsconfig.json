@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "lib": ["ES2020"],
     "rootDir": ".",
     "outDir": "./dist",
@@ -14,7 +14,6 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -22,8 +21,8 @@
     "noUncheckedIndexedAccess": true,
     "strict": true,
     "skipLibCheck": true,
-    "moduleDetection": "force"
+    "moduleDetection": "force",
   },
   "include": ["**/*.ts", "**/*.d.ts", "jest.config.mjs"],
-  "exclude": ["dist", "node_modules", "__snapshots__", "__mocks__"]
+  "exclude": ["dist", "node_modules", "**/*.spec.ts", "__snapshots__", "__mocks__"]
 }

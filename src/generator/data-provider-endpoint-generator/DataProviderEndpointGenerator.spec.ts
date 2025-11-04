@@ -1,7 +1,13 @@
-import { extractCustomEndpoints, generateEndpointMappings, buildEndpointMap } from './data-provider-updates';
 import type { PrismaModel } from '@tg-scripts/types';
+import { DataProviderEndpointGenerator } from './DataProviderEndpointGenerator';
 
-describe('Data Provider Updates', () => {
+describe('DataProviderEndpointGenerator', () => {
+  let generator: DataProviderEndpointGenerator;
+
+  beforeEach(() => {
+    generator = new DataProviderEndpointGenerator();
+  });
+
   describe('extractCustomEndpoints', () => {
     it('should extract custom endpoints when auto-generated section exists', () => {
       const content = `   // Auto-generated API endpoints
@@ -10,7 +16,7 @@ describe('Data Provider Updates', () => {
     // Custom endpoints
     'custom': 'api/custom',
     'another': 'api/another'`;
-      const result = extractCustomEndpoints(content);
+      const result = generator.extractCustomEndpoints(content);
 
       expect(result).toContain("'custom': 'api/custom'");
       expect(result).toContain("'another': 'api/another'");
@@ -23,7 +29,7 @@ describe('Data Provider Updates', () => {
     'user': 'tg-api/users',
     // Custom endpoints
 `;
-      const result = extractCustomEndpoints(content);
+      const result = generator.extractCustomEndpoints(content);
 
       expect(result).toBe('');
     });
@@ -32,7 +38,7 @@ describe('Data Provider Updates', () => {
       const content = `    'custom': 'api/custom',
     'another': 'api/another',
     'test': 'api/test'`;
-      const result = extractCustomEndpoints(content);
+      const result = generator.extractCustomEndpoints(content);
 
       expect(result).toContain("'custom':");
       expect(result).toContain("'another':");
@@ -46,7 +52,7 @@ describe('Data Provider Updates', () => {
     'custom': 'api/custom',
     // This is a comment
     'another': 'api/another'`;
-      const result = extractCustomEndpoints(content);
+      const result = generator.extractCustomEndpoints(content);
 
       expect(result).not.toContain('// This is a comment');
       expect(result).toContain("'another':");
@@ -59,9 +65,9 @@ describe('Data Provider Updates', () => {
     'custom': 'api/custom',
     
     'another': 'api/another'`;
-      const result = extractCustomEndpoints(content);
+      const result = generator.extractCustomEndpoints(content);
 
-      expect(result).not.toMatch(/\n\n\n/); // No triple newlines
+      expect(result).not.toMatch(/\n\n\n/);
       expect(result).toContain("'custom':");
       expect(result).toContain("'another':");
     });
@@ -72,7 +78,7 @@ describe('Data Provider Updates', () => {
     'featureflag': 'tg-api/feature-flags',
     // Custom endpoints
     'custom': 'api/custom'`;
-      const result = extractCustomEndpoints(content);
+      const result = generator.extractCustomEndpoints(content);
 
       expect(result).not.toContain("'user':");
       expect(result).not.toContain("'featureflag':");
@@ -80,7 +86,7 @@ describe('Data Provider Updates', () => {
     });
 
     it('should handle empty content', () => {
-      const result = extractCustomEndpoints('');
+      const result = generator.extractCustomEndpoints('');
       expect(result).toBe('');
     });
 
@@ -88,7 +94,7 @@ describe('Data Provider Updates', () => {
       const content = `   // Auto-generated API endpoints
     // Custom endpoints
     // Just comments`;
-      const result = extractCustomEndpoints(content);
+      const result = generator.extractCustomEndpoints(content);
 
       expect(result).toBe('');
     });
@@ -97,7 +103,7 @@ describe('Data Provider Updates', () => {
       const content = `   // Auto-generated API endpoints
 'user': 'tg-api/users',
 'featureflag': 'tg-api/feature-flags'`;
-      const result = extractCustomEndpoints(content);
+      const result = generator.extractCustomEndpoints(content);
 
       expect(result).toBe('');
     });
@@ -132,7 +138,7 @@ describe('Data Provider Updates', () => {
         },
       ];
 
-      const result = generateEndpointMappings(models, getResourceName, getApiEndpoint);
+      const result = generator.generateEndpointMappings(models, getResourceName, getApiEndpoint);
 
       expect(result).toContain("'users':");
       expect(result).toContain("'projects':");
@@ -157,14 +163,14 @@ describe('Data Provider Updates', () => {
         },
       ];
 
-      const result = generateEndpointMappings(models, getResourceName, getApiEndpoint);
+      const result = generator.generateEndpointMappings(models, getResourceName, getApiEndpoint);
 
       expect(result).toContain("'users':");
       expect(result).not.toContain("'projects':");
     });
 
     it('should handle empty models array', () => {
-      const result = generateEndpointMappings([], getResourceName, getApiEndpoint);
+      const result = generator.generateEndpointMappings([], getResourceName, getApiEndpoint);
 
       expect(result).toBe('');
     });
@@ -180,7 +186,7 @@ describe('Data Provider Updates', () => {
         },
       ];
 
-      const result = generateEndpointMappings(models, getResourceName, getApiEndpoint);
+      const result = generator.generateEndpointMappings(models, getResourceName, getApiEndpoint);
 
       expect(result).toContain("'custom-field-types':");
       expect(result).toContain('tg-api/custom-field-types');
@@ -197,9 +203,9 @@ describe('Data Provider Updates', () => {
         },
       ];
 
-      const result = generateEndpointMappings(models, getResourceName, getApiEndpoint);
+      const result = generator.generateEndpointMappings(models, getResourceName, getApiEndpoint);
 
-      expect(result).toMatch(/^ {4}'/m); // Starts with 4 spaces
+      expect(result).toMatch(/^ {4}'/m);
     });
   });
 
@@ -210,7 +216,7 @@ describe('Data Provider Updates', () => {
       const customEndpoints = `    'custom': 'api/custom',
     'another': 'api/another'`;
 
-      const result = buildEndpointMap(autoGeneratedMappings, customEndpoints);
+      const result = generator.buildEndpointMap(autoGeneratedMappings, customEndpoints);
 
       expect(result).toContain('const endpointMap: Record<string, string> = {');
       expect(result).toContain('// Auto-generated API endpoints');
@@ -224,7 +230,7 @@ describe('Data Provider Updates', () => {
       const autoGeneratedMappings = `    'users': 'tg-api/users'`;
       const customEndpoints = '';
 
-      const result = buildEndpointMap(autoGeneratedMappings, customEndpoints);
+      const result = generator.buildEndpointMap(autoGeneratedMappings, customEndpoints);
 
       expect(result).toContain('// Auto-generated API endpoints');
       expect(result).toContain("'users': 'tg-api/users'");
@@ -236,7 +242,7 @@ describe('Data Provider Updates', () => {
       const autoGeneratedMappings = '';
       const customEndpoints = `    'custom': 'api/custom'`;
 
-      const result = buildEndpointMap(autoGeneratedMappings, customEndpoints);
+      const result = generator.buildEndpointMap(autoGeneratedMappings, customEndpoints);
 
       expect(result).toContain('const endpointMap: Record<string, string> = {');
       expect(result).toContain('// Auto-generated API endpoints');
@@ -246,7 +252,7 @@ describe('Data Provider Updates', () => {
     });
 
     it('should handle empty inputs', () => {
-      const result = buildEndpointMap('', '');
+      const result = generator.buildEndpointMap('', '');
 
       expect(result).toContain('const endpointMap: Record<string, string> = {');
       expect(result).toContain('// Auto-generated API endpoints');
@@ -259,9 +265,8 @@ describe('Data Provider Updates', () => {
     'projects': 'tg-api/projects'`;
       const customEndpoints = `    'custom': 'api/custom'`;
 
-      const result = buildEndpointMap(autoGeneratedMappings, customEndpoints);
+      const result = generator.buildEndpointMap(autoGeneratedMappings, customEndpoints);
 
-      // Check proper line structure
       const lines = result.split('\n');
       expect(lines[0]).toContain('const endpointMap');
       expect(lines.some((l) => l.includes('Auto-generated'))).toBe(true);
@@ -313,9 +318,9 @@ describe('Data Provider Updates', () => {
     // Custom endpoints
     'legacy': 'api/legacy'`;
 
-      const customEndpoints = extractCustomEndpoints(existingContent);
-      const autoGeneratedMappings = generateEndpointMappings(models, getResourceName, getApiEndpoint);
-      const result = buildEndpointMap(autoGeneratedMappings, customEndpoints);
+      const customEndpoints = generator.extractCustomEndpoints(existingContent);
+      const autoGeneratedMappings = generator.generateEndpointMappings(models, getResourceName, getApiEndpoint);
+      const result = generator.buildEndpointMap(autoGeneratedMappings, customEndpoints);
 
       expect(result).toMatchSnapshot();
     });
@@ -355,9 +360,9 @@ describe('Data Provider Updates', () => {
         },
       ];
 
-      const customEndpoints = extractCustomEndpoints(realContent);
-      const autoGeneratedMappings = generateEndpointMappings(models, getResourceName, getApiEndpoint);
-      const result = buildEndpointMap(autoGeneratedMappings, customEndpoints);
+      const customEndpoints = generator.extractCustomEndpoints(realContent);
+      const autoGeneratedMappings = generator.generateEndpointMappings(models, getResourceName, getApiEndpoint);
+      const result = generator.buildEndpointMap(autoGeneratedMappings, customEndpoints);
 
       expect(result).toMatchSnapshot();
     });

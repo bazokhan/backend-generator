@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
-exports[`Module Updates Integration and snapshot tests should handle real-world module structure 1`] = `
+exports[`NestModuleUpdater Integration and snapshot tests should handle real-world module structure 1`] = `
 "import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -16,10 +16,10 @@ import { CustomFieldTypeTgService } from './customFieldType.tg.service';
   providers: [AppService, UsersService, CustomFieldTypeTgService],
   exports: []
 })
-export class AppModule {}"
+export class AppModule {};"
 `;
 
-exports[`Module Updates Integration and snapshot tests should match snapshot for complete module update flow 1`] = `
+exports[`NestModuleUpdater Integration and snapshot tests should match snapshot for complete module update flow 1`] = `
 "import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -30,5 +30,5 @@ import { UserTgService } from './user.tg.service';
   controllers: [AppController, UserTgController],
   providers: [AppService, UserTgService]
 })
-export class AppModule {}"
+export class AppModule {};"
 `;

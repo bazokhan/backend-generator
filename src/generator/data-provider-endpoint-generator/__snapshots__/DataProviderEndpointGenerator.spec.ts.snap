@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
-exports[`Data Provider Updates Integration and snapshot tests should handle real-world endpoint map structure 1`] = `
+exports[`DataProviderEndpointGenerator Integration and snapshot tests should handle real-world endpoint map structure 1`] = `
 "const endpointMap: Record<string, string> = {
     // Auto-generated API endpoints
     'audit-logs': 'tg-api/audit-logs',
@@ -11,7 +11,7 @@ exports[`Data Provider Updates Integration and snapshot tests should handle real
   };"
 `;
 
-exports[`Data Provider Updates Integration and snapshot tests should match snapshot for complete endpoint map generation 1`] = `
+exports[`DataProviderEndpointGenerator Integration and snapshot tests should match snapshot for complete endpoint map generation 1`] = `
 "const endpointMap: Record<string, string> = {
     // Auto-generated API endpoints
     'users': 'tg-api/users',

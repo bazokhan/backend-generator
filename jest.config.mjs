@@ -1,7 +1,9 @@
-/** @jest-config-loader esbuild-register */
-import type { Config } from 'jest';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Read and parse tsconfig.json (handling comments)
 const tsconfigPath = join(__dirname, 'tsconfig.json');
@@ -10,7 +12,7 @@ const tsconfigJson = tsconfigContent.replace(/\/\/.*$/gm, '');
 const { compilerOptions } = JSON.parse(tsconfigJson);
 
 // Build module name mapper from tsconfig paths
-const moduleNameMapper: Record<string, string> = {};
+const moduleNameMapper = {};
 if (compilerOptions.paths) {
   const baseUrl = compilerOptions.baseUrl || '.';
   for (const [alias, paths] of Object.entries(compilerOptions.paths)) {
@@ -21,7 +23,7 @@ if (compilerOptions.paths) {
   }
 }
 
-const config: Config = {
+const config = {
   testEnvironment: 'node',
   roots: ['<rootDir>'],
   testMatch: ['**/*.spec.ts'],
@@ -52,13 +54,19 @@ const config: Config = {
     ...moduleNameMapper,
   },
   collectCoverageFrom: [
-    '**/*.ts',
+    '**/*.{ts,tsx}',
     '!**/*.spec.ts',
     '!**/*.test.ts',
+    '!**/*.spec.tsx',
+    '!**/*.test.tsx',
     '!dist/**',
     '!node_modules/**',
     '!__mocks__/**',
     '!__snapshots__/**',
+    '!cli.ts',
+    '!config.ts',
+    '!jest.config.mjs',
+    '!index.ts',
   ],
 };
 
