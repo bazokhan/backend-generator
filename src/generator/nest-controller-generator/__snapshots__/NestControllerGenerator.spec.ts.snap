@@ -1,0 +1,354 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Nest Admin Controller Generator All operations together should generate complete controller methods 1`] = `
+"
+  @Get()
+  @PaginatedSearch<CustomFieldType>()
+  @ApiOperation({ summary: 'Get all customFieldTypes' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all customFieldTypes',
+    type: PaginatedSearchResultDto<CustomFieldType>,
+  })
+  async getList(@Query() query: PaginatedSearchQueryDto) {
+    const result = await this.customFieldTypeTgService.getList(query);
+    return { data: result.data, total: result.total, page: result.page, limit: result.limit };
+  }
+
+
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get customFieldType by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldType found',
+    type: ApiResponseDto<CustomFieldType>,
+  })
+  @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
+  async getOne(@Param('id') id: string) {
+    const item = await this.customFieldTypeTgService.getOne(id);
+    return { data: item };
+  }
+
+
+
+  @Get('many')
+  @ApiOperation({ summary: 'Get multiple customFieldTypes by IDs' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldTypes found',
+    type: ApiResponseDto<CustomFieldType[]>,
+  })
+  async getMany(@Query('ids') ids: string) {
+    const idArray = ids.split(',').filter(id => id.trim());
+    const result = await this.customFieldTypeTgService.getMany(idArray);
+    return result;
+  }
+
+
+
+  @Get('reference/:target/:id')
+  @PaginatedSearch<CustomFieldType>()
+  @ApiOperation({ summary: 'Get customFieldTypes by reference' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldTypes found',
+    type: PaginatedSearchResultDto<CustomFieldType>,
+  })
+  async getManyReference(
+    @Param('target') target: string,
+    @Param('id') id: string,
+    @Query() query: PaginatedSearchQueryDto,
+  ) {
+    const result = await this.customFieldTypeTgService.getManyReference(target, id, query);
+    return {
+      data: result.data,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+    };
+  }
+
+
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new customFieldType' })
+  @ApiResponse({
+    status: 201,
+    description: 'CustomFieldType created successfully',
+    type: ApiResponseDto<CustomFieldType>,
+  })
+  async create(@Body() dto: CreateCustomFieldTypeTgDto) {
+    const item = await this.customFieldTypeTgService.create(dto);
+    return { data: item, message: 'CustomFieldType created successfully' };
+  }
+
+
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update customFieldType' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldType updated successfully',
+    type: ApiResponseDto<CustomFieldType>,
+  })
+  @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
+  async update(@Param('id') id: string, @Body() dto: UpdateCustomFieldTypeTgDto) {
+    const item = await this.customFieldTypeTgService.update(id, dto);
+    return { data: item, message: 'CustomFieldType updated successfully' };
+  }
+
+
+
+  @Put('many')
+  @ApiOperation({ summary: 'Update multiple customFieldTypes' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldTypes updated successfully',
+    type: ApiResponseDto<CustomFieldType[]>,
+  })
+  async updateMany(@Body() body: { ids: string[]; data: UpdateCustomFieldTypeTgDto }) {
+    const result = await this.customFieldTypeTgService.updateMany(body.ids, body.data);
+    return { data: result.data, message: 'CustomFieldTypes updated successfully' };
+  }
+
+
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete customFieldType' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldType deleted successfully',
+    type: ApiResponseDto<{ message: string }>,
+  })
+  @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
+  async deleteOne(@Param('id') id: string) {
+    const result = await this.customFieldTypeTgService.deleteOne(id);
+    return result;
+  }
+
+
+
+  @Delete('many')
+  @ApiOperation({ summary: 'Delete multiple customFieldTypes' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldTypes deleted successfully',
+    type: ApiResponseDto<{ message: string }[]>,
+  })
+  async deleteMany(@Body() body: { ids: string[] }) {
+    const result = await this.customFieldTypeTgService.deleteMany(body.ids);
+    return { data: result.data, message: 'CustomFieldTypes deleted successfully' };
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator Integration - different model names should work for AuditLog model 1`] = `
+"
+  @Get()
+  @PaginatedSearch<AuditLog>()
+  @ApiOperation({ summary: 'Get all auditLogs' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all auditLogs',
+    type: PaginatedSearchResultDto<AuditLog>,
+  })
+  async getList(@Query() query: PaginatedSearchQueryDto) {
+    const result = await this.auditLogTgService.getList(query);
+    return { data: result.data, total: result.total, page: result.page, limit: result.limit };
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator Integration - different model names should work for ProjectInstance model 1`] = `
+"
+  @Get()
+  @PaginatedSearch<ProjectInstance>()
+  @ApiOperation({ summary: 'Get all projectInstances' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all projectInstances',
+    type: PaginatedSearchResultDto<ProjectInstance>,
+  })
+  async getList(@Query() query: PaginatedSearchQueryDto) {
+    const result = await this.projectInstanceTgService.getList(query);
+    return { data: result.data, total: result.total, page: result.page, limit: result.limit };
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator Integration - different model names should work for User model 1`] = `
+"
+  @Get()
+  @PaginatedSearch<User>()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all users',
+    type: PaginatedSearchResultDto<User>,
+  })
+  async getList(@Query() query: PaginatedSearchQueryDto) {
+    const result = await this.userTgService.getList(query);
+    return { data: result.data, total: result.total, page: result.page, limit: result.limit };
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator create should generate create method for any model 1`] = `
+"
+  @Post()
+  @ApiOperation({ summary: 'Create a new customFieldType' })
+  @ApiResponse({
+    status: 201,
+    description: 'CustomFieldType created successfully',
+    type: ApiResponseDto<CustomFieldType>,
+  })
+  async create(@Body() dto: CreateCustomFieldTypeTgDto) {
+    const item = await this.customFieldTypeTgService.create(dto);
+    return { data: item, message: 'CustomFieldType created successfully' };
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator deleteMany should generate deleteMany method for any model 1`] = `
+"
+  @Delete('many')
+  @ApiOperation({ summary: 'Delete multiple customFieldTypes' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldTypes deleted successfully',
+    type: ApiResponseDto<{ message: string }[]>,
+  })
+  async deleteMany(@Body() body: { ids: string[] }) {
+    const result = await this.customFieldTypeTgService.deleteMany(body.ids);
+    return { data: result.data, message: 'CustomFieldTypes deleted successfully' };
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator deleteOne should generate delete method for any model 1`] = `
+"
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete customFieldType' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldType deleted successfully',
+    type: ApiResponseDto<{ message: string }>,
+  })
+  @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
+  async deleteOne(@Param('id') id: string) {
+    const result = await this.customFieldTypeTgService.deleteOne(id);
+    return result;
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator getList should generate getList method for any model 1`] = `
+"
+  @Get()
+  @PaginatedSearch<CustomFieldType>()
+  @ApiOperation({ summary: 'Get all customFieldTypes' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all customFieldTypes',
+    type: PaginatedSearchResultDto<CustomFieldType>,
+  })
+  async getList(@Query() query: PaginatedSearchQueryDto) {
+    const result = await this.customFieldTypeTgService.getList(query);
+    return { data: result.data, total: result.total, page: result.page, limit: result.limit };
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator getMany should generate getMany method for any model 1`] = `
+"
+  @Get('many')
+  @ApiOperation({ summary: 'Get multiple customFieldTypes by IDs' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldTypes found',
+    type: ApiResponseDto<CustomFieldType[]>,
+  })
+  async getMany(@Query('ids') ids: string) {
+    const idArray = ids.split(',').filter(id => id.trim());
+    const result = await this.customFieldTypeTgService.getMany(idArray);
+    return result;
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator getManyReference should generate getManyReference method for any model 1`] = `
+"
+  @Get('reference/:target/:id')
+  @PaginatedSearch<CustomFieldType>()
+  @ApiOperation({ summary: 'Get customFieldTypes by reference' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldTypes found',
+    type: PaginatedSearchResultDto<CustomFieldType>,
+  })
+  async getManyReference(
+    @Param('target') target: string,
+    @Param('id') id: string,
+    @Query() query: PaginatedSearchQueryDto,
+  ) {
+    const result = await this.customFieldTypeTgService.getManyReference(target, id, query);
+    return {
+      data: result.data,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+    };
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator getOne should generate getOne method for any model 1`] = `
+"
+  @Get(':id')
+  @ApiOperation({ summary: 'Get customFieldType by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldType found',
+    type: ApiResponseDto<CustomFieldType>,
+  })
+  @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
+  async getOne(@Param('id') id: string) {
+    const item = await this.customFieldTypeTgService.getOne(id);
+    return { data: item };
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator update should generate update method for any model 1`] = `
+"
+  @Put(':id')
+  @ApiOperation({ summary: 'Update customFieldType' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldType updated successfully',
+    type: ApiResponseDto<CustomFieldType>,
+  })
+  @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
+  async update(@Param('id') id: string, @Body() dto: UpdateCustomFieldTypeTgDto) {
+    const item = await this.customFieldTypeTgService.update(id, dto);
+    return { data: item, message: 'CustomFieldType updated successfully' };
+  }
+"
+`;
+
+exports[`Nest Admin Controller Generator updateMany should generate updateMany method for any model 1`] = `
+"
+  @Put('many')
+  @ApiOperation({ summary: 'Update multiple customFieldTypes' })
+  @ApiResponse({
+    status: 200,
+    description: 'CustomFieldTypes updated successfully',
+    type: ApiResponseDto<CustomFieldType[]>,
+  })
+  async updateMany(@Body() body: { ids: string[]; data: UpdateCustomFieldTypeTgDto }) {
+    const result = await this.customFieldTypeTgService.updateMany(body.ids, body.data);
+    return { data: result.data, message: 'CustomFieldTypes updated successfully' };
+  }
+"
+`;

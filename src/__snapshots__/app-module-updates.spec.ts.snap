@@ -1,0 +1,64 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`App Module Updates Integration and snapshot tests should handle real-world AppModule structure 1`] = `
+"import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { HealthModule } from './infrastructure/health/health.module';
+import { DatabaseModule } from './infrastructure/database/database.module';
+// AUTO-GENERATED IMPORTS START
+import { UserModule } from './features/user/user.module';
+import { CustomFieldTypeModule } from './features/custom-field-type/customFieldType.module';
+import { ProjectInstanceModule } from './features/project-instance/projectInstance.module';
+// AUTO-GENERATED IMPORTS END
+
+@Module({
+  imports: [
+ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+JwtModule.registerAsync({
+      global: true,
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_ACCESS_SECRET'),
+        signOptions: { expiresIn: '1h' },
+      }),
+      inject: [ConfigService],
+    }),
+HealthModule,
+DatabaseModule,
+UserModule,
+    // AUTO-GENERATED MODULES START
+    CustomFieldTypeModule,
+    ProjectInstanceModule,
+    // AUTO-GENERATED MODULES END
+  ],
+  controllers: [AppController],
+  providers: [AppService]
+})
+export class AppModule {}"
+`;
+
+exports[`App Module Updates Integration and snapshot tests should match snapshot for complete AppModule update flow 1`] = `
+"import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+// AUTO-GENERATED IMPORTS START
+import { UserModule } from './features/user/user.module';
+import { AuthModule } from './features/auth/auth.module';
+import { ProjectModule } from './features/project/project.module';
+// AUTO-GENERATED IMPORTS END
+
+@Module({
+  imports: [
+ConfigModule.forRoot(),
+UserModule,
+    // AUTO-GENERATED MODULES START
+    AuthModule,
+    ProjectModule,
+    // AUTO-GENERATED MODULES END
+  ],
+  controllers: [AppController],
+  providers: [AppService]
+})
+export class AppModule {}"
+`;

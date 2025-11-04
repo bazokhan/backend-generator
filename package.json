@@ -1,0 +1,23 @@
+{
+  "name": "schema-form-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@swc/core": "^1.7.0",
+    "@swc/jest": "^0.2.36",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.10.0",
+    "esbuild-register": "^3.6.0",
+    "jest": "^30.2.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`NestModuleFileGenerator Generate should match snapshot 1`] = `
+"import { Module } from '@nestjs/common';
+    import { FeatureFlagTgController } from './featureFlag.tg.controller';
+    import { FeatureFlagTgService } from './featureFlag.tg.service';
+
+    @Module({
+      controllers: [FeatureFlagTgController],
+      providers: [FeatureFlagTgService],
+      exports: [FeatureFlagTgService],
+    })
+    export class FeatureFlagModule {}
+    "
+`;

@@ -1,0 +1,69 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Naming Utilities Integration tests should handle real-world model names from the project 1`] = `
+[
+  {
+    "camel": "user",
+    "fileName": "user",
+    "kebab": "user",
+    "model": "User",
+    "resource": "users",
+  },
+  {
+    "camel": "auditLog",
+    "fileName": "auditLog",
+    "kebab": "audit-log",
+    "model": "AuditLog",
+    "resource": "audit-logs",
+  },
+  {
+    "camel": "customFieldType",
+    "fileName": "customFieldType",
+    "kebab": "custom-field-type",
+    "model": "CustomFieldType",
+    "resource": "custom-field-types",
+  },
+  {
+    "camel": "customFieldInstance",
+    "fileName": "customFieldInstance",
+    "kebab": "custom-field-instance",
+    "model": "CustomFieldInstance",
+    "resource": "custom-field-instances",
+  },
+  {
+    "camel": "projectType",
+    "fileName": "projectType",
+    "kebab": "project-type",
+    "model": "ProjectType",
+    "resource": "project-types",
+  },
+  {
+    "camel": "projectInstance",
+    "fileName": "projectInstance",
+    "kebab": "project-instance",
+    "model": "ProjectInstance",
+    "resource": "project-instances",
+  },
+  {
+    "camel": "unitType",
+    "fileName": "unitType",
+    "kebab": "unit-type",
+    "model": "UnitType",
+    "resource": "unit-types",
+  },
+  {
+    "camel": "unitInstance",
+    "fileName": "unitInstance",
+    "kebab": "unit-instance",
+    "model": "UnitInstance",
+    "resource": "unit-instances",
+  },
+  {
+    "camel": "translation",
+    "fileName": "translation",
+    "kebab": "translation",
+    "model": "Translation",
+    "resource": "translations",
+  },
+]
+`;

@@ -1,0 +1,172 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Nest DTO Generator Complex snapshot tests should generate complete ResponseDto with all field types and relations 1`] = `
+"import { ApiProperty } from '@nestjs/swagger';
+import { Status, Priority } from '@/generated/prisma';
+
+export class PostResponseDto {
+  @ApiProperty({"name":"id"})
+  id: string;
+
+  @ApiProperty({"name":"title"})
+  title: string;
+
+  @ApiProperty({"name":"content","required":false,"nullable":true})
+  content?: string | null;
+
+  @ApiProperty({"name":"status"})
+  status: Status;
+
+  @ApiProperty({"name":"priority","required":false,"nullable":true})
+  priority?: Priority | null;
+
+  @ApiProperty({"name":"views"})
+  views: number;
+
+  @ApiProperty({"name":"rating","required":false,"nullable":true})
+  rating?: number | null;
+
+  @ApiProperty({"name":"isPublished"})
+  isPublished: boolean;
+
+  @ApiProperty({"name":"publishedAt","required":false,"nullable":true})
+  publishedAt?: Date | null;
+
+  @ApiProperty({"name":"metadata","required":false,"nullable":true})
+  metadata?: any;
+
+  @ApiProperty({"name":"author"})
+  author: User;
+
+  @ApiProperty({"name":"comments"})
+  comments: Comment[];
+
+  @ApiProperty({"name":"category","required":false,"nullable":true})
+  category?: Category | null;
+
+  @ApiProperty({"name":"createdAt"})
+  createdAt: Date;
+
+  @ApiProperty({"name":"updatedAt"})
+  updatedAt: Date;
+}
+"
+`;
+
+exports[`Nest DTO Generator Complex snapshot tests should generate complex CreateDto with all validations and field types 1`] = `
+"import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { IsString, MaxLength, Matches, MinLength, IsNumber, IsOptional, Min, Max, IsEnum, IsBoolean } from 'class-validator';
+import { Status, Role } from '@/generated/prisma';
+
+export class CreateUserTgDto {
+  @IsString()
+  @MaxLength(255)
+  @Matches(^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$)
+  @ApiProperty({"name":"email","description":"email field","example":"user@example.com"})
+  email: string;
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  @Matches(^[a-zA-Z0-9_]+$)
+  @ApiProperty({"name":"username","description":"username field","example":"John Doe"})
+  username: string;
+  @IsString()
+  @MinLength(8)
+  @ApiProperty({"name":"password","description":"password field","example":"example"})
+  password: string;
+  @IsOptional()
+  @Min(13)
+  @Max(120)
+  @ApiProperty({"name":"age","description":"age field","example":1,"required":false})
+  age?: number;
+  @IsOptional()
+  @Min(0)
+  @ApiProperty({"name":"salary","description":"salary field","example":1,"required":false})
+  salary?: number;
+  @IsEnum(Status)
+  @ApiProperty({"name":"status","description":"status field","example":"ACTIVE","enum":["ACTIVE","INACTIVE","PENDING"]})
+  status: Status;
+  @IsEnum(Role)
+  @ApiProperty({"name":"role","description":"role field","example":"USER","enum":["USER","ADMIN","MODERATOR"]})
+  role: Role;
+  @Transform(({ value }) => value === "true" || value === true)
+  @IsBoolean()
+  @ApiProperty({"name":"isActive","description":"isActive field","example":false})
+  isActive: boolean;
+  @IsOptional()
+  @MaxLength(1000)
+  @ApiProperty({"name":"biography","description":"biography field","example":"example","required":false})
+  biography?: string;
+  @IsOptional()
+  @Matches(^https?://)
+  @ApiProperty({"name":"website","description":"website field","example":"example","required":false})
+  website?: string;
+}
+"
+`;
+
+exports[`Nest DTO Generator Complex snapshot tests should generate complex CreateDto with all validations and field types 2`] = `
+"import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { IsString, IsOptional, MaxLength, Matches, MinLength, IsNumber, Min, Max, IsEnum, IsBoolean } from 'class-validator';
+import { Status, Role } from '@/generated/prisma';
+
+export class UpdateUserTgDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  @Matches(^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$)
+  @ApiProperty({"name":"email","description":"email field","example":"user@example.com","required":false})
+  email?: string;
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  @Matches(^[a-zA-Z0-9_]+$)
+  @ApiProperty({"name":"username","description":"username field","example":"John Doe","required":false})
+  username?: string;
+  @IsOptional()
+  @IsString()
+  @MinLength(8)
+  @ApiProperty({"name":"password","description":"password field","example":"example","required":false})
+  password?: string;
+  @IsOptional()
+  @Transform(({ value }: { value: string }) => parseInt(value, 10))
+  @IsNumber()
+  @Min(13)
+  @Max(120)
+  @ApiProperty({"name":"age","description":"age field","example":1,"required":false})
+  age?: number;
+  @IsOptional()
+  @Transform(({ value }: { value: string }) => parseFloat(value))
+  @IsNumber()
+  @Min(0)
+  @ApiProperty({"name":"salary","description":"salary field","example":1,"required":false})
+  salary?: number;
+  @IsOptional()
+  @IsEnum(Status)
+  @ApiProperty({"name":"status","description":"status field","example":"ACTIVE","required":false,"enum":["ACTIVE","INACTIVE","PENDING"]})
+  status?: Status;
+  @IsOptional()
+  @IsEnum(Role)
+  @ApiProperty({"name":"role","description":"role field","example":"USER","required":false,"enum":["USER","ADMIN","MODERATOR"]})
+  role?: Role;
+  @IsOptional()
+  @Transform(({ value }) => value === "true" || value === true)
+  @IsBoolean()
+  @ApiProperty({"name":"isActive","description":"isActive field","example":false,"required":false})
+  isActive?: boolean;
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  @ApiProperty({"name":"biography","description":"biography field","example":"example","required":false})
+  biography?: string;
+  @IsOptional()
+  @IsString()
+  @Matches(^https?://)
+  @ApiProperty({"name":"website","description":"website field","example":"example","required":false})
+  website?: string;
+}
+"
+`;

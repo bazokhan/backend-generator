@@ -1,0 +1,227 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Fields Utilities generateFieldDefinition Boolean fields should generate definition for optional Boolean field 1`] = `
+"  @IsOptional()
+  @ApiProperty({"name":"enabled","description":"enabled field","example":"example","required":false})
+  enabled?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Boolean fields should generate definition for required Boolean field 1`] = `
+"  @Transform(({ value }) => value === "true" || value === true)
+  @IsBoolean()
+  @ApiProperty({"name":"isActive","description":"isActive field","example":false})
+  isActive: boolean;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Complex combinations should generate complete definition for complex field with all properties 1`] = `
+"  @IsOptional()
+  @MinLength(10)
+  @MaxLength(500)
+  @Matches(^[A-Za-z0-9 ]+$)
+  @ApiProperty({"name":"description","description":"description field","example":"example","required":false})
+  description?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Complex combinations should generate definition for DateTime field with validations 1`] = `
+"  @IsOptional()
+  @ApiProperty({"name":"scheduledAt","description":"scheduledAt field","example":"example","required":false})
+  scheduledAt?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Complex combinations should generate definition for DateTime field with validations 2`] = `
+"  @IsOptional()
+  @IsString()
+  @ApiProperty({"name":"scheduledAt","description":"scheduledAt field","example":"example","required":false})
+  scheduledAt?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Complex combinations should generate definition for enum field in update mode 1`] = `
+"  @IsOptional()
+  @IsEnum(Status)
+  @ApiProperty({"name":"status","description":"status field","example":"ACTIVE","required":false,"enum":["ACTIVE","INACTIVE","PENDING"]})
+  status?: Status;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Complex combinations should handle Float fields with range validations 1`] = `
+"  @IsOptional()
+  @MinLength(0)
+  @MaxLength(5)
+  @ApiProperty({"name":"rating","description":"rating field","example":"example","required":false})
+  rating?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Complex combinations should handle numeric fields with range validations 1`] = `
+"  @IsString()
+  @MinLength(0)
+  @MaxLength(100)
+  @ApiProperty({"name":"score","description":"score field","example":"example"})
+  score: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition DateTime fields should generate definition for optional DateTime field 1`] = `
+"  @IsOptional()
+  @ApiProperty({"name":"deletedAt","description":"deletedAt field","example":"example","required":false})
+  deletedAt?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition DateTime fields should generate definition for required DateTime field 1`] = `
+"  @IsDateString()
+  @ApiProperty({"name":"createdAt","description":"createdAt field","example":"2023-01-01T00:00:00.000Z"})
+  createdAt: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Edge cases should handle field with many custom validations 1`] = `
+"  @IsString()
+  @MinLength(3)
+  @MaxLength(100)
+  @Matches(^[A-Z])
+  @ApiProperty({"name":"title","description":"title field","example":"example"})
+  title: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Enum fields should generate definition for optional enum field 1`] = `
+"  @IsOptional()
+  @ApiProperty({"name":"priority","description":"priority field","example":"LOW","required":false})
+  priority?: Priority;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Enum fields should generate definition for required enum field 1`] = `
+"  @IsEnum(Status)
+  @ApiProperty({"name":"status","description":"status field","example":"ACTIVE","enum":["ACTIVE","INACTIVE","PENDING"]})
+  status: Status;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Json fields should generate definition for Json field 1`] = `
+"  @IsString()
+  @ApiProperty({"name":"metadata","description":"metadata field","example":"example"})
+  metadata: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Json fields should generate definition for optional Json field 1`] = `
+"  @IsOptional()
+  @ApiProperty({"name":"extraData","description":"extraData field","example":"example","required":false})
+  extraData?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Number fields should generate definition for Float field 1`] = `
+"  @Transform(({ value }: { value: string }) => parseFloat(value))
+  @IsNumber()
+  @ApiProperty({"name":"price","description":"price field","example":1})
+  price: number;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Number fields should generate definition for Int field with max validation 1`] = `
+"  @IsString()
+  @MaxLength(100)
+  @ApiProperty({"name":"quantity","description":"quantity field","example":"example"})
+  quantity: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Number fields should generate definition for Int field with min validation 1`] = `
+"  @IsString()
+  @MinLength(0)
+  @ApiProperty({"name":"score","description":"score field","example":"example"})
+  score: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Number fields should generate definition for optional Float field 1`] = `
+"  @IsOptional()
+  @ApiProperty({"name":"rating","description":"rating field","example":"example","required":false})
+  rating?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Number fields should generate definition for optional Int field 1`] = `
+"  @IsOptional()
+  @ApiProperty({"name":"quantity","description":"quantity field","example":"example","required":false})
+  quantity?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Number fields should generate definition for required Int field 1`] = `
+"  @Transform(({ value }: { value: string }) => parseInt(value, 10))
+  @IsNumber()
+  @ApiProperty({"name":"age","description":"age field","example":1})
+  age: number;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition String fields should generate definition for String field with email validation 1`] = `
+"  @IsString()
+  @ApiProperty({"name":"email","description":"email field","example":"user@example.com"})
+  email: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition String fields should generate definition for String field with length validation 1`] = `
+"  @IsString()
+  @Length(6)
+  @ApiProperty({"name":"code","description":"code field","example":"example"})
+  code: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition String fields should generate definition for String field with max length validation 1`] = `
+"  @IsString()
+  @MaxLength(100)
+  @ApiProperty({"name":"title","description":"title field","example":"example"})
+  title: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition String fields should generate definition for String field with min length validation 1`] = `
+"  @IsString()
+  @MinLength(5)
+  @ApiProperty({"name":"title","description":"title field","example":"example"})
+  title: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition String fields should generate definition for String field with multiple validations 1`] = `
+"  @IsString()
+  @MinLength(5)
+  @MaxLength(100)
+  @ApiProperty({"name":"title","description":"title field","example":"example"})
+  title: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition String fields should generate definition for String field with pattern validation 1`] = `
+"  @IsString()
+  @Matches(^\\d{10}$)
+  @ApiProperty({"name":"phone","description":"phone field","example":"example"})
+  phone: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition String fields should generate definition for optional String field 1`] = `
+"  @IsOptional()
+  @ApiProperty({"name":"description","description":"description field","example":"example","required":false})
+  description?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition String fields should generate definition for required String field 1`] = `
+"  @IsString()
+  @ApiProperty({"name":"title","description":"title field","example":"example"})
+  title: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Update operations (isUpdate = true) should apply update-only validations for update 1`] = `
+"  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  @ApiProperty({"name":"title","description":"title field","example":"example","required":false})
+  title?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Update operations (isUpdate = true) should keep optional field optional for update 1`] = `
+"  @IsOptional()
+  @IsString()
+  @ApiProperty({"name":"description","description":"description field","example":"example","required":false})
+  description?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Update operations (isUpdate = true) should make required field optional for update 1`] = `
+"  @IsOptional()
+  @IsString()
+  @ApiProperty({"name":"title","description":"title field","example":"example","required":false})
+  title?: string;"
+`;
+
+exports[`Fields Utilities generateFieldDefinition Update operations (isUpdate = true) should not apply create-only validations for update 1`] = `
+"  @IsOptional()
+  @IsString()
+  @ApiProperty({"name":"code","description":"code field","example":"example","required":false})
+  code?: string;"
+`;

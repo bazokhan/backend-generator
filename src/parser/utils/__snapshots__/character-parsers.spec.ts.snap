@@ -1,0 +1,91 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`parseStringToArray Complex real-world snapshot tests should handle complex NestJS module imports array with async configurations 1`] = `
+[
+  "ConfigModule.forRoot({
+      isGlobal: true,
+    })",
+  "JwtModule.registerAsync({
+      global: true,
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_ACCESS_SECRET'),
+        signOptions: { expiresIn: '1h' },
+      }),
+      inject: [ConfigService],
+    })",
+  "ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000,
+        limit: 3,
+      },
+      {
+        name: 'medium',
+        ttl: 10000,
+        limit: 20,
+      },
+      {
+        name: 'long',
+        ttl: 60000,
+        limit: 100,
+      },
+    ])",
+  "HealthModule",
+  "DatabaseModule",
+  "CacheModule",
+  "StorageModule",
+  "AuditModule",
+  "GuardsModule",
+  "FeatureFlagsModule",
+  "EmailModule",
+  "UploadModule",
+  "UsersModule",
+  "AuthModule",
+  "AuditLogModule",
+  "IconModule",
+  "TranslationModule",
+  "ProjectTypeModule",
+  "ProjectInstanceModule",
+  "CustomFieldTypeModule",
+  "CustomFieldInstanceModule",
+  "UnitTypeModule",
+  "UnitInstanceModule",
+]
+`;
+
+exports[`parseStringToArray Complex real-world snapshot tests should handle complex TypeScript module configuration 1`] = `
+[
+  "ConfigModule.forRootAsync({
+      imports: [DatabaseModule],
+      useFactory: async (db: DatabaseService) => {
+        return {
+          secret: process.env.JWT_SECRET,
+          expiresIn: '1h',
+        };
+      },
+      inject: [DatabaseService],
+    })",
+  "LoggerModule.forRootAsync({
+      useFactory: (config: ConfigService) => ({
+        level: config.get('LOG_LEVEL'),
+      }),
+      inject: [ConfigService],
+    })",
+  "SimpleModule",
+]
+`;
+
+exports[`parseStringToArray Complex real-world snapshot tests should handle module imports with provider configurations 1`] = `
+[
+  "AppService",
+  "{
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
+    }",
+  "FeatureFlagGuard",
+  "{
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    }",
+]
+`;
