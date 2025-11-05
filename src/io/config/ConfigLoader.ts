@@ -51,6 +51,7 @@ export class ConfigLoader {
         console.log(`   Suffix: ${config.suffix ? `"${config.suffix}"` : '(empty string)'}`);
         console.log(`   Admin mode: ${config.isAdmin ?? false}`);
         console.log(`   Update data provider: ${config.updateDataProvider ?? false}`);
+        console.log(`   Non-interactive mode: ${config.nonInteractive ?? false}`);
         
         return config;
       } catch (error) {
@@ -61,7 +62,8 @@ export class ConfigLoader {
     // No config file found - throw error instead of using default
     throw new ConfigLoaderError(
       `Configuration file not found. Expected one of: ${CONFIG_FILENAMES.join(', ')}\n` +
-        `Run 'tgraph init' to create a configuration file.`,
+        `💡 Run 'tgraph init' to create a configuration file.\n` +
+        `💡 Run 'tgraph doctor' to diagnose configuration issues.`,
     );
   }
 
@@ -113,7 +115,8 @@ export class ConfigLoader {
     for (const field of requiredFields) {
       if (!config[field]) {
         throw new ConfigLoaderError(
-          `Config file '${configPath}' is missing required field '${String(field)}'.`,
+          `Config file '${configPath}' is missing required field '${String(field)}'.\n` +
+            `💡 Add '${String(field)}' to your configuration file or run 'tgraph init' to recreate it.`,
         );
       }
     }
@@ -121,7 +124,8 @@ export class ConfigLoader {
     // Suffix is required but can be empty string
     if (config.suffix === undefined || config.suffix === null) {
       throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required field 'suffix'. Use empty string '' if no suffix is needed.`,
+        `Config file '${configPath}' is missing required field 'suffix'.\n` +
+          `💡 Use empty string '' if no suffix is needed, or a PascalCase value like 'Tg'.`,
       );
     }
 
@@ -143,7 +147,8 @@ export class ConfigLoader {
       throw new ConfigLoaderError(
         `Prisma schema file not found at: ${config.schemaPath}\n` +
           `Resolved path: ${schemaPath}\n` +
-          `Please check the 'schemaPath' in your configuration file.`,
+          `💡 Run 'npx prisma init' to create a schema or update 'schemaPath' in your config.\n` +
+          `💡 Run 'tgraph doctor' for full diagnostics.`,
       );
     }
 

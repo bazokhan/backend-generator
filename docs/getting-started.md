@@ -119,6 +119,10 @@ export const config: Config = {
   // Automatically update data provider endpoint mappings
   // Default: true
   updateDataProvider: true,
+
+  // Skip interactive prompts (useful for CI)
+  // Default: false
+  nonInteractive: false,
 };
 ```
 
@@ -136,6 +140,7 @@ Customize these values for your project structure.
 | `suffix`             | string  | `'Tg'`                   | Suffix for generated classes  |
 | `isAdmin`            | boolean | `true`                   | Generate admin-only endpoints |
 | `updateDataProvider` | boolean | `true`                   | Auto-update data provider     |
+| `nonInteractive`     | boolean | `false`                  | Skip interactive prompts      |
 
 You can override these via CLI flags (see [CLI Reference](./cli-reference.md)).
 

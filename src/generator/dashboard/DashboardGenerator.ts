@@ -23,6 +23,7 @@ export class DashboardGenerator {
   private readonly dashboardAbsolutePath: string;
   private models: PrismaModel[] = [];
   private enums: Map<string, string[]> = new Map();
+  private readonly nonInteractive: boolean;
 
   constructor(config: Config) {
     this.config = config;
@@ -39,6 +40,7 @@ export class DashboardGenerator {
     this.dashboardAbsolutePath = path.isAbsolute(this.dashboardPath)
       ? this.dashboardPath
       : path.join(this.workspaceRoot, this.dashboardPath);
+    this.nonInteractive = config.nonInteractive ?? false;
   }
 
   async generate(): Promise<void> {
@@ -126,6 +128,10 @@ export class DashboardGenerator {
         const shouldRegenerate = await promptUser(
           `⚠️ Folder for ${model.name} already exists at: ${displayPath}\n` +
             `Do you want to delete and regenerate it? (y/n): `,
+          {
+            autoConfirm: this.nonInteractive,
+            defaultValue: true,
+          },
         );
 
         if (shouldRegenerate) {

@@ -19,6 +19,7 @@ interface Config {
   suffix: string;
   isAdmin?: boolean;
   updateDataProvider?: boolean;
+  nonInteractive?: boolean;
 }
 ```
 
@@ -200,6 +201,32 @@ updateDataProvider: false;
 
 ---
 
+### `nonInteractive`
+
+Automatically accept CLI prompts during generation. Useful for CI/CD pipelines or scripted environments where interactive input is not possible.
+
+**Type:** `boolean`  
+**Default:** `false`  
+**Required:** No
+
+**Impact:**
+
+- Creates missing NestJS module directories without prompting.
+- Regenerates existing dashboard resource folders automatically.
+- Ensures generator commands do not hang waiting for user input.
+
+**Examples:**
+
+```typescript
+// Enable non-interactive mode (always answer "yes")
+nonInteractive: true;
+
+// Keep interactive prompts
+nonInteractive: false;
+```
+
+---
+
 ## Configuration Files
 
 ### Configuration File Requirement
@@ -233,26 +260,24 @@ The CLI searches for configuration files in your project root (`process.cwd()`) 
 
 The first file found is loaded and used.
 
-### Default Configuration
+### Default Values
 
-The package includes fallback defaults used only when no config file is found:
+When you run `tgraph init`, it creates a configuration file with these default values:
 
 ```typescript
-// node_modules/@tgraph/backend-generator/dist/config/defaultConfig.js
-export const defaultConfig: Config = {
+// tgraph.config.ts
+export const config: Config = {
   schemaPath: 'prisma/schema.prisma',
   dashboardPath: 'src/dashboard/src',
   dtosPath: 'src/dtos/generated',
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 };
-
-// Re-exported as `config` for backward compatibility
-export const config = defaultConfig;
 ```
 
-**Note:** These defaults are primarily for backward compatibility. New projects should use `tgraph init`.
+**Note:** A configuration file is required. The package no longer includes fallback defaults to ensure explicit configuration.
 
 ### Project Configuration
 
@@ -269,6 +294,7 @@ export const config: Config = {
   suffix: 'Admin',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 };
 ```
 

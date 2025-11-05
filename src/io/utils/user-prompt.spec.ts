@@ -13,6 +13,7 @@ describe('promptUser', () => {
   };
   let questionCallback: (answer: string) => void;
   let mockCreateInterface: jest.MockedFunction<typeof readline.createInterface>;
+  let consoleLogSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -26,6 +27,11 @@ describe('promptUser', () => {
 
     mockCreateInterface = readline.createInterface as jest.MockedFunction<typeof readline.createInterface>;
     mockCreateInterface.mockReturnValue(mockRl as any);
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleLogSpy.mockRestore();
   });
 
   describe('yes responses', () => {
@@ -87,6 +93,23 @@ describe('promptUser', () => {
       const result = await promise;
 
       expect(result).toBe(true);
+    });
+  });
+
+  describe('autoConfirm option', () => {
+    it('should resolve to true without prompting when autoConfirm is enabled', async () => {
+      const result = await promptUser('Test question?', { autoConfirm: true });
+
+      expect(result).toBe(true);
+      expect(mockCreateInterface).not.toHaveBeenCalled();
+      expect(consoleLogSpy).toHaveBeenCalled();
+    });
+
+    it('should use provided defaultValue when autoConfirm is enabled', async () => {
+      const result = await promptUser('Test question?', { autoConfirm: true, defaultValue: false });
+
+      expect(result).toBe(false);
+      expect(mockCreateInterface).not.toHaveBeenCalled();
     });
   });
 

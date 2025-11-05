@@ -8,6 +8,54 @@ nav_order: 12
 
 Common issues and solutions when using TGraph Backend Generator.
 
+## Quick Diagnostics
+
+### Running System Diagnostics
+
+**The first step when encountering any issue is to run the diagnostics command:**
+
+```bash
+tgraph doctor
+```
+
+This command checks:
+
+- ✓ Configuration file validity
+- ✓ Node.js version compatibility
+- ✓ Prisma CLI installation
+- ✓ Schema file existence and validity
+- ✓ Project directory structure
+
+**Example output:**
+
+```
+🔍 Running system diagnostics...
+
+✓ Configuration
+  ✓ Config file found: tgraph.config.ts
+  ✓ Schema path configured: prisma/schema.prisma
+
+✓ Environment
+  ✓ Node version: 18.19.0 (>= 18.0.0 required)
+  ✓ Prisma CLI installed
+
+✓ Prisma Schema
+  ✓ Schema file exists
+  ✓ Schema is valid
+
+✅ All checks passed!
+💡 Run 'tgraph all' to start generating
+```
+
+**If diagnostics show errors:**
+
+1. Follow the suggestions (💡) shown in the output
+2. Fix the identified issues
+3. Run `tgraph doctor` again to verify
+4. Proceed with generation once all critical checks pass
+
+---
+
 ## Installation Issues
 
 ### Command Not Found: `tgraph`
@@ -660,6 +708,29 @@ df -h  # Linux/Mac
 ```bash
 tgraph api --no-update-data-provider
 ```
+
+---
+
+## Diagnostic Command Reference
+
+The `tgraph doctor` command is your first line of defense when troubleshooting. It performs comprehensive checks and provides actionable suggestions for common issues.
+
+**When to use:**
+
+- Before running generators for the first time
+- When generation fails unexpectedly
+- After updating Node.js, Prisma, or dependencies
+- When setting up CI/CD pipelines
+- When moving the project to a new machine
+
+**What it doesn't check:**
+
+- Database connectivity (use `npx prisma db pull` for that)
+- NestJS application runtime errors
+- React Admin dashboard runtime errors
+- Authentication/authorization setup
+
+For these issues, refer to the specific troubleshooting sections below.
 
 ---
 

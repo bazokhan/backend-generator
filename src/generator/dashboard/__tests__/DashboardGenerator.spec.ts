@@ -11,6 +11,7 @@ const config: Config = {
   dashboardPath: 'src/dashboard/src',
   dtosPath: 'src/dtos/generated',
   suffix: 'Test',
+  nonInteractive: false,
 };
 
 const MOCK_CWD = '/mock/project/root';
@@ -450,6 +451,32 @@ model Post {
 
       expect(mockFs.rmSync).toHaveBeenCalled();
       expect(mockFs.mkdirSync).toHaveBeenCalled();
+    });
+
+    it('should auto-confirm regeneration when nonInteractive is enabled', async () => {
+      mockFs.existsSync.mockImplementation((filePath: string) => {
+        if (filePath.toString().includes('swagger.json')) {
+          return false;
+        }
+        if (filePath.toString().includes('resources')) {
+          return true;
+        }
+        return false;
+      });
+      mockPromptUser.mockClear();
+
+      const nonInteractiveGenerator = new DashboardGenerator({
+        ...config,
+        nonInteractive: true,
+      });
+
+      await nonInteractiveGenerator.generate();
+
+      expect(mockPromptUser).toHaveBeenCalledWith(
+        expect.stringContaining('Do you want to delete and regenerate'),
+        expect.objectContaining({ autoConfirm: true, defaultValue: true }),
+      );
+      expect(mockFs.rmSync).toHaveBeenCalled();
     });
 
     it('should use correct resource names', async () => {

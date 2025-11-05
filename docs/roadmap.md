@@ -88,8 +88,8 @@ Guiding heuristics:
 - Detect misconfiguration early with actionable guidance.
 
 #### Deliverables
-- [ ] **TOP PRIORITY** Add non-interactive mode (`--yes` flag + config option) covering module creation, overwrites, and dashboard regeneration so CI pipelines can run `tgraph` safely.
-- [ ] **TOP PRIORITY** Validate configuration before execution (schema validation, friendly errors) and ship `tgraph doctor` to surface missing files, Prisma issues, or incompatible Node versions upfront.
+- [x] **TOP PRIORITY** Add non-interactive mode (`--yes` flag + config option) covering module creation, overwrites, and dashboard regeneration so CI pipelines can run `tgraph` safely.
+- [x] **TOP PRIORITY** Validate configuration before execution (schema validation, friendly errors) and ship `tgraph doctor` to surface missing files, Prisma issues, or incompatible Node versions upfront.
 - [ ] **TOP PRIORITY** Make key project paths configurable (Nest AppModule location, feature/infrastructure roots, dashboard provider & App entry) with intelligent discovery and clear docs.
 - [ ] Add a dry-run/preflight command that reports pending changes, missing modules, and required manual steps without touching the file system.
 - [ ] Provide official example repositories (API-only, full stack) and add end-to-end tests that run the CLI twice to guarantee idempotent regeneration.

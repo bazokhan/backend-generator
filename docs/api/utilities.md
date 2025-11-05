@@ -292,14 +292,25 @@ await formatGeneratedFiles([
 
 ## User Prompt Utilities
 
-### `promptUser(question: string): Promise<string>`
+### `promptUser(question: string, options?: PromptUserOptions): Promise<boolean>`
 
-Prompts the user for input.
+Prompts the user for a yes/no confirmation. When `options.autoConfirm` is enabled, the prompt resolves immediately without waiting for input—perfect for CI pipelines.
 
 ```typescript
-const answer = await promptUser('Create module directory for User? (y/n): ');
-if (answer.toLowerCase() === 'y') {
+const shouldCreate = await promptUser('Create module directory for User? (y/n): ', {
+  autoConfirm: config.nonInteractive,
+  defaultValue: true,
+});
+
+if (shouldCreate) {
   await createModuleDirectory('user');
+}
+```
+
+```typescript
+interface PromptUserOptions {
+  autoConfirm?: boolean;
+  defaultValue?: boolean;
 }
 ```
 

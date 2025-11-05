@@ -37,6 +37,7 @@ export const config: Config = {
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 };
 ```
 

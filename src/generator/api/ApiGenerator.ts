@@ -42,6 +42,7 @@ export class ApiGenerator {
 
   private namingSuffix: string;
   private fileSuffix: string;
+  private readonly nonInteractive: boolean;
   constructor(config: Config) {
     this.config = config;
     this.workspaceRoot = process.cwd();
@@ -62,6 +63,7 @@ export class ApiGenerator {
     const suffix = config.suffix?.trim() ?? '';
     this.namingSuffix = suffix ? `${suffix.charAt(0).toUpperCase()}${suffix.slice(1).toLowerCase()}` : '';
     this.fileSuffix = suffix.toLowerCase();
+    this.nonInteractive = config.nonInteractive ?? false;
   }
 
   async generate(): Promise<void> {
@@ -153,7 +155,10 @@ export class ApiGenerator {
           .join(', ')}`,
       );
 
-      const shouldCreate = await promptUser(`Do you want to create the module directory for ${model.name}? (y/n): `);
+      const shouldCreate = await promptUser(`Do you want to create the module directory for ${model.name}? (y/n): `, {
+        autoConfirm: this.nonInteractive,
+        defaultValue: true,
+      });
 
       if (shouldCreate) {
         const modulePath = path.join(process.cwd(), 'src', 'features', toKebabCase(model.name));

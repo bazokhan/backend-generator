@@ -460,6 +460,7 @@ export const config: Config = {
   suffix: 'Admin', // Custom suffix
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 };
 ```
 
@@ -476,6 +477,9 @@ tgraph api --no-admin --suffix Public
 
 # Skip data provider updates
 tgraph dashboard --no-update-data-provider
+
+# Non-interactive run (CI/CD)
+tgraph all --yes
 
 # Custom paths
 tgraph all \

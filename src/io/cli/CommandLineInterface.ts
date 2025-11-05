@@ -5,13 +5,15 @@ import { ApiGenerator } from '../../generator/api/ApiGenerator';
 import { DashboardGenerator } from '../../generator/dashboard/DashboardGenerator';
 import { DtoGenerator } from '../../generator/dto/DtoGenerator';
 import { ConfigLoader, ConfigLoaderError } from '../config/ConfigLoader';
+import { SystemValidator } from '../validation/SystemValidator';
+import type { DiagnosticReport, DiagnosticCategory } from '../validation/SystemValidator';
 
-export type CliCommand = 'api' | 'dashboard' | 'dtos' | 'all' | 'init';
+export type CliCommand = 'api' | 'dashboard' | 'dtos' | 'all' | 'init' | 'doctor';
 
 export interface CliOptions
-  extends Partial<Pick<Config, 'schemaPath' | 'dashboardPath' | 'dtosPath' | 'suffix' | 'isAdmin'>> {
-  updateDataProvider?: boolean;
-}
+  extends Partial<
+    Pick<Config, 'schemaPath' | 'dashboardPath' | 'dtosPath' | 'suffix' | 'isAdmin' | 'updateDataProvider' | 'nonInteractive'>
+  > {}
 
 interface ParsedArguments {
   command?: CliCommand;
@@ -57,6 +59,10 @@ export class CommandLineInterface {
 
     if (parsed.command === 'init') {
       return this.initializeConfig();
+    }
+
+    if (parsed.command === 'doctor') {
+      return await this.executeDoctorCommand();
     }
 
     if (!this.configLoader.exists()) {
@@ -121,6 +127,17 @@ export class CommandLineInterface {
           parsed.options.updateDataProvider = false;
           index += 1;
           continue;
+        case '--yes':
+        case '-y':
+        case '--non-interactive':
+          parsed.options.nonInteractive = true;
+          index += 1;
+          continue;
+        case '--no-yes':
+        case '--interactive':
+          parsed.options.nonInteractive = false;
+          index += 1;
+          continue;
         default:
           if (arg?.startsWith('--')) {
             parsed.errors.push(`Unknown option: ${arg}`);
@@ -129,7 +146,7 @@ export class CommandLineInterface {
           }
 
           if (!parsed.command && arg !== undefined) {
-            if (['api', 'dashboard', 'dtos', 'all', 'init'].includes(arg)) {
+            if (['api', 'dashboard', 'dtos', 'all', 'init', 'doctor'].includes(arg)) {
               parsed.command = arg as CliCommand;
               index += 1;
               continue;
@@ -174,6 +191,10 @@ export class CommandLineInterface {
           ? overrides.updateDataProvider
           : (baseConfig.updateDataProvider ?? false),
       isAdmin: typeof overrides.isAdmin === 'boolean' ? overrides.isAdmin : (baseConfig.isAdmin ?? false),
+      nonInteractive:
+        typeof overrides.nonInteractive === 'boolean'
+          ? overrides.nonInteractive
+          : (baseConfig.nonInteractive ?? false),
     };
 
     return resolved;
@@ -251,6 +272,10 @@ export const config: Config = {
   // Automatically update data provider endpoint mappings
   // Default: true
   updateDataProvider: true,
+
+  // Skip interactive prompts and assume "yes"
+  // Default: false
+  nonInteractive: false,
 };
 `;
   }
@@ -261,6 +286,7 @@ tgraph <command> [options]
 
 Commands:
   init        Initialize configuration file (tgraph.config.ts)
+  doctor      Run diagnostics to check environment and configuration
   api         Generate NestJS modules, services, controllers, and update data provider
   dashboard   Generate React Admin dashboard resources and field directive config
   dtos        Generate NestJS DTO files
@@ -275,9 +301,110 @@ Options:
   --no-admin                   Disable admin mode (isAdmin = false)
   --update-data-provider       Enable data provider updates
   --no-update-data-provider    Disable data provider updates
+  -y, --yes, --non-interactive Automatically confirm interactive prompts
+  --interactive                Force interactive prompts even if config sets nonInteractive
   -h, --help                   Display this help message
 `;
     console.log(helpText.trim());
+  }
+
+  private async executeDoctorCommand(): Promise<number> {
+    const startTime = Date.now();
+    console.log(`🔍 Running system diagnostics... [${new Date().toLocaleTimeString()}]\n`);
+
+    try {
+      // Try to load config - if it doesn't exist, validator will report it as an error
+      let config: Config;
+      try {
+        config = this.configLoader.load();
+      } catch (error) {
+        // Config load failed - use minimal config just to run diagnostics
+        // The validator will detect and report the missing config file
+        config = {
+          schemaPath: 'prisma/schema.prisma',
+          dashboardPath: 'src/dashboard/src',
+          dtosPath: 'src/dtos/generated',
+          suffix: 'Tg',
+          isAdmin: true,
+          updateDataProvider: true,
+          nonInteractive: false,
+        };
+      }
+
+      const configLoadTime = Date.now();
+      console.log(`⏳ Running diagnostic checks... [${new Date().toLocaleTimeString()}] (config loaded in ${configLoadTime - startTime}ms)\n`);
+
+      const validator = new SystemValidator();
+      const report: DiagnosticReport = await validator.runDiagnostics(config);
+
+      const diagnosticsTime = Date.now();
+      console.log(`✓ Diagnostics completed in ${diagnosticsTime - configLoadTime}ms [${new Date().toLocaleTimeString()}]\n`);
+
+      this.printDiagnosticReport(report);
+
+      // Return appropriate exit code
+      if (report.hasErrors) {
+        console.log('\n❌ Diagnostics failed! Please fix the errors above before running generation.');
+        console.log('💡 Run \'tgraph doctor\' again after making changes to verify the fixes.\n');
+        return 1;
+      } else if (report.hasWarnings) {
+        console.log(`\n✅ All critical checks passed! (${this.countWarnings(report)} warning${this.countWarnings(report) !== 1 ? 's' : ''})`);
+        console.log('💡 Run \'tgraph all\' to start generating\n');
+        return 0;
+      } else {
+        console.log('\n✅ All checks passed!');
+        console.log('💡 Run \'tgraph all\' to start generating\n');
+        return 0;
+      }
+    } catch (error) {
+      console.error('❌ Error running diagnostics:', error);
+      return 1;
+    }
+  }
+
+  private printDiagnosticReport(report: DiagnosticReport): void {
+    for (const category of report.categories) {
+      this.printDiagnosticCategory(category);
+    }
+  }
+
+  private printDiagnosticCategory(category: DiagnosticCategory): void {
+    // Determine category status (ok, warning, error)
+    const hasErrors = category.results.some((r) => r.severity === 'error');
+    const hasWarnings = category.results.some((r) => r.severity === 'warning');
+
+    let categoryPrefix: string;
+    if (hasErrors) {
+      categoryPrefix = '❌';
+    } else if (hasWarnings) {
+      categoryPrefix = '⚠️';
+    } else {
+      categoryPrefix = '✓';
+    }
+
+    console.log(`${categoryPrefix} ${category.name}`);
+
+    for (const result of category.results) {
+      const prefix = result.severity === 'ok' ? '  ✓' : result.severity === 'warning' ? '  ⚠️' : '  ❌';
+      console.log(`${prefix} ${result.message}`);
+      if (result.suggestion) {
+        console.log(`     💡 ${result.suggestion}`);
+      }
+    }
+
+    console.log(''); // Empty line between categories
+  }
+
+  private countWarnings(report: DiagnosticReport): number {
+    let count = 0;
+    for (const category of report.categories) {
+      for (const result of category.results) {
+        if (result.severity === 'warning') {
+          count++;
+        }
+      }
+    }
+    return count;
   }
 
   private handleExecutionError(error: unknown): void {

@@ -12,8 +12,7 @@
   ],
   "scripts": {
     "build": "rimraf dist && tsc -p tsconfig.json",
-    "pack": "npm run build && rimraf package && npm pack",
-    "package": "npm run pack && node -e \"const fs=require('fs'); const f=fs.readdirSync('.').find(x=>x.endsWith('.tgz')); fs.mkdirSync('package',{recursive:true}); require('child_process').execSync(`tar -xzf ${f} -C package`)\"",
+    "package": "npm run build && rimraf package && npm pack && node -e \"const fs=require('fs'); const f=fs.readdirSync('.').find(x=>x.endsWith('.tgz')); fs.mkdirSync('package',{recursive:true}); require('child_process').execSync(`tar -xzf ${f} -C package`)\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm test",
     "test": "jest",

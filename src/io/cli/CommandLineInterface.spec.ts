@@ -6,10 +6,13 @@ import { CommandLineInterface } from './CommandLineInterface';
 import { ApiGenerator } from '@tg-scripts/generator/api/ApiGenerator';
 import { DashboardGenerator } from '@tg-scripts/generator/dashboard/DashboardGenerator';
 import { DtoGenerator } from '@tg-scripts/generator/dto/DtoGenerator';
+import { SystemValidator } from '@tg-scripts/io/validation/SystemValidator';
+import type { DiagnosticReport } from '@tg-scripts/io/validation/SystemValidator';
 
 const apiGenerateMock = jest.fn<Promise<void>, []>();
 const dashboardGenerateMock = jest.fn<Promise<void>, []>();
 const dtoGenerateMock = jest.fn<void, []>();
+const systemValidatorRunDiagnosticsMock = jest.fn<Promise<DiagnosticReport>, [Config]>();
 
 jest.mock('@tg-scripts/generator/api/ApiGenerator', () => ({
   ApiGenerator: jest.fn().mockImplementation(() => ({ generate: apiGenerateMock })),
@@ -23,6 +26,10 @@ jest.mock('@tg-scripts/generator/dto/DtoGenerator', () => ({
   DtoGenerator: jest.fn().mockImplementation(() => ({ generate: dtoGenerateMock })),
 }));
 
+jest.mock('@tg-scripts/io/validation/SystemValidator', () => ({
+  SystemValidator: jest.fn().mockImplementation(() => ({ runDiagnostics: systemValidatorRunDiagnosticsMock })),
+}));
+
 const SAMPLE_CONFIG: Config = {
   schemaPath: 'schema.prisma',
   dashboardPath: 'dashboard',
@@ -30,11 +37,13 @@ const SAMPLE_CONFIG: Config = {
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: false,
+  nonInteractive: false,
 };
 
 const ApiGeneratorMock = jest.mocked(ApiGenerator);
 const DashboardGeneratorMock = jest.mocked(DashboardGenerator);
 const DtoGeneratorMock = jest.mocked(DtoGenerator);
+const SystemValidatorMock = jest.mocked(SystemValidator);
 
 describe('CommandLineInterface', () => {
   let consoleLogSpy: jest.SpyInstance;
@@ -44,6 +53,11 @@ describe('CommandLineInterface', () => {
     jest.clearAllMocks();
     apiGenerateMock.mockResolvedValue(undefined);
     dashboardGenerateMock.mockResolvedValue(undefined);
+    systemValidatorRunDiagnosticsMock.mockResolvedValue({
+      categories: [],
+      hasErrors: false,
+      hasWarnings: false,
+    });
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -185,5 +199,252 @@ describe('CommandLineInterface', () => {
     expect(mergedConfig.schemaPath).toBe('custom.prisma');
     expect(mergedConfig.updateDataProvider).toBe(false);
     expect(apiGenerateMock).toHaveBeenCalled();
+  });
+
+  it('enables non-interactive mode when --yes is provided', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    const exitCode = await cli.run(['dashboard', '--yes']);
+
+    expect(exitCode).toBe(0);
+    const mergedConfig = DashboardGeneratorMock.mock.calls[0]?.[0] as Config;
+    expect(mergedConfig.nonInteractive).toBe(true);
+  });
+
+  it('forces interactive prompts when --interactive overrides config', async () => {
+    const loader = createLoaderMock({
+      load: jest.fn().mockReturnValue({
+        ...SAMPLE_CONFIG,
+        nonInteractive: true,
+      }),
+    });
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    const exitCode = await cli.run(['api', '--interactive']);
+
+    expect(exitCode).toBe(0);
+    const mergedConfig = ApiGeneratorMock.mock.calls[0]?.[0] as Config;
+    expect(mergedConfig.nonInteractive).toBe(false);
+  });
+});
+
+describe('CommandLineInterface - doctor command', () => {
+  let consoleLogSpy: jest.SpyInstance;
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleLogSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
+  });
+
+  const createLoaderMock = (overrides?: Partial<ConfigLoader>): ConfigLoader => {
+    return {
+      exists: jest.fn().mockReturnValue(true),
+      load: jest.fn().mockReturnValue(SAMPLE_CONFIG),
+      getConfigFilePath: jest.fn().mockReturnValue('tgraph.config.ts'),
+      ...overrides,
+    } as unknown as ConfigLoader;
+  };
+
+  it('runs doctor command successfully with all checks passing', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    systemValidatorRunDiagnosticsMock.mockResolvedValue({
+      categories: [
+        {
+          name: 'Configuration',
+          results: [
+            { severity: 'ok', message: 'Config file found' },
+            { severity: 'ok', message: 'Schema path configured' },
+          ],
+        },
+        {
+          name: 'Environment',
+          results: [
+            { severity: 'ok', message: 'Node version: 18.0.0' },
+            { severity: 'ok', message: 'Prisma CLI installed' },
+          ],
+        },
+      ],
+      hasErrors: false,
+      hasWarnings: false,
+    });
+
+    const exitCode = await cli.run(['doctor']);
+
+    expect(exitCode).toBe(0);
+    expect(SystemValidatorMock).toHaveBeenCalled();
+    expect(systemValidatorRunDiagnosticsMock).toHaveBeenCalled();
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Running system diagnostics'));
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('All checks passed'));
+  });
+
+  it('runs doctor command with warnings but no errors', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    systemValidatorRunDiagnosticsMock.mockResolvedValue({
+      categories: [
+        {
+          name: 'Configuration',
+          results: [
+            { severity: 'ok', message: 'Config file found' },
+          ],
+        },
+        {
+          name: 'Project Paths',
+          results: [
+            { severity: 'warning', message: 'Dashboard directory does not exist', suggestion: 'Will be created' },
+          ],
+        },
+      ],
+      hasErrors: false,
+      hasWarnings: true,
+    });
+
+    const exitCode = await cli.run(['doctor']);
+
+    expect(exitCode).toBe(0);
+    expect(systemValidatorRunDiagnosticsMock).toHaveBeenCalled();
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('All critical checks passed'));
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('1 warning'));
+  });
+
+  it('runs doctor command with errors', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    systemValidatorRunDiagnosticsMock.mockResolvedValue({
+      categories: [
+        {
+          name: 'Configuration',
+          results: [
+            { severity: 'error', message: 'No configuration file found', suggestion: "Run 'tgraph init'" },
+          ],
+        },
+        {
+          name: 'Prisma Schema',
+          results: [
+            { severity: 'error', message: 'Schema file not found', suggestion: "Run 'npx prisma init'" },
+          ],
+        },
+      ],
+      hasErrors: true,
+      hasWarnings: false,
+    });
+
+    const exitCode = await cli.run(['doctor']);
+
+    expect(exitCode).toBe(1);
+    expect(systemValidatorRunDiagnosticsMock).toHaveBeenCalled();
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Diagnostics failed'));
+  });
+
+  it('runs doctor without config file and reports error', async () => {
+    const loader = createLoaderMock({
+      load: jest.fn().mockImplementation(() => {
+        throw new ConfigLoaderError('Configuration file not found');
+      }),
+    });
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    systemValidatorRunDiagnosticsMock.mockResolvedValue({
+      categories: [
+        {
+          name: 'Configuration',
+          results: [
+            { severity: 'error', message: 'No configuration file found', suggestion: "Run 'tgraph init'" },
+          ],
+        },
+      ],
+      hasErrors: true,
+      hasWarnings: false,
+    });
+
+    const exitCode = await cli.run(['doctor']);
+
+    expect(exitCode).toBe(1);
+    expect(systemValidatorRunDiagnosticsMock).toHaveBeenCalled();
+    // Verify that it still runs diagnostics even when config is missing
+    // (it uses a minimal default config internally just to run the checks)
+    const callArg = systemValidatorRunDiagnosticsMock.mock.calls[0]?.[0];
+    expect(callArg).toBeDefined();
+    expect(callArg?.schemaPath).toBe('prisma/schema.prisma');
+  });
+
+  it('prints diagnostic categories with proper formatting', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    systemValidatorRunDiagnosticsMock.mockResolvedValue({
+      categories: [
+        {
+          name: 'Configuration',
+          results: [
+            { severity: 'ok', message: 'Config file found' },
+            { severity: 'warning', message: 'Suffix not PascalCase', suggestion: 'Use PascalCase' },
+          ],
+        },
+      ],
+      hasErrors: false,
+      hasWarnings: true,
+    });
+
+    await cli.run(['doctor']);
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('⚠️ Configuration'));
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('✓ Config file found'));
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('⚠️ Suffix not PascalCase'));
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('💡 Use PascalCase'));
+  });
+
+  it('handles errors during diagnostic execution', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    systemValidatorRunDiagnosticsMock.mockRejectedValue(new Error('Diagnostic error'));
+
+    const exitCode = await cli.run(['doctor']);
+
+    expect(exitCode).toBe(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Error running diagnostics'), expect.any(Error));
+  });
+
+  it('counts warnings correctly in output', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    systemValidatorRunDiagnosticsMock.mockResolvedValue({
+      categories: [
+        {
+          name: 'Category 1',
+          results: [
+            { severity: 'warning', message: 'Warning 1' },
+            { severity: 'warning', message: 'Warning 2' },
+          ],
+        },
+        {
+          name: 'Category 2',
+          results: [
+            { severity: 'warning', message: 'Warning 3' },
+            { severity: 'ok', message: 'OK message' },
+          ],
+        },
+      ],
+      hasErrors: false,
+      hasWarnings: true,
+    });
+
+    await cli.run(['doctor']);
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('3 warnings'));
   });
 });

@@ -15,6 +15,7 @@ const config: Config = {
   dtosPath: 'src/dtos/generated',
   suffix: 'Tg',
   updateDataProvider: true,
+  nonInteractive: false,
 };
 
 const mockFindModulePath = jest.fn();
@@ -373,6 +374,25 @@ model Post {
 
       expect(mockUpdateImportStatements).toHaveBeenCalled();
       expect(mockUpdateImportsArray).toHaveBeenCalled();
+    });
+
+    it('should auto-confirm module creation when nonInteractive is enabled', async () => {
+      mockFindModulePath.mockReset();
+      mockFindModulePath.mockImplementation(() => null);
+      mockPromptUser.mockClear();
+
+      const nonInteractiveGenerator = new ApiGenerator({
+        ...config,
+        nonInteractive: true,
+      });
+
+      await nonInteractiveGenerator.generate();
+
+      expect(mockPromptUser).toHaveBeenCalledWith(
+        expect.stringContaining('Do you want to create the module directory'),
+        expect.objectContaining({ autoConfirm: true, defaultValue: true }),
+      );
+      expect(mockFs.mkdirSync).toHaveBeenCalled();
     });
 
     it('should skip updateAppModule when no auto-created modules', async () => {

@@ -339,6 +339,7 @@ Defaults work for 80% of cases:
 - `isAdmin: true` – Most CRUD is admin-only
 - `updateDataProvider: true` – Keep dashboard in sync
 - `suffix: 'Tg'` – Clear, short suffix
+- `nonInteractive: false` – Keep local runs interactive by default
 
 **Escape Hatch:** All defaults are configurable.
 

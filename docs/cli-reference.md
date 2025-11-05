@@ -93,10 +93,105 @@ export const config: Config = {
   // Automatically update data provider endpoint mappings
   // Default: true
   updateDataProvider: true,
+
+  // Skip interactive prompts (useful for CI)
+  // Default: false
+  nonInteractive: false,
 };
 ```
 
 **Note:** You must run `tgraph init` before running any other commands. All generation commands require a config file.
+
+---
+
+### `tgraph doctor`
+
+Run system diagnostics to check your environment and configuration before generation.
+
+```bash
+tgraph doctor
+```
+
+**What it checks:**
+
+- Configuration file existence and validity
+- Required configuration fields
+- Node.js version (>= 18.0.0)
+- Prisma CLI installation
+- Prisma schema file existence and validity
+- Project directory structure
+- Dashboard and DTOs path availability
+
+**Example:**
+
+```bash
+tgraph doctor
+```
+
+**Output (success with warnings):**
+
+```
+🔍 Running system diagnostics...
+
+✓ Configuration
+  ✓ Config file found: tgraph.config.ts
+  ✓ Schema path configured: prisma/schema.prisma
+  ✓ Dashboard path configured: src/dashboard/src
+  ✓ DTOs path configured: src/dtos/generated
+  ✓ Suffix configured: "Tg"
+
+✓ Environment
+  ✓ Node version: 18.19.0 (>= 18.0.0 required)
+  ✓ Prisma CLI installed
+
+✓ Prisma Schema
+  ✓ Schema file exists
+  ✓ Schema is valid
+
+⚠️ Project Paths
+  ⚠️ Dashboard directory does not exist: src/dashboard/src
+     💡 Directory will be created during generation
+  ✓ DTOs directory exists: src/dtos/generated
+  ✓ Source directory exists: src/
+
+✅ All critical checks passed! (1 warning)
+💡 Run 'tgraph all' to start generating
+```
+
+**Output (with errors):**
+
+```
+🔍 Running system diagnostics...
+
+❌ Configuration
+  ❌ No configuration file found
+     💡 Run 'tgraph init' to create a configuration file
+
+✓ Environment
+  ✓ Node version: 18.19.0 (>= 18.0.0 required)
+  ✓ Prisma CLI installed
+
+❌ Prisma Schema
+  ❌ Schema file not found: prisma/schema.prisma
+     💡 Run 'npx prisma init' to create a schema
+
+❌ Diagnostics failed! Please fix the errors above before running generation.
+💡 Run 'tgraph doctor' again after making changes to verify the fixes.
+```
+
+**Exit codes:**
+
+- `0` - All checks passed or only warnings present
+- `1` - One or more critical errors found
+
+**Use cases:**
+
+- **First-time setup:** Verify environment before running generators
+- **CI/CD pipelines:** Validate setup before attempting generation
+- **Troubleshooting:** Diagnose issues when generation fails
+- **After updates:** Ensure environment is still compatible
+
+**Note:** The `doctor` command can run even if no configuration file exists. It will detect and report the missing config file as an error, along with other environment issues.
 
 ---
 
@@ -352,6 +447,34 @@ tgraph dashboard --no-update-data-provider
 
 ---
 
+### `-y`, `--yes`, `--non-interactive`
+
+Automatically answer "yes" to interactive prompts. Essential for CI pipelines where user input is not possible.
+
+**Example:**
+
+```bash
+tgraph all --yes
+```
+
+**Use case:** Prevents the CLI from pausing when creating modules or regenerating dashboard resources.
+
+---
+
+### `--interactive`
+
+Forces interactive prompts even when the config enables non-interactive mode.
+
+**Example:**
+
+```bash
+tgraph api --interactive
+```
+
+**Use case:** Override a non-interactive config for local runs when you want to review prompts.
+
+---
+
 ### `-h`, `--help`
 
 Display help message.
@@ -380,6 +503,8 @@ Options:
   --no-admin                   Disable admin mode (isAdmin = false)
   --update-data-provider       Enable data provider updates
   --no-update-data-provider    Disable data provider updates
+  -y, --yes, --non-interactive Automatically confirm interactive prompts
+  --interactive                Force interactive prompts even if config sets nonInteractive
   -h, --help                   Display this help message
 ```
 
@@ -405,6 +530,7 @@ export const config: Config = {
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 };
 ```
 
@@ -425,6 +551,9 @@ CLI options override config file values.
 ```bash
 # Initialize config file
 tgraph init
+
+# Check environment (recommended)
+tgraph doctor
 
 # Generate everything
 tgraph all

@@ -83,6 +83,7 @@ export interface Config {
   suffix: string;
   isAdmin?: boolean;
   updateDataProvider?: boolean;
+  nonInteractive?: boolean;
 }
 
 import type { ParsedSchema } from '@tg-scripts/types';

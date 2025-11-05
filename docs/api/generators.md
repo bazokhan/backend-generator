@@ -56,6 +56,7 @@ const generator = new ApiGenerator({
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 });
 
 await generator.generate();
@@ -132,6 +133,7 @@ const generator = new DashboardGenerator({
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 });
 
 await generator.generate();
@@ -253,6 +255,7 @@ interface Config {
   suffix: string;
   isAdmin?: boolean;
   updateDataProvider?: boolean;
+  nonInteractive?: boolean;
 }
 ```
 
@@ -315,6 +318,20 @@ Whether to automatically update data provider endpoint mappings.
 **Type:** `boolean`
 **Default:** `true`
 **Example:** `false` to disable auto-updates
+
+#### `nonInteractive`
+
+Skip interactive confirmation prompts when generating code.
+
+**Type:** `boolean`
+**Default:** `false`
+**Example:** `true` when running in CI/CD pipelines
+
+**Impact:**
+
+- Automatically creates missing module directories
+- Regenerates existing dashboard resources without confirmation
+- Prevents commands from hanging waiting for input
 
 ---
 
@@ -475,6 +492,7 @@ export const generatorConfig = {
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 };
 
 // scripts/generate-api.ts

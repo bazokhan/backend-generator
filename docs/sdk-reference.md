@@ -17,19 +17,31 @@ npm install --save-dev @tgraph/backend-generator
 ## Basic Usage
 
 ```typescript
-import { ApiGenerator, DashboardGenerator, DtoGenerator, config as defaultConfig } from '@tgraph/backend-generator';
+import { ApiGenerator, DashboardGenerator, DtoGenerator } from '@tgraph/backend-generator';
+import type { Config } from '@tgraph/backend-generator';
+
+// Define your configuration
+const config: Config = {
+  schemaPath: 'prisma/schema.prisma',
+  dashboardPath: 'src/dashboard/src',
+  dtosPath: 'src/dtos/generated',
+  suffix: 'Tg',
+  isAdmin: true,
+  updateDataProvider: true,
+  nonInteractive: false,
+};
 
 (async () => {
   // Generate API files
-  const api = new ApiGenerator(defaultConfig);
+  const api = new ApiGenerator(config);
   await api.generate();
 
   // Generate dashboard
-  const dashboard = new DashboardGenerator(defaultConfig);
+  const dashboard = new DashboardGenerator(config);
   await dashboard.generate();
 
   // Generate DTOs
-  const dtos = new DtoGenerator(defaultConfig);
+  const dtos = new DtoGenerator(config);
   dtos.generate();
 })();
 ```
@@ -66,6 +78,7 @@ const config = {
   suffix: 'Admin',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 };
 
 const generator = new ApiGenerator(config);
@@ -111,6 +124,7 @@ const config = {
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 };
 
 const generator = new DashboardGenerator(config);
@@ -326,6 +340,7 @@ interface Config {
   suffix: string;
   isAdmin?: boolean;
   updateDataProvider?: boolean;
+  nonInteractive?: boolean;
 }
 ```
 
@@ -339,22 +354,37 @@ interface Config {
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 }
 ```
 
 **Example:**
 
 ```typescript
-import { config as defaultConfig } from '@tgraph/backend-generator';
+import type { Config } from '@tgraph/backend-generator';
 
-// Use defaults
-console.log(defaultConfig.suffix); // 'Tg'
+// Define base configuration
+const baseConfig: Config = {
+  schemaPath: 'prisma/schema.prisma',
+  dashboardPath: 'src/dashboard/src',
+  dtosPath: 'src/dtos/generated',
+  suffix: 'Tg',
+  isAdmin: true,
+  updateDataProvider: true,
+  nonInteractive: false,
+};
 
-// Override specific values
-const customConfig = {
-  ...defaultConfig,
+// Create variations
+const adminConfig: Config = {
+  ...baseConfig,
   suffix: 'Admin',
   isAdmin: true,
+};
+
+const publicConfig: Config = {
+  ...baseConfig,
+  suffix: 'Public',
+  isAdmin: false,
 };
 ```
 
@@ -368,11 +398,23 @@ Create a custom generation script with pre/post hooks:
 
 ```typescript
 // scripts/generate.ts
-import { ApiGenerator, DashboardGenerator, DtoGenerator, config as defaultConfig } from '@tgraph/backend-generator';
+import { ApiGenerator, DashboardGenerator, DtoGenerator } from '@tgraph/backend-generator';
+import type { Config } from '@tgraph/backend-generator';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
+
+// Load your configuration
+const config: Config = {
+  schemaPath: 'prisma/schema.prisma',
+  dashboardPath: 'src/dashboard/src',
+  dtosPath: 'src/dtos/generated',
+  suffix: 'Tg',
+  isAdmin: true,
+  updateDataProvider: true,
+  nonInteractive: false,
+};
 
 async function generate() {
   console.log('🚀 Starting generation...');
@@ -383,17 +425,17 @@ async function generate() {
 
   // Generate backend
   console.log('⚙️  Generating backend...');
-  const api = new ApiGenerator(defaultConfig);
+  const api = new ApiGenerator(config);
   await api.generate();
 
   // Generate dashboard
   console.log('🎨 Generating dashboard...');
-  const dashboard = new DashboardGenerator(defaultConfig);
+  const dashboard = new DashboardGenerator(config);
   await dashboard.generate();
 
   // Generate DTOs
   console.log('📝 Generating DTOs...');
-  const dtos = new DtoGenerator(defaultConfig);
+  const dtos = new DtoGenerator(config);
   dtos.generate();
 
   // Post-generation: Format code
@@ -434,6 +476,7 @@ const baseConfig = {
   dashboardPath: 'src/dashboard/src',
   dtosPath: 'src/dtos/generated',
   updateDataProvider: true,
+  nonInteractive: false,
 };
 
 async function generateAll() {
@@ -552,6 +595,7 @@ const config = {
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
 };
 
 async function regenerate() {
@@ -610,6 +654,7 @@ async function generateMonorepo() {
       suffix: 'Tg',
       isAdmin: true,
       updateDataProvider: true,
+      nonInteractive: false,
     };
 
     const api = new ApiGenerator(config);
@@ -637,6 +682,7 @@ interface Config {
   suffix: string;
   isAdmin?: boolean;
   updateDataProvider?: boolean;
+  nonInteractive?: boolean;
 }
 ```
 
