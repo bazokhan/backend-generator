@@ -7,8 +7,10 @@ import { DtoGenerator } from '../../generator/dto/DtoGenerator';
 import { ConfigLoader, ConfigLoaderError } from '../config/ConfigLoader';
 import { SystemValidator } from '../validation/SystemValidator';
 import type { DiagnosticReport, DiagnosticCategory } from '../validation/SystemValidator';
+import { PreflightChecker } from '../preflight/PreflightChecker';
+import type { PreflightReport } from '../preflight/PreflightChecker';
 
-export type CliCommand = 'api' | 'dashboard' | 'dtos' | 'all' | 'init' | 'doctor';
+export type CliCommand = 'api' | 'dashboard' | 'dtos' | 'all' | 'init' | 'doctor' | 'preflight';
 
 export interface CliOptions
   extends Partial<
@@ -146,8 +148,9 @@ export class CommandLineInterface {
           }
 
           if (!parsed.command && arg !== undefined) {
-            if (['api', 'dashboard', 'dtos', 'all', 'init', 'doctor'].includes(arg)) {
-              parsed.command = arg as CliCommand;
+            const normalizedCommand = arg === 'dry-run' ? 'preflight' : arg;
+            if (['api', 'dashboard', 'dtos', 'all', 'init', 'doctor', 'preflight'].includes(normalizedCommand)) {
+              parsed.command = normalizedCommand as CliCommand;
               index += 1;
               continue;
             }
@@ -216,6 +219,9 @@ export class CommandLineInterface {
         await new DashboardGenerator(config).generate();
         new DtoGenerator(config).generate();
         return;
+      case 'preflight':
+        await this.runPreflight(config);
+        return;
       default:
         throw new Error(`Unsupported command: ${command}`);
     }
@@ -276,6 +282,28 @@ export const config: Config = {
   // Skip interactive prompts and assume "yes"
   // Default: false
   nonInteractive: false,
+
+  // Optional path overrides for non-standard project structures
+  paths: {
+    // NestJS AppModule location
+    // Example: 'apps/api/src/app.module.ts'
+    // appModule: 'src/app.module.ts',
+
+    // Where to look for generated NestJS feature and infrastructure modules
+    moduleRoots: {
+      // features: ['src/features'],
+      // infrastructure: ['src/infrastructure'],
+    },
+
+    // Dashboard-specific overrides
+    dashboard: {
+      // React Admin App entrypoint
+      // appComponent: 'src/dashboard/src/App.tsx',
+
+      // React Admin data provider implementation
+      // dataProvider: 'src/dashboard/src/providers/dataProvider.ts',
+    },
+  },
 };
 `;
   }
@@ -287,6 +315,7 @@ tgraph <command> [options]
 Commands:
   init        Initialize configuration file (tgraph.config.ts)
   doctor      Run diagnostics to check environment and configuration
+  preflight   Analyze pending changes without modifying files
   api         Generate NestJS modules, services, controllers, and update data provider
   dashboard   Generate React Admin dashboard resources and field directive config
   dtos        Generate NestJS DTO files
@@ -405,6 +434,98 @@ Options:
       }
     }
     return count;
+  }
+
+  private async runPreflight(config: Config): Promise<void> {
+    console.log('🧪 Running preflight analysis...\n');
+    const checker = new PreflightChecker(config);
+    const report = checker.run();
+    this.printPreflightReport(report, config);
+    if (report.hasWarnings) {
+      console.log('\n⚠️ Preflight completed with warnings. Review the manual steps above.');
+    } else {
+      console.log('\n✅ Preflight completed with no pending actions.');
+    }
+  }
+
+  private printPreflightReport(report: PreflightReport, config: Config): void {
+    console.log('📂 Key Paths');
+    this.printPathStatus(report.appModule, false);
+    this.printPathStatus(report.dataProvider, !(config.updateDataProvider ?? true));
+    this.printPathStatus(report.appComponent, false);
+    this.printPathStatus(report.swagger, false);
+
+    console.log('\n🧱 Modules');
+    if (report.modules.length === 0) {
+      console.log('  ⚠️ No models with @tg_form() found.');
+    } else {
+      for (const module of report.modules) {
+        console.log(this.describeModuleStatus(module));
+      }
+    }
+
+    console.log('\n🖥️ Dashboard Resources');
+    if (report.dashboardResources.length === 0) {
+      console.log('  ℹ️ No dashboard resources will be generated.');
+    } else {
+      for (const resource of report.dashboardResources) {
+        const icon = resource.exists ? '  ⚠️' : '  ✓';
+        const suffix = resource.exists ? ' (existing folder will be replaced)' : '';
+        console.log(`${icon} ${resource.name}: ${this.toWorkspaceRelative(resource.path)}${suffix}`);
+      }
+    }
+
+    console.log('\n📝 Manual Steps');
+    if (report.manualSteps.length === 0) {
+      console.log('  ✓ None');
+    } else {
+      const sorted = [...report.manualSteps].sort((a, b) => {
+        if (a.severity === b.severity) return 0;
+        return a.severity === 'warning' ? -1 : 1;
+      });
+      for (const step of sorted) {
+        const icon = step.severity === 'warning' ? '  ⚠️' : '  ℹ️';
+        console.log(`${icon} ${step.message}`);
+      }
+    }
+  }
+
+  private printPathStatus(report: PreflightReport['appModule'], optional: boolean): void {
+    const location = report.resolvedPath ?? report.configuredPath;
+    const displayPath = this.toWorkspaceRelative(location ?? undefined);
+    if (report.exists) {
+      console.log(`  ✓ ${report.label}: ${displayPath}`);
+    } else if (optional) {
+      console.log(`  ℹ️ ${report.label}: not required${displayPath !== '(not detected)' ? ` (${displayPath})` : ''}`);
+    } else {
+      console.log(`  ⚠️ ${report.label}: not found${displayPath !== '(not detected)' ? ` (${displayPath})` : ''}`);
+    }
+  }
+
+  private describeModuleStatus(module: PreflightReport['modules'][number]): string {
+    switch (module.status) {
+      case 'ready':
+        return `  ✓ ${module.name}: ready at ${this.toWorkspaceRelative(module.existingModuleFile ?? module.existingDirectory)}`;
+      case 'missing-module-file':
+        return `  ⚙️ ${module.name}: module file will be generated at ${this.toWorkspaceRelative(module.pendingModuleFile)}`;
+      case 'missing-directory':
+      default:
+        return `  🆕 ${module.name}: module directory will be created at ${this.toWorkspaceRelative(module.pendingDirectory)}`;
+    }
+  }
+
+  private toWorkspaceRelative(targetPath?: string | null): string {
+    if (!targetPath) {
+      return '(not detected)';
+    }
+
+    const cwd = process.cwd();
+    const relative = this.pathModule.relative(cwd, targetPath);
+    if (!relative || relative.startsWith('..')) {
+      return targetPath;
+    }
+
+    return relative || '.';
   }
 
   private handleExecutionError(error: unknown): void {

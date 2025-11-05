@@ -1,4 +1,6 @@
 import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 import { ModulePathResolver } from './ModulePathResolver';
 
 jest.mock('fs', () => {
@@ -49,6 +51,28 @@ describe('ModulePathResolver', () => {
       const baseDir = process.cwd();
       const result = resolver.findModulePath('NonExistentModuleName123', baseDir);
       expect(result).toBeNull();
+    });
+
+    it('should respect configured module roots', () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'module-path-resolver-'));
+      const customRoot = path.join(tempDir, 'custom', 'features');
+      const moduleDir = path.join(customRoot, 'user');
+      fs.mkdirSync(moduleDir, { recursive: true });
+      fs.writeFileSync(path.join(moduleDir, 'user.module.ts'), '// test module');
+
+      const customResolver = new ModulePathResolver({
+        moduleRoots: {
+          features: [customRoot],
+        },
+      });
+
+      const result = customResolver.findModulePath('User', tempDir);
+
+      expect(result).not.toBeNull();
+      expect(result?.path).toBe(moduleDir);
+      expect(result?.type).toBe('features');
+
+      fs.rmSync(tempDir, { recursive: true, force: true });
     });
   });
 

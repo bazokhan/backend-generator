@@ -17,6 +17,12 @@ const config: Config = {
 const MOCK_CWD = '/mock/project/root';
 const SCHEMA_ABSOLUTE_PATH = path.join(MOCK_CWD, config.schemaPath);
 const DASHBOARD_ABSOLUTE_PATH = path.join(MOCK_CWD, config.dashboardPath);
+const mockResolveModuleRoots = jest.fn();
+const mockResolveAppModulePath = jest.fn();
+const mockResolveDashboardDataProviderPath = jest.fn();
+const mockResolveDashboardAppComponentPath = jest.fn();
+const mockGetDefaultModuleRoot = jest.fn();
+const mockGetDashboardRoot = jest.fn();
 
 // Mock file system operations
 jest.mock('fs', () => {
@@ -36,6 +42,16 @@ jest.mock('fs', () => {
 jest.mock('child_process');
 jest.mock('@tg-scripts/io/utils/user-prompt');
 jest.mock('@tg-scripts/generator/utils/naming');
+jest.mock('@tg-scripts/io/project-paths/ProjectPathResolver', () => ({
+  ProjectPathResolver: jest.fn().mockImplementation(() => ({
+    resolveModuleRoots: mockResolveModuleRoots,
+    resolveAppModulePath: mockResolveAppModulePath,
+    resolveDashboardDataProviderPath: mockResolveDashboardDataProviderPath,
+    resolveDashboardAppComponentPath: mockResolveDashboardAppComponentPath,
+    getDefaultModuleRoot: mockGetDefaultModuleRoot,
+    getDashboardRoot: mockGetDashboardRoot,
+  })),
+}));
 
 // Mock console methods
 const originalConsole = global.console;
@@ -72,6 +88,13 @@ describe('DashboardGenerator', () => {
     // Mock process.cwd()
     mockProcessCwd = jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD);
 
+    mockResolveModuleRoots.mockReturnValue({ features: [], infrastructure: [] });
+    mockResolveAppModulePath.mockReturnValue(null);
+    mockResolveDashboardDataProviderPath.mockReturnValue(null);
+    mockGetDefaultModuleRoot.mockReturnValue(path.join(MOCK_CWD, 'src', 'features'));
+    mockGetDashboardRoot.mockReturnValue(DASHBOARD_ABSOLUTE_PATH);
+    mockResolveDashboardAppComponentPath.mockReturnValue(path.join(DASHBOARD_ABSOLUTE_PATH, 'App.tsx'));
+
     // Mock fs.promises - ensure it's set up and reset before each test
     if (!mockFs.promises) {
       mockFs.promises = {} as any;
@@ -87,6 +110,12 @@ describe('DashboardGenerator', () => {
       // Return false for resource paths (so we don't prompt for regeneration)
       if (filePath.toString().includes('resources')) {
         return false;
+      }
+      if (filePath === SCHEMA_ABSOLUTE_PATH) {
+        return true;
+      }
+      if (filePath.toString().includes('App.tsx')) {
+        return true;
       }
       return false;
     });

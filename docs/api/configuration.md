@@ -20,6 +20,14 @@ interface Config {
   isAdmin?: boolean;
   updateDataProvider?: boolean;
   nonInteractive?: boolean;
+  paths?: {
+    appModule?: string;
+    moduleRoots?: Partial<Record<'features' | 'infrastructure', string[]>>;
+    dashboard?: {
+      appComponent?: string;
+      dataProvider?: string;
+    };
+  };
 }
 ```
 
@@ -224,6 +232,58 @@ nonInteractive: true;
 // Keep interactive prompts
 nonInteractive: false;
 ```
+
+---
+
+### `paths`
+
+Optional overrides for project discovery. TGraph auto-detects standard layouts (e.g., `src/app.module.ts`, `src/features/*`, `src/dashboard/src/App.tsx`). Use `paths` when your project deviates from these conventions or lives inside a monorepo.
+
+All paths can be absolute or relative to the workspace root.
+
+```typescript
+paths: {
+  appModule: 'apps/api/src/app.module.ts',
+  moduleRoots: {
+    features: ['apps/api/src/modules/features', 'libs/shared/src/features'],
+    infrastructure: ['apps/api/src/modules/infrastructure'],
+  },
+  dashboard: {
+    appComponent: 'apps/admin/src/App.tsx',
+    dataProvider: 'apps/admin/src/providers/dataProvider.ts',
+  },
+}
+```
+
+#### `paths.appModule`
+
+Direct path to the NestJS root module. When omitted, the generator searches common locations (e.g., `src/app.module.ts`, `apps/*/src/app.module.ts`).
+
+Set this when your AppModule lives outside standard folders so auto-imports continue to work.
+
+#### `paths.moduleRoots`
+
+Explicit module root directories for feature and infrastructure modules. Provide one or more directories for each key. The generator searches these first before falling back to discovery.
+
+```typescript
+moduleRoots: {
+  features: ['apps/api/src/modules', 'libs/domains/src/features'],
+  infrastructure: ['apps/api/src/infrastructure'],
+}
+```
+
+- The first configured path is used when creating new modules.
+- Additional paths are scanned when locating existing modules.
+
+#### `paths.dashboard.appComponent`
+
+Location of the React Admin entrypoint that should receive generated `<Resource />` registrations. Defaults to `App.tsx` inside `dashboardPath`, but you can point to any file.
+
+#### `paths.dashboard.dataProvider`
+
+Path to the React Admin data provider file. When `updateDataProvider` is `true`, this file is updated with new endpoint mappings. Configure this if your provider lives outside `providers/dataProvider.ts` under `dashboardPath`.
+
+> 💡 Tip: Run `tgraph preflight` to see how discovery resolved each path before you generate anything.
 
 ---
 

@@ -7,6 +7,8 @@ import { NestAppModuleUpdater } from './generator/nest-app-module-updater/NestAp
 import { NestModuleUpdater } from './generator/nest-module-updater/NestModuleUpdater';
 import { ConfigLoader, ConfigLoaderError } from './io/config/ConfigLoader';
 import { ModulePathResolver } from './io/module-path-resolver/ModulePathResolver';
+import { ProjectPathResolver } from './io/project-paths/ProjectPathResolver';
+import { PreflightChecker } from './io/preflight/PreflightChecker';
 
 // Re-export Config type for external usage
 export type { Config } from '@tg-scripts/types';
@@ -17,6 +19,8 @@ export {
   DataProviderEndpointGenerator,
   DtoGenerator,
   ModulePathResolver,
+  ProjectPathResolver,
+  PreflightChecker,
   NestAppModuleUpdater,
   NestModuleUpdater,
   ConfigLoader,

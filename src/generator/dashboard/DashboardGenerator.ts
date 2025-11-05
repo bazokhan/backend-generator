@@ -3,6 +3,7 @@ import * as path from 'path';
 import { execSync } from 'child_process';
 import type { Config, PrismaModel } from '@tg-scripts/types';
 import { formatGeneratedFiles, promptUser } from '../../io/utils';
+import { ProjectPathResolver } from '../../io/project-paths/ProjectPathResolver';
 import { buildFieldDirectiveFile } from '../../directives/field/field-directive-writer';
 import { PrismaFieldParser } from '../../parser/prisma-field-parser/PrismaFieldParser';
 import { PrismaRelationsParser } from '../../parser/prisma-relation-parser/PrismaRelationsParser';
@@ -24,6 +25,8 @@ export class DashboardGenerator {
   private models: PrismaModel[] = [];
   private enums: Map<string, string[]> = new Map();
   private readonly nonInteractive: boolean;
+  private readonly projectPathResolver: ProjectPathResolver;
+  private appComponentPath: string | null;
 
   constructor(config: Config) {
     this.config = config;
@@ -32,15 +35,15 @@ export class DashboardGenerator {
     this.schemaParser = new PrismaSchemaParser(this.fieldParser, this.fieldRelationsParser);
     this.reactComponentsGenerator = new ReactComponentsGenerator();
     this.workspaceRoot = process.cwd();
+    this.projectPathResolver = new ProjectPathResolver(config, { workspaceRoot: this.workspaceRoot });
     this.schemaPath = this.config.schemaPath;
     this.schemaAbsolutePath = path.isAbsolute(this.schemaPath)
       ? this.schemaPath
       : path.join(this.workspaceRoot, this.schemaPath);
     this.dashboardPath = this.config.dashboardPath;
-    this.dashboardAbsolutePath = path.isAbsolute(this.dashboardPath)
-      ? this.dashboardPath
-      : path.join(this.workspaceRoot, this.dashboardPath);
+    this.dashboardAbsolutePath = this.projectPathResolver.getDashboardRoot();
     this.nonInteractive = config.nonInteractive ?? false;
+    this.appComponentPath = this.projectPathResolver.resolveDashboardAppComponentPath();
   }
 
   async generate(): Promise<void> {
@@ -200,8 +203,22 @@ export class DashboardGenerator {
   private updateAppComponent(): void {
     console.log('🔄 Updating App component with new resources...');
 
-    const appPath = path.join(this.dashboardAbsolutePath, 'App.tsx');
-    let appContent = fs.readFileSync(appPath, 'utf-8');
+    const resolvedAppPath = this.appComponentPath ?? this.projectPathResolver.resolveDashboardAppComponentPath();
+    this.appComponentPath = resolvedAppPath;
+
+    if (!resolvedAppPath) {
+      console.warn('⚠️ Could not locate App component. Skipping automatic App.tsx updates.');
+      console.warn('   Configure config.paths.dashboard.appComponent if your entrypoint lives elsewhere.');
+      return;
+    }
+
+    if (!fs.existsSync(resolvedAppPath)) {
+      console.warn(`⚠️ App component file not found at ${resolvedAppPath}. Skipping update.`);
+      console.warn('   Configure config.paths.dashboard.appComponent if your entrypoint lives elsewhere.');
+      return;
+    }
+
+    let appContent = fs.readFileSync(resolvedAppPath, 'utf-8');
 
     // Remove ALL existing auto-generated imports blocks (using global flag)
     appContent = appContent.replace(/\/\/ AUTO-GENERATED IMPORTS START[\s\S]*?\/\/ AUTO-GENERATED IMPORTS END\n?/g, '');
@@ -275,10 +292,10 @@ export class DashboardGenerator {
       appContent = appContent.replace(adminMatch[0], adminMatch[1] + newAdminContent + adminMatch[3]);
     }
 
-    fs.writeFileSync(appPath, appContent);
+    fs.writeFileSync(resolvedAppPath, appContent);
 
     // Format the updated App component
-    formatGeneratedFiles([appPath], this.workspaceRoot);
+    formatGeneratedFiles([resolvedAppPath], this.workspaceRoot);
 
     console.log('✅ App component updated with new resources');
   }

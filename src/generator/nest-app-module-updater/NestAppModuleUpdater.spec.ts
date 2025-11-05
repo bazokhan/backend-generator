@@ -1,4 +1,3 @@
-import type { GeneratedModuleFolder } from '@tg-scripts/types';
 import { NestAppModuleUpdater } from './NestAppModuleUpdater';
 
 describe('NestAppModuleUpdater', () => {
@@ -60,19 +59,22 @@ import { AuthModule } from './features/auth/auth.module';`;
 
   describe('buildImportStatement', () => {
     it('should build import statement for features module', () => {
-      const result = updater.buildImportStatement('User', 'features');
+      const result = updater.buildImportStatement('User', './features/user/user.module');
       expect(result.name).toBe('UserModule');
       expect(result.line).toBe("import { UserModule } from './features/user/user.module';");
     });
 
     it('should build import statement for infrastructure module', () => {
-      const result = updater.buildImportStatement('Database', 'infrastructure');
+      const result = updater.buildImportStatement('Database', '../infrastructure/database/database.module');
       expect(result.name).toBe('DatabaseModule');
-      expect(result.line).toBe("import { DatabaseModule } from './infrastructure/database/database.module';");
+      expect(result.line).toBe("import { DatabaseModule } from '../infrastructure/database/database.module';");
     });
 
     it('should handle compound model names', () => {
-      const result = updater.buildImportStatement('CustomFieldType', 'features');
+      const result = updater.buildImportStatement(
+        'CustomFieldType',
+        './features/custom-field-type/customFieldType.module',
+      );
       expect(result.name).toBe('CustomFieldTypeModule');
       expect(result.line).toBe(
         "import { CustomFieldTypeModule } from './features/custom-field-type/customFieldType.module';",
@@ -348,7 +350,7 @@ import { UserModule } from './user.module';
   });
 
   describe('updateImportStatements', () => {
-    const mods: Array<{ name: string; moduleType: GeneratedModuleFolder }> = [{ name: 'Auth', moduleType: 'features' }];
+    const mods: Array<{ name: string; importPath: string }> = [{ name: 'Auth', importPath: './features/auth/auth.module' }];
 
     it('should update existing import block', () => {
       const content = `import { Module } from '@nestjs/common';
@@ -375,9 +377,9 @@ export class App {}`;
 
     it('should merge multiple modules', () => {
       const content = `import { Module } from '@nestjs/common';`;
-      const multipleMods: Array<{ name: string; moduleType: GeneratedModuleFolder }> = [
-        { name: 'User', moduleType: 'features' },
-        { name: 'Auth', moduleType: 'features' },
+      const multipleMods: Array<{ name: string; importPath: string }> = [
+        { name: 'User', importPath: './features/user/user.module' },
+        { name: 'Auth', importPath: './features/auth/auth.module' },
       ];
 
       const result = updater.updateImportStatements(content, multipleMods);
@@ -389,7 +391,7 @@ export class App {}`;
     it('should handle content with no imports when adding new imports', () => {
       const content = `export class AppModule {}`;
 
-      const result = updater.updateImportStatements(content, [{ name: 'User', moduleType: 'features' }]);
+      const result = updater.updateImportStatements(content, [{ name: 'User', importPath: './features/user/user.module' }]);
 
       expect(result).toContain('UserModule');
       expect(result).toMatch(/^\/\/ AUTO-GENERATED IMPORTS START/m);
@@ -406,8 +408,8 @@ export class App {}`;
     // AUTO-GENERATED MODULES END
   ]
 })`;
-      const mods: Array<{ name: string; moduleType: GeneratedModuleFolder }> = [
-        { name: 'Auth', moduleType: 'features' },
+      const mods: Array<{ name: string; importPath: string }> = [
+        { name: 'Auth', importPath: './features/auth/auth.module' },
       ];
 
       const result = updater.updateImportsArray(content, mods);
@@ -421,8 +423,8 @@ export class App {}`;
       const content = `@Module({
   imports: [ConfigModule, JwtModule]
 })`;
-      const mods: Array<{ name: string; moduleType: GeneratedModuleFolder }> = [
-        { name: 'User', moduleType: 'features' },
+      const mods: Array<{ name: string; importPath: string }> = [
+        { name: 'User', importPath: './features/user/user.module' },
       ];
 
       const result = updater.updateImportsArray(content, mods);
@@ -434,8 +436,8 @@ export class App {}`;
 
     it('should return original content if module decorator not found', () => {
       const content = `export class AppModule {}`;
-      const mods: Array<{ name: string; moduleType: GeneratedModuleFolder }> = [
-        { name: 'User', moduleType: 'features' },
+      const mods: Array<{ name: string; importPath: string }> = [
+        { name: 'User', importPath: './features/user/user.module' },
       ];
 
       const result = updater.updateImportsArray(content, mods);
@@ -447,8 +449,8 @@ export class App {}`;
       const content = `@Module({
   controllers: [AppController]
 })`;
-      const mods: Array<{ name: string; moduleType: GeneratedModuleFolder }> = [
-        { name: 'User', moduleType: 'features' },
+      const mods: Array<{ name: string; importPath: string }> = [
+        { name: 'User', importPath: './features/user/user.module' },
       ];
 
       const result = updater.updateImportsArray(content, mods);
@@ -477,9 +479,9 @@ import { UserModule } from './features/user/user.module';
 })
 export class AppModule {}`;
 
-      const mods: Array<{ name: string; moduleType: GeneratedModuleFolder }> = [
-        { name: 'Auth', moduleType: 'features' },
-        { name: 'Project', moduleType: 'features' },
+      const mods: Array<{ name: string; importPath: string }> = [
+        { name: 'Auth', importPath: './features/auth/auth.module' },
+        { name: 'Project', importPath: './features/project/project.module' },
       ];
 
       let result = updater.updateImportStatements(content, mods);
@@ -522,9 +524,9 @@ import { UserModule } from './features/user/user.module';
 })
 export class AppModule {}`;
 
-      const mods: Array<{ name: string; moduleType: GeneratedModuleFolder }> = [
-        { name: 'CustomFieldType', moduleType: 'features' },
-        { name: 'ProjectInstance', moduleType: 'features' },
+      const mods: Array<{ name: string; importPath: string }> = [
+        { name: 'CustomFieldType', importPath: './features/custom-field-type/customFieldType.module' },
+        { name: 'ProjectInstance', importPath: './features/project-instance/projectInstance.module' },
       ];
 
       let result = updater.updateImportStatements(realAppModule, mods);

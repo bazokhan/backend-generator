@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { Config } from '@tg-scripts/types';
+import type { PreflightReport } from '@tg-scripts/io/preflight/PreflightChecker';
 import { ConfigLoader, ConfigLoaderError } from '../config/ConfigLoader';
 import { CommandLineInterface } from './CommandLineInterface';
 import { ApiGenerator } from '@tg-scripts/generator/api/ApiGenerator';
@@ -13,6 +14,7 @@ const apiGenerateMock = jest.fn<Promise<void>, []>();
 const dashboardGenerateMock = jest.fn<Promise<void>, []>();
 const dtoGenerateMock = jest.fn<void, []>();
 const systemValidatorRunDiagnosticsMock = jest.fn<Promise<DiagnosticReport>, [Config]>();
+const preflightRunMock = jest.fn<PreflightReport, []>();
 
 jest.mock('@tg-scripts/generator/api/ApiGenerator', () => ({
   ApiGenerator: jest.fn().mockImplementation(() => ({ generate: apiGenerateMock })),
@@ -29,6 +31,9 @@ jest.mock('@tg-scripts/generator/dto/DtoGenerator', () => ({
 jest.mock('@tg-scripts/io/validation/SystemValidator', () => ({
   SystemValidator: jest.fn().mockImplementation(() => ({ runDiagnostics: systemValidatorRunDiagnosticsMock })),
 }));
+jest.mock('@tg-scripts/io/preflight/PreflightChecker', () => ({
+  PreflightChecker: jest.fn().mockImplementation(() => ({ run: preflightRunMock })),
+}));
 
 const SAMPLE_CONFIG: Config = {
   schemaPath: 'schema.prisma',
@@ -38,6 +43,17 @@ const SAMPLE_CONFIG: Config = {
   isAdmin: true,
   updateDataProvider: false,
   nonInteractive: false,
+};
+
+const SAMPLE_PREFLIGHT_REPORT: PreflightReport = {
+  appModule: { label: 'AppModule', resolvedPath: '/mock/app.module.ts', exists: true },
+  dataProvider: { label: 'Data Provider', resolvedPath: '/mock/dataProvider.ts', exists: true },
+  appComponent: { label: 'Dashboard App', resolvedPath: '/mock/App.tsx', exists: true },
+  swagger: { label: 'Swagger JSON', resolvedPath: '/mock/swagger.json', exists: true, required: true },
+  modules: [],
+  dashboardResources: [],
+  manualSteps: [],
+  hasWarnings: false,
 };
 
 const ApiGeneratorMock = jest.mocked(ApiGenerator);
@@ -58,6 +74,8 @@ describe('CommandLineInterface', () => {
       hasErrors: false,
       hasWarnings: false,
     });
+    preflightRunMock.mockReset();
+    preflightRunMock.mockReturnValue(SAMPLE_PREFLIGHT_REPORT);
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -170,6 +188,28 @@ describe('CommandLineInterface', () => {
     expect(dtoGenerateMock).toHaveBeenCalledTimes(1);
     expect(DashboardGeneratorMock).toHaveBeenCalledTimes(1);
     expect(DtoGeneratorMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs preflight checker when preflight command is provided', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    const exitCode = await cli.run(['preflight']);
+
+    expect(exitCode).toBe(0);
+    expect(loader.load).toHaveBeenCalled();
+    expect(preflightRunMock).toHaveBeenCalled();
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('🧪 Running preflight analysis'));
+  });
+
+  it('aliases dry-run command to preflight', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    const exitCode = await cli.run(['dry-run']);
+
+    expect(exitCode).toBe(0);
+    expect(preflightRunMock).toHaveBeenCalled();
   });
 
   it('returns non-zero exit code when config loading fails', async () => {

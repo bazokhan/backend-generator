@@ -52,6 +52,21 @@ export class ConfigLoader {
         console.log(`   Admin mode: ${config.isAdmin ?? false}`);
         console.log(`   Update data provider: ${config.updateDataProvider ?? false}`);
         console.log(`   Non-interactive mode: ${config.nonInteractive ?? false}`);
+        if (config.paths?.appModule) {
+          console.log(`   AppModule override: ${config.paths.appModule}`);
+        }
+        if (config.paths?.moduleRoots?.features?.length) {
+          console.log(`   Feature module roots: ${config.paths.moduleRoots.features.join(', ')}`);
+        }
+        if (config.paths?.moduleRoots?.infrastructure?.length) {
+          console.log(`   Infrastructure module roots: ${config.paths.moduleRoots.infrastructure.join(', ')}`);
+        }
+        if (config.paths?.dashboard?.appComponent) {
+          console.log(`   Dashboard app component: ${config.paths.dashboard.appComponent}`);
+        }
+        if (config.paths?.dashboard?.dataProvider) {
+          console.log(`   Dashboard data provider: ${config.paths.dashboard.dataProvider}`);
+        }
         
         return config;
       } catch (error) {
@@ -155,9 +170,53 @@ export class ConfigLoader {
     // Check if schema file has content
     const schemaStats = fs.statSync(schemaPath);
     console.log(`   📄 Schema file size: ${schemaStats.size} bytes`);
-    
+
     if (schemaStats.size === 0) {
       console.warn(`   ⚠️  Warning: Schema file is empty!`);
+    }
+
+    const cwd = this.options.cwd ?? process.cwd();
+    if (config.paths?.appModule) {
+      this.warnIfPathMissing('App module override', config.paths.appModule, cwd);
+    }
+    const featuresRoots = Array.isArray(config.paths?.moduleRoots?.features)
+      ? config.paths?.moduleRoots?.features
+      : [];
+    const infrastructureRoots = Array.isArray(config.paths?.moduleRoots?.infrastructure)
+      ? config.paths?.moduleRoots?.infrastructure
+      : [];
+
+    for (const root of featuresRoots ?? []) {
+      this.warnIfDirectoryMissing('Feature module root', root, cwd);
+    }
+    for (const root of infrastructureRoots ?? []) {
+      this.warnIfDirectoryMissing('Infrastructure module root', root, cwd);
+    }
+
+    if (config.paths?.dashboard?.appComponent) {
+      this.warnIfPathMissing('Dashboard app component', config.paths.dashboard.appComponent, cwd);
+    }
+    if (config.paths?.dashboard?.dataProvider) {
+      this.warnIfPathMissing('Dashboard data provider', config.paths.dashboard.dataProvider, cwd);
+    }
+  }
+
+  private warnIfPathMissing(label: string, targetPath: string, cwd: string): void {
+    const resolved = path.isAbsolute(targetPath) ? targetPath : path.join(cwd, targetPath);
+    if (!fs.existsSync(resolved)) {
+      console.warn(`   ⚠️  Warning: ${label} not found at ${resolved}`);
+    }
+  }
+
+  private warnIfDirectoryMissing(label: string, targetPath: string, cwd: string): void {
+    const resolved = path.isAbsolute(targetPath) ? targetPath : path.join(cwd, targetPath);
+    if (!fs.existsSync(resolved)) {
+      console.warn(`   ⚠️  Warning: ${label} not found at ${resolved}`);
+      return;
+    }
+    const stats = fs.statSync(resolved);
+    if (!stats.isDirectory()) {
+      console.warn(`   ⚠️  Warning: ${label} at ${resolved} is not a directory`);
     }
   }
 }

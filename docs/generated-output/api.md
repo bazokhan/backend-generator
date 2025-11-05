@@ -65,7 +65,7 @@ Once a module path exists, the following files are written (overwriting any exis
 - Existing module files are updated in-place:
   - Missing controller/service imports are injected after the last import statement.
   - Controllers and providers arrays gain the generated classes if they were absent.
-- When new module folders are auto-created, `src/app.module.ts` is rewritten:
+- When new module folders are auto-created, the AppModule file (defaults to `src/app.module.ts`) is rewritten. Override with `paths.appModule` if needed:
   - An `// AUTO-GENERATED IMPORTS` block is created or extended with `<Model>Module` imports.
   - The `imports: []` array gains an auto-generated block listing those modules.
 - All edits are textual; manual additions outside the auto-generated sections remain untouched.
@@ -73,7 +73,7 @@ Once a module path exists, the following files are written (overwriting any exis
 ## Dashboard data provider sync (optional)
 
 - Triggered only if `config.updateDataProvider !== false`.
-- Rewrites `src/dashboard/src/providers/dataProvider.ts` by replacing the `const endpointMap` object with:
+- Rewrites the dashboard data provider (defaults to `src/dashboard/src/providers/dataProvider.ts`, configurable via `paths.dashboard.dataProvider`) by replacing the `const endpointMap` object with:
   - `// Auto-generated API endpoints` block listing each generated controller route.
   - `// Custom endpoints` block containing any pre-existing entries that were not in the auto-generated section.
 - If the `endpointMap` declaration is missing, a warning is logged and the file is left unchanged.

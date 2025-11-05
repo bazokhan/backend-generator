@@ -1,6 +1,9 @@
-import type { GeneratedModuleFolder } from '@tg-scripts/types';
 import { NestAppModuleParser } from '../../parser/nest-app-module-parser/NestAppModuleParser';
-import { toCamelCase, toKebabCase } from '../utils';
+
+export interface AppModuleRegistration {
+  name: string;
+  importPath: string;
+}
 
 export class NestAppModuleUpdater {
   constructor(private readonly parser: NestAppModuleParser = new NestAppModuleParser()) {}
@@ -15,9 +18,8 @@ export class NestAppModuleUpdater {
     return entries;
   }
 
-  public buildImportStatement(modelName: string, moduleType: GeneratedModuleFolder): { name: string; line: string } {
-    const modelNameLower = toCamelCase(modelName);
-    const line = `import { ${modelName}Module } from './${moduleType}/${toKebabCase(modelName)}/${modelNameLower}.module';`;
+  public buildImportStatement(modelName: string, importPath: string): { name: string; line: string } {
+    const line = `import { ${modelName}Module } from '${importPath}';`;
     return { name: `${modelName}Module`, line };
   }
 
@@ -101,11 +103,8 @@ export class NestAppModuleUpdater {
     return newImportsArrayContent;
   }
 
-  public updateImportStatements(
-    content: string,
-    mods: Array<{ name: string; moduleType: GeneratedModuleFolder }>,
-  ): string {
-    const newEntries = mods.map((m) => this.buildImportStatement(m.name, m.moduleType));
+  public updateImportStatements(content: string, mods: AppModuleRegistration[]): string {
+    const newEntries = mods.map((m) => this.buildImportStatement(m.name, m.importPath));
 
     const existingBlock = this.findImportBlock(content);
     let existingEntries: Array<{ name: string; line: string }> = [];
@@ -127,7 +126,7 @@ export class NestAppModuleUpdater {
     return this.insertImportBlock(content, importsBlock, lastImport?.index ?? null);
   }
 
-  public updateImportsArray(content: string, mods: Array<{ name: string; moduleType: GeneratedModuleFolder }>): string {
+  public updateImportsArray(content: string, mods: AppModuleRegistration[]): string {
     const parsedResult = this.parser.parse(content);
 
     if (!parsedResult.moduleBounds || !parsedResult.importsBounds) {

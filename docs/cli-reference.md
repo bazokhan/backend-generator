@@ -195,6 +195,63 @@ tgraph doctor
 
 ---
 
+### `tgraph preflight`
+
+Simulate a full generation run without touching the filesystem. Identifies missing modules, dashboard resources that would be overwritten, and manual steps to complete before running `tgraph all`.
+
+```bash
+tgraph preflight
+# Alias
+tgraph dry-run
+```
+
+**What it reports:**
+
+- Resolved project paths (AppModule, module roots, dashboard entrypoints)
+- Modules that will be created or require new files
+- Dashboard resources that already exist and will be regenerated
+- Missing dependencies like Swagger JSON or data provider files
+- Actionable manual steps to take before generating
+
+**Example:**
+
+```
+🧪 Running preflight analysis...
+
+📂 Key Paths
+  ✓ AppModule: src/app.module.ts
+  ⚠️ Data Provider: not found (src/dashboard/src/providers/dataProvider.ts)
+  ✓ Dashboard App: src/dashboard/src/App.tsx
+  ⚠️ Swagger JSON: not found (src/dashboard/src/types/swagger.json)
+
+🧱 Modules
+  🆕 Invoice: module directory will be created at src/features/invoice
+  ⚙️ Customer: module file will be generated at src/features/customer/customer.module.ts
+
+🖥️ Dashboard Resources
+  ⚠️ customers: src/dashboard/src/resources/customers (existing folder will be replaced)
+  ✓ invoices: src/dashboard/src/resources/invoices
+
+📝 Manual Steps
+  ⚠️ Dashboard data provider not found. Configure config.paths.dashboard.dataProvider or create the file before running generation.
+  ℹ️ Swagger JSON missing. Run "npm run generate:swagger" before generating dashboard types.
+
+⚠️ Preflight completed with warnings. Review the manual steps above.
+```
+
+**When to use it:**
+
+- Before the first run on a new or custom project layout
+- In pull requests to preview generator impact
+- In CI to fail fast if required files are missing
+
+**Exit codes:**
+
+- `0` – Command executed successfully (warnings may be present)
+- `1` – Unexpected error while performing the analysis
+
+---
+
 ### `tgraph api`
 
 Generate NestJS backend files: controllers, services, DTOs, and update AppModule imports.

@@ -84,6 +84,16 @@ export interface Config {
   isAdmin?: boolean;
   updateDataProvider?: boolean;
   nonInteractive?: boolean;
+  paths?: ProjectPathsConfig;
+}
+
+export interface ProjectPathsConfig {
+  appModule?: string;
+  moduleRoots?: Partial<Record<GeneratedModuleFolder, string[]>>;
+  dashboard?: {
+    appComponent?: string;
+    dataProvider?: string;
+  };
 }
 
 import type { ParsedSchema } from '@tg-scripts/types';

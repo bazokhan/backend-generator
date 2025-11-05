@@ -89,6 +89,9 @@ npm install -g @tgraph/backend-generator
 # Generate everything
 tgraph all
 
+# Preview pending changes without writing
+tgraph preflight
+
 # Generate only API
 tgraph api
 
@@ -138,6 +141,19 @@ export const config: Config = {
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
+  nonInteractive: false,
+
+  paths: {
+    // appModule: 'apps/api/src/app.module.ts',
+    // moduleRoots: {
+    //   features: ['apps/api/src/modules/features'],
+    //   infrastructure: ['apps/api/src/modules/infrastructure'],
+    // },
+    // dashboard: {
+    //   appComponent: 'apps/admin/src/App.tsx',
+    //   dataProvider: 'apps/admin/src/providers/dataProvider.ts',
+    // },
+  },
 };
 ```
 

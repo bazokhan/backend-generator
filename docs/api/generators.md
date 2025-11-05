@@ -72,8 +72,8 @@ src/features/user/
 ├── user.tg.controller.ts
 └── user.module.ts (updated)
 
-src/app.module.ts (updated)
-src/dashboard/src/providers/dataProvider.ts (updated if enabled)
+AppModule file (defaults to `src/app.module.ts`, override with `paths.appModule`) – updated
+Dashboard data provider (defaults to `src/dashboard/src/providers/dataProvider.ts`, override with `paths.dashboard.dataProvider`) – updated if enabled
 ```
 
 **Throws:**
