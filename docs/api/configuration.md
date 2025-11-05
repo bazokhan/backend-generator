@@ -202,13 +202,44 @@ updateDataProvider: false;
 
 ## Configuration Files
 
+### Configuration File Requirement
+
+**Important:** The CLI requires a configuration file to run any generation commands (`api`, `dashboard`, `dtos`, `all`).
+
+If you try to run a command without a config file, you'll see:
+
+```
+❌ Error: No configuration file found.
+   Run 'tgraph init' to create a configuration file.
+   Expected file: tgraph.config.ts or tgraph.config.js in project root.
+```
+
+### Initializing Configuration
+
+Create a configuration file using:
+
+```bash
+tgraph init
+```
+
+This generates `tgraph.config.ts` in your project root with comprehensive inline documentation.
+
+### Config File Discovery
+
+The CLI searches for configuration files in your project root (`process.cwd()`) in this order:
+
+1. `tgraph.config.ts` (TypeScript)
+2. `tgraph.config.js` (JavaScript)
+
+The first file found is loaded and used.
+
 ### Default Configuration
 
-The package includes a default configuration:
+The package includes fallback defaults used only when no config file is found:
 
 ```typescript
-// node_modules/@tgraph/backend-generator/config.ts
-export const config: Config = {
+// node_modules/@tgraph/backend-generator/dist/config/defaultConfig.js
+export const defaultConfig: Config = {
   schemaPath: 'prisma/schema.prisma',
   dashboardPath: 'src/dashboard/src',
   dtosPath: 'src/dtos/generated',
@@ -216,14 +247,19 @@ export const config: Config = {
   isAdmin: true,
   updateDataProvider: true,
 };
+
+// Re-exported as `config` for backward compatibility
+export const config = defaultConfig;
 ```
+
+**Note:** These defaults are primarily for backward compatibility. New projects should use `tgraph init`.
 
 ### Project Configuration
 
-Override defaults by creating `config.ts` in your project root:
+Your project configuration file (`tgraph.config.ts`):
 
 ```typescript
-// config.ts
+// tgraph.config.ts
 import type { Config } from '@tgraph/backend-generator';
 
 export const config: Config = {
@@ -236,9 +272,19 @@ export const config: Config = {
 };
 ```
 
+**Supported export formats:**
+
+```typescript
+// Named export (recommended)
+export const config: Config = { ... };
+
+// Default export (also supported)
+export default { ... };
+```
+
 ### Multiple Configurations
 
-Create separate configs for different environments:
+For programmatic usage, you can create separate configs for different environments:
 
 ```typescript
 // config/generator.dev.ts
@@ -273,6 +319,8 @@ const generator = new ApiGenerator(devConfig);
 await generator.generate();
 ```
 
+**Note:** For CLI usage, only `tgraph.config.ts` or `tgraph.config.js` in the project root is loaded. Use environment variables or CLI flags for environment-specific overrides.
+
 ---
 
 ## CLI Configuration Override
@@ -295,8 +343,27 @@ tgraph api \
 **Priority Order:**
 
 1. CLI flags (highest)
-2. Project config file
-3. Default config (lowest)
+2. Project config file (`tgraph.config.ts` or `tgraph.config.js`)
+3. Package defaults (lowest)
+
+## Config File Loading
+
+The config loader (`config-loader.ts`) handles loading and validation:
+
+**Loading process:**
+
+1. Searches for `tgraph.config.ts` in `process.cwd()`
+2. If not found, searches for `tgraph.config.js`
+3. Uses `require()` to dynamically load the config module
+4. Validates required fields (`schemaPath`, `dashboardPath`, `dtosPath`, `suffix`)
+5. Returns the loaded and validated config
+
+**Error handling:**
+
+- Missing required fields: Shows error with field name
+- Invalid syntax: Shows parse error
+- Invalid suffix format: Shows warning if not PascalCase
+- File not found: Uses package defaults (with warning for CLI usage)
 
 ---
 
@@ -305,7 +372,7 @@ tgraph api \
 Use environment variables for dynamic configuration:
 
 ```typescript
-// config.ts
+// tgraph.config.ts
 import type { Config } from '@tgraph/backend-generator';
 
 const env = process.env.NODE_ENV || 'development';
@@ -330,7 +397,7 @@ NODE_ENV=production npm run generate
 
 ## Validation
 
-Validate your configuration before generation:
+The CLI automatically validates your configuration when loading. For programmatic usage, you can add custom validation:
 
 ```typescript
 import { existsSync } from 'fs';
@@ -356,27 +423,62 @@ function validateConfig(config: Config): void {
 validateConfig(config);
 ```
 
+**Built-in validation:**
+
+The config loader automatically validates:
+- Required fields presence
+- Suffix format (warns if not PascalCase)
+- Config file syntax (shows parse errors)
+
 ---
 
 ## Best Practices
 
-### 1. Use Project Config File
+### 1. Initialize Config First
 
-Store configuration in your project instead of passing CLI flags every time:
+Always start by initializing your configuration:
+
+```bash
+tgraph init
+```
+
+This ensures you have the correct file name and structure.
+
+### 2. Version Control Configuration
+
+Commit your config file to version control:
+
+```bash
+git add tgraph.config.ts
+git commit -m "Add tgraph configuration"
+```
+
+This ensures all team members use the same configuration.
+
+### 3. Document Custom Paths
+
+The generated config file includes inline comments. Customize them for your project structure:
 
 ```typescript
-// config.ts
 export const config: Config = {
-  schemaPath: 'prisma/schema.prisma',
-  dashboardPath: 'src/dashboard/src',
-  dtosPath: 'src/dtos/generated',
+  // Custom monorepo structure
+  schemaPath: 'apps/api/prisma/schema.prisma',
+
+  // Separate admin dashboard
+  dashboardPath: 'apps/admin-panel/src',
+
+  // Shared DTOs directory
+  dtosPath: 'libs/shared/dtos',
+
   suffix: 'Tg',
   isAdmin: true,
   updateDataProvider: true,
 };
 ```
 
-### 2. Separate Configs for Different APIs
+### 4. Separate Configs for Programmatic Usage
+
+For SDK usage with multiple environments, create separate config files:
 
 ```typescript
 // config/admin.config.ts
@@ -395,35 +497,7 @@ export const publicConfig: Config = {
 };
 ```
 
-### 3. Version Control Configuration
-
-Commit your config files:
-
-```bash
-git add config.ts
-git commit -m "Add generator configuration"
-```
-
-### 4. Document Custom Paths
-
-Add comments explaining non-standard paths:
-
-```typescript
-export const config: Config = {
-  // Custom monorepo structure
-  schemaPath: 'apps/api/prisma/schema.prisma',
-
-  // Separate admin dashboard
-  dashboardPath: 'apps/admin-panel/src',
-
-  // Shared DTOs directory
-  dtosPath: 'libs/shared/dtos',
-
-  suffix: 'Tg',
-  isAdmin: true,
-  updateDataProvider: true,
-};
-```
+Import these in your scripts rather than using the CLI.
 
 ---
 

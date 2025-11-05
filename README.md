@@ -20,6 +20,9 @@
 # Install
 npm install --save-dev @tgraph/backend-generator
 
+# Initialize configuration
+npx tgraph init
+
 # Mark your Prisma models
 // @tg_form()
 model User {
@@ -117,7 +120,13 @@ tgraph all --suffix Admin --no-update-data-provider
 
 ## Configuration
 
-Create `config.ts` in your project root:
+Initialize a configuration file in your project:
+
+```bash
+npx tgraph init
+```
+
+This creates `tgraph.config.ts` in your project root with default values:
 
 ```typescript
 import type { Config } from '@tgraph/backend-generator';
@@ -132,7 +141,7 @@ export const config: Config = {
 };
 ```
 
-Or use CLI flags to override on the fly.
+Customize the values for your project, or use CLI flags to override on the fly.
 
 ## Programmatic Usage
 

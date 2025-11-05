@@ -1,27 +1,28 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
-import { getResourceName } from './src/generator/utils';
-import type { PrismaModel, Config } from '@tg-scripts/types';
-import { promptUser, formatGeneratedFiles } from './src/io/utils';
-import { PrismaFieldParser } from './src/parser/prisma-field-parser/PrismaFieldParser';
-import { PrismaSchemaParser } from './src/parser/prisma-schema-parser/PrismaSchemaParser';
-import { PrismaRelationsParser } from './src/parser/prisma-relation-parser/PrismaRelationsParser';
-import { ReactComponentsGenerator } from './src/generator/react-components-generator/ReactComponentsGenerator';
-import { config } from './config';
-import { buildFieldDirectiveFile } from './src/directives/field/field-directive-writer';
+import type { Config, PrismaModel } from '@tg-scripts/types';
+import { formatGeneratedFiles, promptUser } from '../../io/utils';
+import { buildFieldDirectiveFile } from '../../directives/field/field-directive-writer';
+import { PrismaFieldParser } from '../../parser/prisma-field-parser/PrismaFieldParser';
+import { PrismaRelationsParser } from '../../parser/prisma-relation-parser/PrismaRelationsParser';
+import { PrismaSchemaParser } from '../../parser/prisma-schema-parser/PrismaSchemaParser';
+import { ReactComponentsGenerator } from '../react-components-generator/ReactComponentsGenerator';
+import { getResourceName } from '../utils/naming';
 
 export class DashboardGenerator {
-  private schemaPath: string;
-  private dashboardPath: string;
+  private readonly config: Config;
+  private readonly fieldParser: PrismaFieldParser;
+  private readonly fieldRelationsParser: PrismaRelationsParser;
+  private readonly schemaParser: PrismaSchemaParser;
+  private readonly reactComponentsGenerator: ReactComponentsGenerator;
+  private readonly workspaceRoot: string;
+  private readonly schemaPath: string;
+  private readonly schemaAbsolutePath: string;
+  private readonly dashboardPath: string;
+  private readonly dashboardAbsolutePath: string;
   private models: PrismaModel[] = [];
   private enums: Map<string, string[]> = new Map();
-
-  private config: Config;
-  private fieldParser: PrismaFieldParser;
-  private fieldRelationsParser: PrismaRelationsParser;
-  private schemaParser: PrismaSchemaParser;
-  private reactComponentsGenerator: ReactComponentsGenerator;
 
   constructor(config: Config) {
     this.config = config;
@@ -29,8 +30,15 @@ export class DashboardGenerator {
     this.fieldRelationsParser = new PrismaRelationsParser();
     this.schemaParser = new PrismaSchemaParser(this.fieldParser, this.fieldRelationsParser);
     this.reactComponentsGenerator = new ReactComponentsGenerator();
+    this.workspaceRoot = process.cwd();
     this.schemaPath = this.config.schemaPath;
+    this.schemaAbsolutePath = path.isAbsolute(this.schemaPath)
+      ? this.schemaPath
+      : path.join(this.workspaceRoot, this.schemaPath);
     this.dashboardPath = this.config.dashboardPath;
+    this.dashboardAbsolutePath = path.isAbsolute(this.dashboardPath)
+      ? this.dashboardPath
+      : path.join(this.workspaceRoot, this.dashboardPath);
   }
 
   async generate(): Promise<void> {
@@ -45,14 +53,14 @@ export class DashboardGenerator {
       console.log('✅ Dashboard generation completed successfully!');
     } catch (error) {
       console.error('❌ Error during generation:', error);
-      process.exit(1);
+      throw error;
     }
   }
 
   private parseSchema(): void {
     console.log('📖 Parsing Prisma schema...');
 
-    const schemaContent = fs.readFileSync(this.schemaPath, 'utf-8');
+    const schemaContent = fs.readFileSync(this.schemaAbsolutePath, 'utf-8');
     this.schemaParser.load(schemaContent);
     const { models, enums } = this.schemaParser.parse();
 
@@ -68,7 +76,7 @@ export class DashboardGenerator {
   private generateTypes(): void {
     console.log('🔧 Generating TypeScript types from Swagger...');
 
-    const swaggerJsonPath = path.join(process.cwd(), 'src', 'dashboard', 'src', 'types', 'swagger.json');
+    const swaggerJsonPath = path.join(this.dashboardAbsolutePath, 'types', 'swagger.json');
 
     if (!fs.existsSync(swaggerJsonPath)) {
       console.warn('⚠️ Swagger JSON file not found. Please run "npm run generate:swagger" first.');
@@ -77,17 +85,18 @@ export class DashboardGenerator {
 
     try {
       // Generate types from static Swagger JSON file
-      const command = `npx swagger-typescript-api generate -p ${swaggerJsonPath} -o src/dashboard/src/types -n api.ts`;
+      const outputDir = path.join(this.dashboardAbsolutePath, 'types');
+      const command = `npx swagger-typescript-api generate -p "${swaggerJsonPath}" -o "${outputDir}" -n api.ts`;
       execSync(command, {
         stdio: 'inherit',
-        cwd: process.cwd(),
+        cwd: this.workspaceRoot,
       });
       console.log('✅ Types generated successfully');
 
       // Format the generated api.ts file
-      const apiTsPath = path.join(process.cwd(), 'src', 'dashboard', 'src', 'types', 'api.ts');
+      const apiTsPath = path.join(outputDir, 'api.ts');
       if (fs.existsSync(apiTsPath)) {
-        formatGeneratedFiles([apiTsPath], process.cwd());
+        formatGeneratedFiles([apiTsPath], this.workspaceRoot);
         console.log('✅ api.ts formatted');
       }
     } catch (error) {
@@ -109,12 +118,13 @@ export class DashboardGenerator {
       }
 
       const resourceName = getResourceName(model.name);
-      const resourcePath = path.join(this.dashboardPath, 'resources', resourceName);
+      const resourcePath = path.join(this.dashboardAbsolutePath, 'resources', resourceName);
+      const displayPath = this.toWorkspaceRelative(resourcePath);
 
       // Check if folder already exists
       if (fs.existsSync(resourcePath)) {
         const shouldRegenerate = await promptUser(
-          `⚠️ Folder for ${model.name} already exists at: ${resourcePath}\n` +
+          `⚠️ Folder for ${model.name} already exists at: ${displayPath}\n` +
             `Do you want to delete and regenerate it? (y/n): `,
         );
 
@@ -122,7 +132,7 @@ export class DashboardGenerator {
           console.log(`🗑️ Deleting existing folder for ${model.name}...`);
           fs.rmSync(resourcePath, { recursive: true, force: true });
         } else {
-          console.log(`⏭️ Skipping ${model.name}...`);
+        console.log(`⏭️ Skipping ${model.name}...`);
           continue;
         }
       }
@@ -153,7 +163,7 @@ export class DashboardGenerator {
     if (allGeneratedFiles.length > 0) {
       console.log('🎨 Formatting generated files...');
       try {
-        formatGeneratedFiles(allGeneratedFiles, process.cwd());
+        formatGeneratedFiles(allGeneratedFiles, this.workspaceRoot);
         console.log('✅ All files formatted');
       } catch {
         console.warn(
@@ -165,17 +175,26 @@ export class DashboardGenerator {
 
   private generateFieldDirectiveConfig(): void {
     console.log('🧭 Generating field directive configuration...');
-    const directivesPath = path.join(this.dashboardPath, 'providers', 'fieldDirectives.generated.ts');
+    const directivesPath = path.join(this.dashboardAbsolutePath, 'providers', 'fieldDirectives.generated.ts');
     fs.mkdirSync(path.dirname(directivesPath), { recursive: true });
     const content = buildFieldDirectiveFile(this.models);
     fs.writeFileSync(directivesPath, content);
-    formatGeneratedFiles([directivesPath], process.cwd());
+    formatGeneratedFiles([directivesPath], this.workspaceRoot);
+  }
+
+  private toWorkspaceRelative(targetPath: string): string {
+    const relativePath = path.relative(this.workspaceRoot, targetPath);
+    if (!relativePath || relativePath.startsWith('..')) {
+      return targetPath;
+    }
+
+    return relativePath;
   }
 
   private updateAppComponent(): void {
     console.log('🔄 Updating App component with new resources...');
 
-    const appPath = path.join(this.dashboardPath, 'App.tsx');
+    const appPath = path.join(this.dashboardAbsolutePath, 'App.tsx');
     let appContent = fs.readFileSync(appPath, 'utf-8');
 
     // Remove ALL existing auto-generated imports blocks (using global flag)
@@ -253,7 +272,7 @@ export class DashboardGenerator {
     fs.writeFileSync(appPath, appContent);
 
     // Format the updated App component
-    formatGeneratedFiles([appPath], process.cwd());
+    formatGeneratedFiles([appPath], this.workspaceRoot);
 
     console.log('✅ App component updated with new resources');
   }

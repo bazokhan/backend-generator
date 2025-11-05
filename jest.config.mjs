@@ -19,7 +19,9 @@ if (compilerOptions.paths) {
     const pathPattern = Array.isArray(paths) ? paths[0] : paths;
     const regex = `^${alias.replace(/\*/g, '(.*)')}$`;
     const replacement = pathPattern.replace(/\*/g, '$1').replace(/\.d\.ts$/, '');
-    moduleNameMapper[regex] = `<rootDir>/${replacement}`;
+    // Resolve the full path including baseUrl
+    const fullPath = join(baseUrl, replacement).replace(/\\/g, '/');
+    moduleNameMapper[regex] = `<rootDir>/${fullPath}`;
   }
 }
 
@@ -49,24 +51,20 @@ const config = {
     ],
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
-  moduleNameMapper: {
-    '^@tg-scripts/types$': '<rootDir>/types',
-    ...moduleNameMapper,
-  },
+  moduleNameMapper,
   collectCoverageFrom: [
-    '**/*.{ts,tsx}',
-    '!**/*.spec.ts',
-    '!**/*.test.ts',
-    '!**/*.spec.tsx',
-    '!**/*.test.tsx',
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.spec.ts',
+    '!src/**/*.test.ts',
+    '!src/**/*.spec.tsx',
+    '!src/**/*.test.tsx',
+    '!src/bin/**',
+    '!src/types/**',
     '!dist/**',
     '!node_modules/**',
     '!__mocks__/**',
     '!__snapshots__/**',
-    '!cli.ts',
-    '!config.ts',
     '!jest.config.mjs',
-    '!index.ts',
   ],
 };
 

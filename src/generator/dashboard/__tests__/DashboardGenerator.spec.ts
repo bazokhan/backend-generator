@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
-import { DashboardGenerator } from './generate-dashboard';
-import { promptUser } from './src/io/utils/user-prompt';
-import { getResourceName } from './src/generator/utils/naming';
+import { DashboardGenerator } from '@tg-scripts/generator/dashboard/DashboardGenerator';
+import { promptUser } from '@tg-scripts/io/utils/user-prompt';
+import { getResourceName } from '@tg-scripts/generator/utils/naming';
 import type { Config } from '@tg-scripts/types';
 
 const config: Config = {
@@ -12,6 +12,10 @@ const config: Config = {
   dtosPath: 'src/dtos/generated',
   suffix: 'Test',
 };
+
+const MOCK_CWD = '/mock/project/root';
+const SCHEMA_ABSOLUTE_PATH = path.join(MOCK_CWD, config.schemaPath);
+const DASHBOARD_ABSOLUTE_PATH = path.join(MOCK_CWD, config.dashboardPath);
 
 // Mock file system operations
 jest.mock('fs', () => {
@@ -29,8 +33,8 @@ jest.mock('fs', () => {
   };
 });
 jest.mock('child_process');
-jest.mock('./src/io/utils/user-prompt');
-jest.mock('./src/generator/utils/naming');
+jest.mock('@tg-scripts/io/utils/user-prompt');
+jest.mock('@tg-scripts/generator/utils/naming');
 
 // Mock console methods
 const originalConsole = global.console;
@@ -54,7 +58,6 @@ describe('DashboardGenerator', () => {
   let mockPromptUser: jest.MockedFunction<typeof promptUser>;
   let mockGetResourceName: jest.MockedFunction<typeof getResourceName>;
   let mockProcessCwd: jest.SpyInstance;
-  let mockProcessExit: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -66,12 +69,7 @@ describe('DashboardGenerator', () => {
     mockGetResourceName = getResourceName as jest.MockedFunction<typeof getResourceName>;
 
     // Mock process.cwd()
-    mockProcessCwd = jest.spyOn(process, 'cwd').mockReturnValue('/mock/project/root');
-
-    // Mock process.exit()
-    mockProcessExit = jest.spyOn(process, 'exit').mockImplementation((code?: number) => {
-      throw new Error(`Process exit called with code: ${code}`);
-    });
+    mockProcessCwd = jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD);
 
     // Mock fs.promises - ensure it's set up and reset before each test
     if (!mockFs.promises) {
@@ -144,7 +142,6 @@ export default App;
 
   afterEach(() => {
     mockProcessCwd.mockRestore();
-    mockProcessExit.mockRestore();
   });
 
   describe('Constructor', () => {
@@ -153,7 +150,7 @@ export default App;
 
       await gen.generate();
 
-      expect(mockFs.readFileSync).toHaveBeenCalledWith('prisma/schema.prisma', 'utf-8');
+      expect(mockFs.readFileSync).toHaveBeenCalledWith(SCHEMA_ABSOLUTE_PATH, 'utf-8');
     });
   });
 
@@ -197,15 +194,14 @@ export default App;
       expect(order).toContain('execSync');
     });
 
-    it('should exit with code 1 on error', async () => {
+    it('should surface errors without exiting the process', async () => {
       const error = new Error('Test error');
       mockFs.readFileSync.mockImplementation(() => {
         throw error;
       });
 
-      await expect(generator.generate()).rejects.toThrow('Process exit called with code: 1');
+      await expect(generator.generate()).rejects.toThrow(error);
       expect(console.error).toHaveBeenCalledWith('❌ Error during generation:', error);
-      expect(mockProcessExit).toHaveBeenCalledWith(1);
     });
 
     it('should handle errors during parseSchema', async () => {
@@ -214,7 +210,7 @@ export default App;
         throw error;
       });
 
-      await expect(generator.generate()).rejects.toThrow('Process exit called with code: 1');
+      await expect(generator.generate()).rejects.toThrow(error);
       expect(console.error).toHaveBeenCalled();
     });
 
@@ -222,7 +218,7 @@ export default App;
       const error = new Error('CRUD generation error');
       (mockFs.promises.writeFile as jest.Mock).mockRejectedValue(error);
 
-      await expect(generator.generate()).rejects.toThrow('Process exit called with code: 1');
+      await expect(generator.generate()).rejects.toThrow('CRUD generation error');
     });
   });
 
@@ -230,7 +226,7 @@ export default App;
     it('should read schema file with correct path', async () => {
       await generator.generate();
 
-      expect(mockFs.readFileSync).toHaveBeenCalledWith('prisma/schema.prisma', 'utf-8');
+      expect(mockFs.readFileSync).toHaveBeenCalledWith(SCHEMA_ABSOLUTE_PATH, 'utf-8');
     });
 
     it('should parse schema content', async () => {
@@ -438,9 +434,9 @@ model Post {
       await generator.generate();
 
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining('⏭️ Skipping'));
-      const skippedResourcePath = path.join(config.dashboardPath, 'resources', 'user');
-      const skippedResourcePath2 = path.join(config.dashboardPath, 'resources', 'post');
-      const providersDir = path.join(config.dashboardPath, 'providers');
+      const skippedResourcePath = path.join(DASHBOARD_ABSOLUTE_PATH, 'resources', 'user');
+      const skippedResourcePath2 = path.join(DASHBOARD_ABSOLUTE_PATH, 'resources', 'post');
+      const providersDir = path.join(DASHBOARD_ABSOLUTE_PATH, 'providers');
       expect(mockFs.mkdirSync).not.toHaveBeenCalledWith(skippedResourcePath, expect.anything());
       expect(mockFs.mkdirSync).not.toHaveBeenCalledWith(skippedResourcePath2, expect.anything());
       expect(mockFs.mkdirSync).toHaveBeenCalledWith(providersDir, { recursive: true });
@@ -534,7 +530,7 @@ model Post {
     it('should read App.tsx file', async () => {
       await generator.generate();
 
-      const appPath = path.join('src/dashboard/src', 'App.tsx');
+      const appPath = path.join(DASHBOARD_ABSOLUTE_PATH, 'App.tsx');
 
       expect(mockFs.readFileSync).toHaveBeenCalledWith(appPath, 'utf-8');
     });
@@ -685,7 +681,7 @@ model Post {
     it('should write updated App.tsx file', async () => {
       await generator.generate();
 
-      const appPath = path.join('src/dashboard/src', 'App.tsx');
+      const appPath = path.join(DASHBOARD_ABSOLUTE_PATH, 'App.tsx');
 
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(appPath, expect.any(String));
     });

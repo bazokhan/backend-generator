@@ -84,20 +84,47 @@ If a module doesn't exist, the CLI will prompt you to create it.
 
 ## Configuration
 
-Create a `config.ts` file in your project root (optional):
+Before generating code, you must initialize a configuration file:
+
+```bash
+tgraph init
+```
+
+This creates a `tgraph.config.ts` file in your project root with comprehensive inline documentation:
 
 ```typescript
 import type { Config } from '@tgraph/backend-generator';
 
 export const config: Config = {
+  // Path to your Prisma schema file
+  // Default: 'prisma/schema.prisma'
   schemaPath: 'prisma/schema.prisma',
+
+  // Path to your React Admin dashboard source directory
+  // Default: 'src/dashboard/src'
   dashboardPath: 'src/dashboard/src',
+
+  // Path where DTO files will be generated
+  // Default: 'src/dtos/generated'
   dtosPath: 'src/dtos/generated',
+
+  // Suffix for generated classes (e.g., UserTgService, UserTgController)
+  // Default: 'Tg'
   suffix: 'Tg',
+
+  // Generate admin-only endpoints with authentication guards
+  // Default: true
   isAdmin: true,
+
+  // Automatically update data provider endpoint mappings
+  // Default: true
   updateDataProvider: true,
 };
 ```
+
+Customize these values for your project structure.
+
+**Note:** The CLI requires a config file to run. If you try to run `tgraph all`, `tgraph api`, `tgraph dashboard`, or `tgraph dtos` without a config file, you'll see an error instructing you to run `tgraph init` first.
 
 ### Configuration Options
 
@@ -132,7 +159,7 @@ Only models marked with `// @tg_form()` will be processed.
 
 ## First Generation
 
-Run your first generation:
+After setting up your configuration, run your first generation:
 
 ```bash
 tgraph all

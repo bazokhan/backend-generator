@@ -4,9 +4,9 @@
     "module": "CommonJS",
     "moduleResolution": "Node",
     "lib": ["ES2020"],
-    "rootDir": ".",
+    "rootDir": "src",
     "outDir": "./dist",
-    "baseUrl": ".",
+    "baseUrl": "./src",
     "paths": {
       "@tg-scripts/types": ["./types"],
       "@tg-scripts/*": ["./*"]
@@ -23,6 +23,6 @@
     "skipLibCheck": true,
     "moduleDetection": "force"
   },
-  "include": ["**/*.ts", "**/*.d.ts", "jest.config.mjs"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "jest.config.mjs"],
   "exclude": ["dist", "node_modules", "**/*.spec.ts", "__snapshots__", "__mocks__"]
 }

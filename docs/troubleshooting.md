@@ -287,7 +287,7 @@ npm install @nestjs/common @nestjs/core
 Check your configuration:
 
 ```typescript
-// config.ts
+// tgraph.config.ts
 export const config = {
   schemaPath: 'prisma/schema.prisma', // ← Verify this
   dashboardPath: 'src/dashboard/src', // ← And this
@@ -593,7 +593,7 @@ tgraph api --suffix=Admin
 CLI flags override config, but config must be valid:
 
 ```typescript
-// config.ts - must export 'config'
+// tgraph.config.ts - must export 'config'
 export const config: Config = {
   /* ... */
 };

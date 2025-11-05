@@ -293,7 +293,7 @@ pluralize('category'); // 'categories'
 Override the default `Tg` suffix:
 
 ```typescript
-// config.ts
+// tgraph.config.ts
 export const config: Config = {
   // ...
   suffix: 'Admin',

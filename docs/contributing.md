@@ -51,27 +51,29 @@ npm test
 ```
 backend-generator/
 ├── src/
-│   ├── directives/           # Field directive system
+│   ├── bin/                  # CLI entry points
+│   ├── config/               # Default configuration exports
 │   ├── generator/            # Code generators
-│   ├── io/                   # File system utilities
-│   └── parser/               # Schema parsers
+│   │   ├── api/
+│   │   │   ├── ApiGenerator.ts
+│   │   │   └── __tests__/ApiGenerator.spec.ts
+│   │   ├── dashboard/
+│   │   │   ├── DashboardGenerator.ts
+│   │   │   └── __tests__/DashboardGenerator.spec.ts
+│   │   └── dto/
+│   │       ├── DtoGenerator.ts
+│   │       └── __tests__/DtoGenerator.spec.ts
+│   ├── io/                   # CLI + filesystem utilities
+│   ├── parser/               # Schema parsers
+│   └── types/                # Shared type declarations
 ├── __mocks__/                # Test mocks
 ├── __snapshots__/            # Jest snapshots
-├── cli.ts                    # CLI entry point
-├── config.ts                 # Default configuration
-├── index.ts                  # SDK exports
-├── types.d.ts                # TypeScript type definitions
-├── generate-api.ts           # API generator
-├── generate-dashboard.ts     # Dashboard generator
-├── generate-dtos.ts          # DTO generator
-└── *.spec.ts                 # Tests
-
-docs/                         # Documentation
-├── index.md
-├── getting-started.md
-├── guides/
-├── recipes/
-└── api/
+├── coverage/                 # Coverage reports
+├── dist/                     # Build output
+├── docs/                     # Documentation
+├── jest.config.mjs
+├── package.json
+└── tsconfig.json
 ```
 
 ## Development Workflow

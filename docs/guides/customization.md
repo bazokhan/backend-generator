@@ -450,7 +450,7 @@ export const UserList = () => (
 Override default configuration:
 
 ```typescript
-// config.ts
+// tgraph.config.ts
 import type { Config } from '@tgraph/backend-generator';
 
 export const config: Config = {

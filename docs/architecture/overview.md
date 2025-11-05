@@ -16,7 +16,7 @@ TGraph Backend Generator is built on a modular, composable architecture with cle
 ```
 ┌─────────────────────────────────────────────┐
 │              CLI Interface                   │
-│         (cli.ts - User Entry Point)          │
+│     (src/bin/cli.ts ▸ CommandLineInterface)  │
 └──────────────────┬──────────────────────────┘
                    │
        ┌───────────┴────────────┐

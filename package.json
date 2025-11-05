@@ -5,13 +5,15 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "tgraph": "dist/cli.js"
+    "tgraph": "dist/bin/cli.js"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "rimraf dist && tsc -p tsconfig.json",
+    "pack": "npm run build && rimraf package && npm pack",
+    "package": "npm run pack && node -e \"const fs=require('fs'); const f=fs.readdirSync('.').find(x=>x.endsWith('.tgz')); fs.mkdirSync('package',{recursive:true}); require('child_process').execSync(`tar -xzf ${f} -C package`)\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm test",
     "test": "jest",
@@ -49,6 +51,7 @@
     "esbuild-register": "^3.6.0",
     "jest": "^30.2.0",
     "prettier": "^3.6.2",
+    "rimraf": "^6.1.0",
     "typescript": "^5.9.3"
   }
 }

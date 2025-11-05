@@ -12,13 +12,13 @@ export class UserResponseDto {
   id: string;
 }
 ",
-    "filePath": "src\\dtos\\generated\\user-response.dto.ts",
+    "filePath": "\\mock\\project\\root\\src\\dtos\\generated\\user-response.dto.ts",
   },
   {
     "callIndex": 1,
     "content": "/* AUTO-GENERATED */
 export * from './user-response.dto';",
-    "filePath": "src\\dtos\\generated\\index.ts",
+    "filePath": "\\mock\\project\\root\\src\\dtos\\generated\\index.ts",
   },
 ]
 `;
@@ -38,9 +38,11 @@ exports[`TgDtoGenerator Snapshot Tests should snapshot complete generation workf
 {
   "consoleLogs": [
     "🚀 Starting DTO generation...",
-    "📁 Setting up output directory...",
+    "📁 Setting up output directory at src\\dtos\\generated...",
     "📖 Parsing Prisma schema...",
-    "📋 Found model: User",
+    "   Reading from: \\mock\\project\\root\\prisma\\schema.prisma",
+    "   Schema content length: 46 characters",
+    "   📋 Found model: User",
     "📊 Found 1 models in schema",
     "📝 Generating DTO files...",
     "✅ Generated user-response.dto.ts",
@@ -51,8 +53,8 @@ exports[`TgDtoGenerator Snapshot Tests should snapshot complete generation workf
   ],
   "dtoFilesGenerated": 1,
   "filePaths": [
-    "src\\dtos\\generated\\user-response.dto.ts",
-    "src\\dtos\\generated\\index.ts",
+    "\\mock\\project\\root\\src\\dtos\\generated\\user-response.dto.ts",
+    "\\mock\\project\\root\\src\\dtos\\generated\\index.ts",
   ],
   "formatGeneratedFileCalls": 2,
   "parseSchemaCalls": 1,
@@ -63,7 +65,7 @@ exports[`TgDtoGenerator Snapshot Tests should snapshot complete generation workf
 
 exports[`TgDtoGenerator Snapshot Tests should snapshot file generation with mixed case model names 1`] = `
 [
-  "src\\dtos\\generated\\user-response.dto.ts",
+  "\\mock\\project\\root\\src\\dtos\\generated\\user-response.dto.ts",
 ]
 `;
 

@@ -26,6 +26,80 @@ tgraph <command> [options]
 
 ## Commands
 
+### `tgraph init`
+
+Initialize a configuration file in your project root.
+
+```bash
+tgraph init
+```
+
+**What it does:**
+
+- Creates `tgraph.config.ts` in your project root
+- Includes comprehensive inline comments explaining each option
+- Uses default values suitable for most projects
+- Fails if a config file already exists
+
+**Example:**
+
+```bash
+tgraph init
+```
+
+**Output:**
+
+```
+✅ Created configuration file: /path/to/your/project/tgraph.config.ts
+   You can now customize it for your project.
+   Run 'tgraph all' to generate code.
+```
+
+**Error cases:**
+
+If a config file already exists:
+
+```
+❌ Error: Configuration file already exists at 'tgraph.config.ts'
+   Remove it first if you want to reinitialize.
+```
+
+**Generated file structure:**
+
+```typescript
+import type { Config } from '@tgraph/backend-generator';
+
+export const config: Config = {
+  // Path to your Prisma schema file
+  // Default: 'prisma/schema.prisma'
+  schemaPath: 'prisma/schema.prisma',
+
+  // Path to your React Admin dashboard source directory
+  // Default: 'src/dashboard/src'
+  dashboardPath: 'src/dashboard/src',
+
+  // Path where DTO files will be generated
+  // Default: 'src/dtos/generated'
+  dtosPath: 'src/dtos/generated',
+
+  // Suffix for generated classes (e.g., UserTgService, UserTgController)
+  // Default: 'Tg'
+  suffix: 'Tg',
+
+  // Generate admin-only endpoints with authentication guards
+  // Default: true
+  isAdmin: true,
+
+  // Automatically update data provider endpoint mappings
+  // Default: true
+  updateDataProvider: true,
+};
+```
+
+**Note:** You must run `tgraph init` before running any other commands. All generation commands require a config file.
+
+---
+
 ### `tgraph api`
 
 Generate NestJS backend files: controllers, services, DTOs, and update AppModule imports.
@@ -313,7 +387,13 @@ Options:
 
 ## Configuration File
 
-Instead of passing options every time, create a `config.ts` file in your project root:
+The CLI requires a configuration file to run. Create one using:
+
+```bash
+tgraph init
+```
+
+This generates `tgraph.config.ts` (or you can manually create `tgraph.config.js`) in your project root:
 
 ```typescript
 import type { Config } from '@tgraph/backend-generator';
@@ -328,11 +408,27 @@ export const config: Config = {
 };
 ```
 
+**Config file discovery:**
+
+The CLI searches for config files in this order:
+1. `tgraph.config.ts`
+2. `tgraph.config.js`
+
 CLI options override config file values.
 
 ---
 
 ## Common Workflows
+
+### First Time Setup
+
+```bash
+# Initialize config file
+tgraph init
+
+# Generate everything
+tgraph all
+```
 
 ### Standard Generation
 
@@ -465,11 +561,26 @@ chmod -R u+w src/features
 chmod -R u+w src/dashboard/src
 ```
 
+### Config File Not Found
+
+**Problem:**
+
+```
+❌ Error: No configuration file found.
+   Run 'tgraph init' to create a configuration file.
+```
+
+**Solution:** Initialize a config file:
+
+```bash
+tgraph init
+```
+
 ### Schema Not Found
 
 **Problem:** `Prisma schema not found`
 
-**Solution:** Specify correct path:
+**Solution:** Specify correct path in your config file or via CLI:
 
 ```bash
 tgraph api --schema path/to/schema.prisma
