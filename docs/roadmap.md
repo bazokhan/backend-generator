@@ -13,7 +13,7 @@ description: "Milestone-based roadmap for the TGraph Backend Generator"
 
 ## Table of Contents
 
-1. [Current State (v0.0.1)](#current-state-v001)
+1. [Current State (v0.0.2)](#current-state-v001)
 2. [Core Philosophy & Goals](#core-philosophy--goals)
 3. [Roadmap Strategy](#roadmap-strategy)
 4. [Roadmap by Milestone](#roadmap-by-milestone)
@@ -25,7 +25,7 @@ description: "Milestone-based roadmap for the TGraph Backend Generator"
 
 ---
 
-## Current State (v0.0.1)
+## Current State (v0.0.2)
 
 ### ✅ What Works Today
 - CLI commands (`api`, `dashboard`, `dtos`, `all`, `init`) that generate NestJS + React Admin artifacts from Prisma schemas.
