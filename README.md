@@ -107,16 +107,16 @@ tgraph all --suffix Admin --no-update-data-provider
 
 ## Documentation
 
-📚 **[Complete Documentation](./docs/index.md)**
+📚 **[Complete Documentation](https://trugraph.github.io/backend-generator/)**
 
-- [Getting Started](./docs/getting-started.md) – Installation and setup
-- [Quick Start Tutorial](./docs/quick-start.md) – Build a blog in 5 minutes
-- [Prisma Setup](./docs/guides/prisma-setup.md) – Configure your schema
-- [Field Directives](./docs/guides/field-directives.md) – Control generation behavior
-- [Recipes](./docs/recipes/basic-crud.md) – Practical examples
-- [CLI Reference](./docs/cli-reference.md) – All commands and options
-- [SDK Reference](./docs/sdk-reference.md) – Programmatic usage
-- [Troubleshooting](./docs/troubleshooting.md) – Common issues
+- [Getting Started](https://trugraph.github.io/backend-generator/getting-started.html) – Installation and setup
+- [Quick Start Tutorial](https://trugraph.github.io/backend-generator/quick-start.html) – Build a blog in 5 minutes
+- [Prisma Setup](https://trugraph.github.io/backend-generator/guides/prisma-setup.html) – Configure your schema
+- [Field Directives](https://trugraph.github.io/backend-generator/guides/field-directives.html) – Control generation behavior
+- [Recipes](https://trugraph.github.io/backend-generator/recipes/basic-crud.html) – Practical examples
+- [CLI Reference](https://trugraph.github.io/backend-generator/cli-reference.html) – All commands and options
+- [SDK Reference](https://trugraph.github.io/backend-generator/sdk-reference.html) – Programmatic usage
+- [Troubleshooting](https://trugraph.github.io/backend-generator/troubleshooting.html) – Common issues
 
 ## Configuration
 
@@ -155,7 +155,7 @@ const dashboard = new DashboardGenerator(config);
 await dashboard.generate();
 ```
 
-See [SDK Reference](./docs/sdk-reference.md) for complete API documentation.
+See [SDK Reference](https://trugraph.github.io/backend-generator/sdk-reference.html) for complete API documentation.
 
 ## Project Structure
 
@@ -197,7 +197,7 @@ model User {
 }
 ```
 
-See [Field Directives Guide](./docs/guides/field-directives.md) for all directives.
+See [Field Directives Guide](https://trugraph.github.io/backend-generator/guides/field-directives.html) for all directives.
 
 ## Philosophy
 
@@ -208,15 +208,15 @@ TGraph Backend Generator follows these principles:
 - **Progressive Disclosure** – Start simple, add complexity as needed
 - **Type Safety First** – Compile-time error checking
 
-Read more in [Philosophy & Principles](./docs/architecture/philosophy.md).
+Read more in [Philosophy & Principles](https://trugraph.github.io/backend-generator/architecture/philosophy.html).
 
 ## Contributing
 
-Contributions are welcome! See [Contributing Guide](./docs/contributing.md).
+Contributions are welcome! See [Contributing Guide](https://trugraph.github.io/backend-generator/contributing.html).
 
 ## Publishing
 
-For maintainers: See [Publishing Guide](./docs/publishing.md) for release process.
+For maintainers: See [Publishing Guide](https://trugraph.github.io/backend-generator/publishing.html) for release process.
 
 ## License
 
@@ -224,11 +224,11 @@ ISC
 
 ## Links
 
-- [Documentation](./docs/index.md)
+- [Documentation](https://trugraph.github.io/backend-generator/)
 - [GitHub Repository](https://github.com/trugraph/backend-generator)
 - [npm Package](https://www.npmjs.com/package/@tgraph/backend-generator)
 - [Issues](https://github.com/trugraph/backend-generator/issues)
 
 ---
 
-**Made with ❤️ by the TGraph team**
+**Made with ❤️ by the TruGraph team**

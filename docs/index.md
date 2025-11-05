@@ -29,39 +29,39 @@ TGraph Backend Generator is a powerful CLI toolkit that automatically generates 
 
 ### Getting Started
 
-- [Installation & Setup](./getting-started.md)
-- [Quick Start Tutorial](./quick-start.md)
+- [Installation & Setup](./getting-started.html)
+- [Quick Start Tutorial](./quick-start.html)
 
 ### Guides
 
-- [Prisma Schema Setup](./guides/prisma-setup.md)
-- [Field Directives](./guides/field-directives.md)
-- [Naming Conventions](./guides/naming-conventions.md)
-- [Customization](./guides/customization.md)
+- [Prisma Schema Setup](./guides/prisma-setup.html)
+- [Field Directives](./guides/field-directives.html)
+- [Naming Conventions](./guides/naming-conventions.html)
+- [Customization](./guides/customization.html)
 
 ### Recipes
 
-- [Basic CRUD Generation](./recipes/basic-crud.md)
-- [File Upload Fields](./recipes/file-uploads.md)
-- [Custom Validation](./recipes/custom-validation.md)
-- [Extending Generated Code](./recipes/extending-generated-code.md)
+- [Basic CRUD Generation](./recipes/basic-crud.html)
+- [File Upload Fields](./recipes/file-uploads.html)
+- [Custom Validation](./recipes/custom-validation.html)
+- [Extending Generated Code](./recipes/extending-generated-code.html)
 
 ### Reference
 
-- [CLI Reference](./cli-reference.md)
-- [SDK Reference](./sdk-reference.md)
-- [API Documentation](./api/generators.md)
+- [CLI Reference](./cli-reference.html)
+- [SDK Reference](./sdk-reference.html)
+- [API Documentation](./api/generators.html)
 
 ### Contributing
 
-- [Architecture Overview](./architecture/overview.md)
-- [Philosophy & Principles](./architecture/philosophy.md)
-- [Contributing Guide](./contributing.md)
-- [Publishing Guide](./publishing.md)
+- [Architecture Overview](./architecture/overview.html)
+- [Philosophy & Principles](./architecture/philosophy.html)
+- [Contributing Guide](./contributing.html)
+- [Publishing Guide](./publishing.html)
 
 ### Help
 
-- [Troubleshooting](./troubleshooting.md)
+- [Troubleshooting](./troubleshooting.html)
 
 ## Installation
 
@@ -146,4 +146,4 @@ ISC
 
 ---
 
-Ready to get started? Head to the [Getting Started Guide](./getting-started.md).
+Ready to get started? Head to the [Getting Started Guide](./getting-started.html).
