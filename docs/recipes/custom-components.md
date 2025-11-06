@@ -365,6 +365,7 @@ export const ChipSelectInput: React.FC<ChipSelectInputProps> = (props) => {
 
 ### Rich Text Editor
 
+{% raw %}
 ```typescript
 // src/dashboard/src/components/custom/RichTextInput.tsx
 import React from 'react';
@@ -404,6 +405,7 @@ export const RichTextInput: React.FC<InputProps> = (props) => {
   );
 };
 ```
+{% endraw %}
 
 Install dependencies:
 
