@@ -7,415 +7,207 @@ nav_order: 3
 
 # Utilities API
 
-Helper functions and utility classes for code generation.
+Supporting classes exported by `@tgraph/backend-generator` that keep the CLI modular and easy to extend. Unless noted otherwise, imports come from the package root. Helpers under `io/utils` are available as deep exports via `@tgraph/backend-generator/dist/...`.
+
+---
+
+## Config Loader Helpers
+
+### `ConfigLoader` & `ConfigLoaderError`
+
+```typescript
+import { ConfigLoader } from '@tgraph/backend-generator';
+
+const loader = new ConfigLoader({ cwd: process.cwd() });
+const config = loader.load(); // throws ConfigLoaderError if invalid
+```
+
+- Searches for `tgraph.config.ts` or `tgraph.config.js` unless `configPath` is provided.
+- Accepts stubbed `fs`/`path` modules for tests.
+- Validates required sections (`input`, `output`, `api`, `dashboard`, `behavior`).
+
+### Convenience functions
+
+- `loadConfig(): Config` – one-liner used by the CLI and custom scripts.
+- `configFileExists(): boolean` – detect whether generation can proceed.
+- `getConfigFilePath(): string | null` – returns the resolved config location for logging/tooling.
+
+---
 
 ## ModulePathResolver
 
-Locates and resolves NestJS module paths in your project.
-
-### Constructor
+Locates NestJS module directories for a given model by scanning every path listed in `config.output.backend.modules.searchPaths`.
 
 ```typescript
-new ModulePathResolver();
+import { ModulePathResolver } from '@tgraph/backend-generator';
+
+const resolver = new ModulePathResolver({
+  searchPaths: ['src/features', 'src/modules'],
+  defaultRoot: 'src/features',
+});
+
+const info = resolver.findModulePath('User', process.cwd());
+// => { path: '/workspace/src/features/user', type: 'features', folderName: 'user' }
 ```
 
 ### Methods
 
-#### `resolve(modelName: string): Promise<ModulePathInfo | null>`
+- `findModulePath(modelName: string, baseDir: string): ModulePathInfo | null`
+- `getModuleFileName(modulePath: string): string` – looks for the first `*.module.ts`.
+- `getDefaultRoot(): string` / `getSearchPaths(): string[]`
 
-Finds the module directory for a given model name.
+When the resolver returns `null`, generators prompt (or auto-confirm) and create a folder under `defaultRoot`.
 
-**Parameters:**
+---
 
-- `modelName` - PascalCase model name (e.g., 'User', 'BlogPost')
+## ProjectPathResolver
 
-**Returns:**
+Determines project-level paths from the active `Config`.
 
 ```typescript
-interface ModulePathInfo {
-  path: string; // e.g., 'src/features/user'
-  type: 'features' | 'infrastructure';
-  folderName: string; // e.g., 'user'
+import { ProjectPathResolver } from '@tgraph/backend-generator';
+
+const resolver = new ProjectPathResolver(config);
+const appModule = resolver.resolveAppModulePath();
+const dataProvider = resolver.resolveDashboardDataProviderPath();
+const dashboardRoot = resolver.getDashboardRoot();
+```
+
+### Capabilities
+
+- Resolves AppModule, dashboard `App.tsx`, and `dataProvider.ts`, honoring overrides in `config.paths`.
+- Computes module root directories from the configured search paths.
+- Provides `getWorkspaceRoot()` and `getDefaultModuleRoot()` helpers for new directories.
+- Caches lookups to avoid repeated filesystem walks.
+
+---
+
+## PreflightChecker
+
+Runs a lightweight diagnostic pass before generation and surfaces actionable warnings.
+
+```typescript
+import { PreflightChecker } from '@tgraph/backend-generator';
+
+const report = new PreflightChecker(config).run();
+if (report.hasWarnings) {
+  report.manualSteps.forEach((step) => console.warn(step.message));
 }
 ```
 
-**Search Order:**
-
-1. `src/features/{kebab-case-name}/`
-2. `src/infrastructure/{kebab-case-name}/`
-
-**Example:**
+### Report shape
 
 ```typescript
-const resolver = new ModulePathResolver();
-
-const userModule = await resolver.resolve('User');
-// { path: 'src/features/user', type: 'features', folderName: 'user' }
-
-const postModule = await resolver.resolve('BlogPost');
-// { path: 'src/features/blog-post', type: 'features', folderName: 'blog-post' }
+interface PreflightReport {
+  appModule: PreflightPathReport;
+  dataProvider: PreflightPathReport;
+  appComponent: PreflightPathReport;
+  swagger: PreflightPathReport & { required: boolean };
+  modules: Array<{
+    name: string;
+    status: 'ready' | 'missing-directory' | 'missing-module-file';
+    moduleType?: string;
+    existingDirectory?: string;
+    pendingDirectory?: string;
+  }>;
+  dashboardResources: Array<{ name: string; path: string; exists: boolean }>;
+  manualSteps: Array<{ message: string; severity: 'info' | 'warning' }>;
+  hasWarnings: boolean;
+}
 ```
+
+Use it inside CI or `tgraph doctor` to fail builds before generation touches the filesystem.
 
 ---
 
 ## NestAppModuleUpdater
 
-Updates `app.module.ts` with auto-generated imports while preserving manual code.
+Encapsulates the string gymnastics required to update `app.module.ts`.
 
-### Constructor
-
-```typescript
-new NestAppModuleUpdater();
-```
-
-### Methods
-
-#### `update(modules: Array<{ name: string; path: string }>): Promise<void>`
-
-Updates AppModule with the given module imports.
-
-**Parameters:**
-
-- `modules` - Array of module names and paths
-
-**Example:**
+### Common flow
 
 ```typescript
+import { NestAppModuleUpdater } from '@tgraph/backend-generator';
+
 const updater = new NestAppModuleUpdater();
-
-await updater.update([
-  { name: 'UserModule', path: './features/user/user.module' },
-  { name: 'PostModule', path: './features/post/post.module' },
-]);
+const registrations = [{ name: 'User', importPath: './features/user/user.module' }];
+let content = fs.readFileSync('src/app.module.ts', 'utf-8');
+content = updater.updateImportStatements(content, registrations);
+content = updater.updateImportsArray(content, registrations);
+fs.writeFileSync('src/app.module.ts', content);
 ```
 
-**Behavior:**
+### Notable helpers
 
-- Creates `// AUTO-GENERATED IMPORTS START/END` comments if missing
-- Replaces content between sentinel comments
-- Preserves all manual imports and code
-- Formats generated code
-
-**Generated Section:**
-
-```typescript
-// AUTO-GENERATED IMPORTS START
-import { UserModule } from './features/user/user.module';
-import { PostModule } from './features/post/post.module';
-// AUTO-GENERATED IMPORTS END
-
-@Module({
-  imports: [
-    // Manual imports preserved
-    ConfigModule,
-    // AUTO-GENERATED IMPORTS START
-    UserModule,
-    PostModule,
-    // AUTO-GENERATED IMPORTS END
-  ],
-})
-export class AppModule {}
-```
+- `parseImportEntries(block)` – turns an auto-generated import block into `[name, line]` pairs.
+- `buildImportStatement(modelName, importPath)` – generates a standard `import { ModelModule } ...`.
+- `mergeImportEntries(existing, incoming)` – deduplicates modules.
+- `updateImportsArray(content, registrations)` – injects `ModelModule` names between sentinel comments inside the `imports: []` array.
 
 ---
 
 ## NestModuleUpdater
 
-Updates individual module files with providers and controllers.
-
-### Constructor
+Small helper that injects controllers/services into feature modules.
 
 ```typescript
-new NestModuleUpdater();
-```
+import { NestModuleUpdater } from '@tgraph/backend-generator';
 
-### Methods
-
-#### `update(modulePath: string, updates: ModuleUpdates): Promise<void>`
-
-Updates a module file with new providers/controllers.
-
-**Parameters:**
-
-- `modulePath` - Path to module file
-- `updates` - Object containing providers, controllers, imports, exports
-
-```typescript
-interface ModuleUpdates {
-  providers?: string[];
-  controllers?: string[];
-  imports?: string[];
-  exports?: string[];
-}
-```
-
-**Example:**
-
-```typescript
 const updater = new NestModuleUpdater();
-
-await updater.update('src/features/user/user.module.ts', {
-  providers: ['UserTgService', 'UserService'],
-  controllers: ['UserTgController', 'UserController'],
-  exports: ['UserService'],
-});
-```
-
-**Behavior:**
-
-- Preserves existing providers/controllers
-- Adds new ones without duplicates
-- Maintains module structure
-- Formats generated code
-
----
-
-## DataProviderEndpointGenerator
-
-Updates React Admin data provider with endpoint mappings.
-
-### Constructor
-
-```typescript
-new DataProviderEndpointGenerator();
+const imports = updater.generateModuleImportStatements('User', 'user', 'Admin', 'admin');
+let content = fs.readFileSync('src/features/user/user.module.ts', 'utf-8');
+content = updater.addImportsToModule(content, [imports.controllerImport, imports.serviceImport]);
+content = updater.addToArrayInModule(content, 'controllers', ['UserAdminController']);
+content = updater.addToArrayInModule(content, 'providers', ['UserAdminService']);
+fs.writeFileSync('src/features/user/user.module.ts', content);
 ```
 
 ### Methods
 
-#### `update(resources: Array<{ name: string; endpoint: string }>): Promise<void>`
-
-Updates the data provider endpoint map.
-
-**Parameters:**
-
-- `resources` - Array of resource names and endpoint paths
-
-**Example:**
-
-```typescript
-const generator = new DataProviderEndpointGenerator();
-
-await generator.update([
-  { name: 'users', endpoint: 'tg-api/users' },
-  { name: 'posts', endpoint: 'tg-api/posts' },
-  { name: 'comments', endpoint: 'tg-api/comments' },
-]);
-```
-
-**Generated Section:**
-
-```typescript
-const endpointMap: Record<string, string> = {
-  // Manual mappings preserved
-  'feature-flags': 'admin/feature-flags',
-
-  // AUTO-GENERATED MAPPINGS START
-  users: 'tg-api/users',
-  posts: 'tg-api/posts',
-  comments: 'tg-api/comments',
-  // AUTO-GENERATED MAPPINGS END
-};
-```
+- `generateModuleImportStatements(modelName, kebab, namingSuffix, fileSuffix)`
+- `addImportsToModule(content, imports)`
+- `addToArrayInModule(content, arrayName, items)`
+- `findArrayInModule(content, arrayName)` – exposes the `[start, end]` span for custom modifications.
 
 ---
 
-## Naming Utilities
+## Formatting Helpers
 
-Internal utilities for consistent naming transformations.
-
-### `toKebabCase(str: string): string`
-
-Converts PascalCase to kebab-case.
+Run Prettier against generated files without reimplementing CLI calls.
 
 ```typescript
-toKebabCase('User'); // 'user'
-toKebabCase('BlogPost'); // 'blog-post'
-toKebabCase('CustomFieldType'); // 'custom-field-type'
+import {
+  formatGeneratedFile,
+  formatGeneratedFiles,
+} from '@tgraph/backend-generator/dist/io/utils/format-files';
+
+await formatGeneratedFile('src/features/user/user.admin.service.ts', process.cwd());
+await formatGeneratedFiles(['fileA.ts', 'fileB.ts'], process.cwd());
 ```
 
-### `pluralize(str: string): string`
-
-Simple English pluralization.
-
-```typescript
-pluralize('user'); // 'users'
-pluralize('post'); // 'posts'
-pluralize('category'); // 'categories'
-pluralize('person'); // 'people'
-```
-
-### `getApiEndpoint(modelName: string): string`
-
-Returns the API endpoint path.
-
-```typescript
-getApiEndpoint('User'); // 'tg-api/users'
-getApiEndpoint('BlogPost'); // 'tg-api/blog-posts'
-getApiEndpoint('CustomFieldType'); // 'tg-api/custom-field-types'
-```
-
-### `getResourceName(modelName: string): string`
-
-Returns the frontend resource name.
-
-```typescript
-getResourceName('User'); // 'users'
-getResourceName('BlogPost'); // 'blog-posts'
-getResourceName('CustomFieldType'); // 'custom-field-types'
-```
+Both helpers shell out to `npx prettier --write`. `formatGeneratedFiles` attempts a batched call first and falls back to per-file formatting if that fails.
 
 ---
 
-## Formatting Utilities
+## Prompt Helper
 
-### `formatGeneratedFile(filePath: string): Promise<void>`
-
-Formats a single file using Prettier.
+`promptUser(question: string, options?: { autoConfirm?: boolean; defaultValue?: boolean }): Promise<boolean>`
 
 ```typescript
-await formatGeneratedFile('src/features/user/user.tg.service.ts');
-```
+import { promptUser } from '@tgraph/backend-generator/dist/io/utils/user-prompt';
 
-### `formatGeneratedFiles(filePaths: string[]): Promise<void>`
-
-Formats multiple files in parallel.
-
-```typescript
-await formatGeneratedFiles([
-  'src/features/user/user.tg.service.ts',
-  'src/features/user/user.tg.controller.ts',
-  'src/features/user/create-user.tg.dto.ts',
-]);
-```
-
----
-
-## User Prompt Utilities
-
-### `promptUser(question: string, options?: PromptUserOptions): Promise<boolean>`
-
-Prompts the user for a yes/no confirmation. When `options.autoConfirm` is enabled, the prompt resolves immediately without waiting for input—perfect for CI pipelines.
-
-```typescript
-const shouldCreate = await promptUser('Create module directory for User? (y/n): ', {
-  autoConfirm: config.nonInteractive,
+const shouldCreate = await promptUser('Create module directory? (y/n): ', {
+  autoConfirm: config.behavior.nonInteractive,
   defaultValue: true,
 });
-
-if (shouldCreate) {
-  await createModuleDirectory('user');
-}
 ```
 
-```typescript
-interface PromptUserOptions {
-  autoConfirm?: boolean;
-  defaultValue?: boolean;
-}
-```
-
-### `promptYesNo(question: string): Promise<boolean>`
-
-Prompts for yes/no answer.
-
-```typescript
-const shouldCreate = await promptYesNo('Create module directory?');
-if (shouldCreate) {
-  await createModuleDirectory('user');
-}
-```
+When `autoConfirm` is enabled the function logs the assumed answer and resolves immediately, which keeps CI jobs non-blocking.
 
 ---
 
-## File System Utilities
+## Related Reading
 
-### `ensureDirectoryExists(dirPath: string): Promise<void>`
-
-Creates directory if it doesn't exist.
-
-```typescript
-await ensureDirectoryExists('src/features/user');
-```
-
-### `writeGeneratedFile(filePath: string, content: string): Promise<void>`
-
-Writes file and formats it.
-
-```typescript
-await writeGeneratedFile('src/features/user/user.tg.service.ts', serviceContent);
-```
-
-### `readFile(filePath: string): Promise<string>`
-
-Reads file content.
-
-```typescript
-const content = await readFile('src/app.module.ts');
-```
-
----
-
-## Best Practices
-
-### 1. Use Updaters for Safe Modifications
-
-Always use updater classes instead of direct file manipulation:
-
-```typescript
-// Good
-const updater = new NestAppModuleUpdater();
-await updater.update(modules);
-
-// Bad - manual string manipulation
-let content = fs.readFileSync('app.module.ts', 'utf-8');
-content += `import { UserModule } from './features/user/user.module';\n`;
-fs.writeFileSync('app.module.ts', content);
-```
-
-### 2. Format Generated Code
-
-Always format generated files:
-
-```typescript
-const filePath = 'src/features/user/user.tg.service.ts';
-fs.writeFileSync(filePath, content);
-await formatGeneratedFile(filePath);
-```
-
-### 3. Handle Errors
-
-```typescript
-try {
-  const resolver = new ModulePathResolver();
-  const modulePath = await resolver.resolve('User');
-
-  if (!modulePath) {
-    console.warn('Module not found, creating...');
-    await ensureDirectoryExists('src/features/user');
-  }
-} catch (error) {
-  console.error('Resolution failed:', error);
-}
-```
-
-### 4. Validate Paths
-
-```typescript
-const modulePath = await resolver.resolve('User');
-
-if (!modulePath) {
-  throw new Error('Module path could not be resolved');
-}
-
-if (!fs.existsSync(modulePath.path)) {
-  throw new Error(`Module directory does not exist: ${modulePath.path}`);
-}
-```
-
----
-
-## Next Steps
-
-- **[Generators API](./generators.md)** – Generator classes
-- **[Parsers API](./parsers.md)** – Schema parsing
-- **[Configuration](./configuration.md)** – Configuration options
+- [Generators](./generators.md) – see how these helpers are orchestrated.
+- [Parsers](./parsers.md) – understand the metadata flowing into the utilities.
+- [Configuration](./configuration.md) – source of truth for the `Config` consumed above.

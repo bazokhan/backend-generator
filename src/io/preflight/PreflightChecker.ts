@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { Config, GeneratedModuleFolder, PrismaModel } from '@tg-scripts/types';
+import type { Config, PrismaModel } from '@tg-scripts/types';
 import { ProjectPathResolver } from '../project-paths/ProjectPathResolver';
 import { ModulePathResolver } from '../module-path-resolver/ModulePathResolver';
 import { PrismaFieldParser } from '../../parser/prisma-field-parser/PrismaFieldParser';
@@ -18,7 +18,7 @@ interface PreflightPathReport {
 interface PreflightModuleReport {
   name: string;
   status: 'ready' | 'missing-directory' | 'missing-module-file';
-  moduleType?: GeneratedModuleFolder;
+  moduleType?: string;
   existingDirectory?: string;
   existingModuleFile?: string;
   pendingDirectory?: string;
@@ -71,11 +71,11 @@ export class PreflightChecker {
       fsModule: this.fsModule,
       pathModule: this.pathModule,
     });
-    const moduleRoots = this.projectPaths.resolveModuleRoots();
     this.modulePathResolver = new ModulePathResolver({
       fsModule: this.fsModule,
       pathModule: this.pathModule,
-      moduleRoots,
+      searchPaths: config.output.backend.modules.searchPaths,
+      defaultRoot: config.output.backend.modules.defaultRoot,
     });
     const fieldParser = new PrismaFieldParser();
     const relationsParser = new PrismaRelationsParser();
@@ -121,9 +121,9 @@ export class PreflightChecker {
   }
 
   private parseSchema(): PrismaModel[] {
-    const schemaPath = this.pathModule.isAbsolute(this.config.schemaPath)
-      ? this.config.schemaPath
-      : this.pathModule.join(this.workspaceRoot, this.config.schemaPath);
+    const schemaPath = this.pathModule.isAbsolute(this.config.input.schemaPath)
+      ? this.config.input.schemaPath
+      : this.pathModule.join(this.workspaceRoot, this.config.input.schemaPath);
     const schemaContent = this.fsModule.readFileSync(schemaPath, 'utf-8');
     this.schemaParser.load(schemaContent);
     const { models } = this.schemaParser.parse();
@@ -151,7 +151,7 @@ export class PreflightChecker {
   }
 
   private evaluateDataProvider(): PreflightPathReport {
-    const configuredPath = this.config.paths?.dashboard?.dataProvider;
+    const configuredPath = this.config.paths?.dataProvider;
     const resolvedPath = this.projectPaths.resolveDashboardDataProviderPath();
     const exists = resolvedPath ? this.fsModule.existsSync(resolvedPath) : false;
     
@@ -171,7 +171,7 @@ export class PreflightChecker {
   }
 
   private evaluateAppComponent(): PreflightPathReport {
-    const configuredPath = this.config.paths?.dashboard?.appComponent;
+    const configuredPath = this.config.paths?.appComponent;
     const resolvedPath = this.projectPaths.resolveDashboardAppComponentPath();
     const exists = resolvedPath ? this.fsModule.existsSync(resolvedPath) : false;
     
@@ -202,7 +202,7 @@ export class PreflightChecker {
   }
 
   private evaluateModules(models: PrismaModel[]): PreflightModuleReport[] {
-    const defaultFeatureRoot = this.projectPaths.getDefaultModuleRoot('features');
+    const defaultFeatureRoot = this.projectPaths.getDefaultModuleRoot();
     return models.map((model) => {
       const moduleInfo = this.modulePathResolver.findModulePath(model.name, this.workspaceRoot);
 
@@ -278,11 +278,11 @@ export class PreflightChecker {
       });
     }
 
-    if (this.config.updateDataProvider && !context.dataProvider.exists) {
+    if (this.config.dashboard.updateDataProvider && !context.dataProvider.exists) {
       steps.push({
         severity: 'warning',
         message:
-          'Dashboard data provider not found. Configure config.paths.dashboard.dataProvider or create the file before running generation.',
+          'Dashboard data provider not found. Configure config.paths.dataProvider or create the file before running generation.',
       });
     }
 
@@ -290,7 +290,7 @@ export class PreflightChecker {
       steps.push({
         severity: 'warning',
         message:
-          'Dashboard App component not found. Configure config.paths.dashboard.appComponent so resources can be registered.',
+          'Dashboard App component not found. Configure config.paths.appComponent so resources can be registered.',
       });
     }
 

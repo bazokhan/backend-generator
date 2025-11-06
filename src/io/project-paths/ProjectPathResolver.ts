@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { Config, GeneratedModuleFolder } from '@tg-scripts/types';
+import type { Config } from '@tg-scripts/types';
 
 interface ProjectPathResolverOptions {
   workspaceRoot?: string;
@@ -28,7 +28,7 @@ export class ProjectPathResolver {
   private readonly pathModule: typeof path;
   private readonly dashboardAbsolutePath: string;
 
-  private readonly moduleRootCache: Partial<Record<GeneratedModuleFolder, string[]>> = {};
+  private readonly moduleRootCache: Record<string, string[]> = {};
   private appModulePathCache: string | null | undefined;
   private dataProviderPathCache: string | null | undefined;
   private appComponentPathCache: string | null | undefined;
@@ -37,7 +37,7 @@ export class ProjectPathResolver {
     this.workspaceRoot = options.workspaceRoot ?? process.cwd();
     this.fsModule = options.fsModule ?? fs;
     this.pathModule = options.pathModule ?? path;
-    const dashboardPath = this.config.dashboardPath;
+    const dashboardPath = this.config.output.dashboard.root;
     this.dashboardAbsolutePath = this.isAbsolute(dashboardPath)
       ? dashboardPath
       : this.pathModule.join(this.workspaceRoot, dashboardPath);
@@ -83,11 +83,18 @@ export class ProjectPathResolver {
     return this.appModulePathCache;
   }
 
-  public resolveModuleRoots(): Record<GeneratedModuleFolder, string[]> {
-    return {
-      features: this.resolveModuleRootsFor('features'),
-      infrastructure: this.resolveModuleRootsFor('infrastructure'),
-    };
+  public resolveModuleRoots(): Record<string, string[]> {
+    // Return all configured search paths as module roots
+    const roots: Record<string, string[]> = {};
+    for (const searchPath of this.config.output.backend.modules.searchPaths) {
+      const absolutePath = this.makeAbsolute(searchPath);
+      const folderName = this.pathModule.basename(absolutePath);
+      if (!roots[folderName]) {
+        roots[folderName] = [];
+      }
+      roots[folderName].push(absolutePath);
+    }
+    return roots;
   }
 
   public resolveDashboardDataProviderPath(): string | null {
@@ -95,7 +102,7 @@ export class ProjectPathResolver {
       return this.dataProviderPathCache;
     }
 
-    const configured = this.resolveConfiguredPath(this.config.paths?.dashboard?.dataProvider);
+    const configured = this.resolveConfiguredPath(this.config.paths?.dataProvider);
     if (configured) {
       this.dataProviderPathCache = configured;
       return this.dataProviderPathCache;
@@ -118,7 +125,7 @@ export class ProjectPathResolver {
       return this.appComponentPathCache;
     }
 
-    const configured = this.resolveConfiguredPath(this.config.paths?.dashboard?.appComponent);
+    const configured = this.resolveConfiguredPath(this.config.paths?.appComponent);
     if (configured) {
       this.appComponentPathCache = configured;
       return this.appComponentPathCache;
@@ -151,25 +158,21 @@ export class ProjectPathResolver {
     return this.appComponentPathCache;
   }
 
-  public getDefaultModuleRoot(type: GeneratedModuleFolder): string {
-    const configured = this.config.paths?.moduleRoots?.[type]?.[0];
-    if (configured) {
-      return this.makeAbsolute(configured);
-    }
-
-    return this.pathModule.join(this.workspaceRoot, 'src', type);
+  public getDefaultModuleRoot(): string {
+    // With new config, we use the defaultRoot from config
+    return this.pathModule.join(this.workspaceRoot, this.config.output.backend.modules.defaultRoot);
   }
 
-  private resolveModuleRootsFor(type: GeneratedModuleFolder): string[] {
+  private resolveModuleRootsFor(type: string): string[] {
     if (this.moduleRootCache[type]) {
       return this.moduleRootCache[type] ?? [];
     }
 
     const resolved: string[] = [];
 
-    const configured = this.config.paths?.moduleRoots?.[type] ?? [];
-    for (const provided of configured) {
-      resolved.push(this.makeAbsolute(provided));
+    // Use search paths from new config structure
+    for (const searchPath of this.config.output.backend.modules.searchPaths) {
+      resolved.push(this.makeAbsolute(searchPath));
     }
 
     const defaults = [
@@ -217,7 +220,7 @@ export class ProjectPathResolver {
     return this.moduleRootCache[type] ?? [];
   }
 
-  private discoverModuleDirectories(type: GeneratedModuleFolder): string[] {
+  private discoverModuleDirectories(type: string): string[] {
     const matches: string[] = [];
     const searchBases = [this.workspaceRoot, this.pathModule.join(this.workspaceRoot, 'src')];
 

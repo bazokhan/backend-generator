@@ -202,7 +202,7 @@ const moduleInfo = await resolver.resolve('User');
 
 if (moduleInfo) {
   console.log('Module path:', moduleInfo.path);
-  console.log('Module type:', moduleInfo.type); // 'features' | 'infrastructure'
+  console.log('Module type:', moduleInfo.type); // e.g., 'features', 'modules', 'domains', etc.
   console.log('Folder name:', moduleInfo.folderName);
 }
 ```
@@ -212,7 +212,7 @@ if (moduleInfo) {
 ```typescript
 interface ModulePathInfo {
   path: string; // e.g., 'src/features/user'
-  type: 'features' | 'infrastructure';
+  type: string;  // Folder name where module is found (e.g., 'features', 'modules', 'domains', etc.)
   folderName: string; // e.g., 'user'
 }
 ```
@@ -691,7 +691,7 @@ interface Config {
 ```typescript
 interface ModulePathInfo {
   path: string;
-  type: 'features' | 'infrastructure';
+  type: string;  // Folder name where module is found
   folderName: string;
 }
 ```

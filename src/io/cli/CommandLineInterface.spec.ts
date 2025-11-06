@@ -36,13 +36,50 @@ jest.mock('@tg-scripts/io/preflight/PreflightChecker', () => ({
 }));
 
 const SAMPLE_CONFIG: Config = {
-  schemaPath: 'schema.prisma',
-  dashboardPath: 'dashboard',
-  dtosPath: 'dtos',
-  suffix: 'Tg',
-  isAdmin: true,
-  updateDataProvider: false,
-  nonInteractive: false,
+  input: {
+    schemaPath: 'schema.prisma',
+    prismaService: 'src/infrastructure/database/prisma.service.ts',
+  },
+  output: {
+    backend: {
+      dtos: 'dtos',
+      modules: {
+        searchPaths: ['src/features', 'src/infrastructure'],
+        defaultRoot: 'src/features',
+      },
+      staticFiles: {
+        guards: 'src/guards',
+        decorators: 'src/decorators',
+        dtos: 'src/dtos',
+        interceptors: 'src/interceptors',
+          utils: 'src/utils',
+        },
+    },
+    dashboard: {
+      root: 'dashboard',
+      resources: 'dashboard/resources',
+    },
+  },
+  api: {
+    suffix: 'Tg',
+    prefix: 'api',
+    authentication: {
+      enabled: true,
+      requireAdmin: true,
+      guards: [],
+    },
+  },
+  dashboard: {
+    enabled: true,
+    updateDataProvider: false,
+    components: {
+      form: {},
+      display: {},
+    },
+  },
+  behavior: {
+    nonInteractive: false,
+  },
 };
 
 const SAMPLE_PREFLIGHT_REPORT: PreflightReport = {
@@ -168,11 +205,9 @@ describe('CommandLineInterface', () => {
     expect(loader.load).toHaveBeenCalled();
     expect(apiGenerateMock).toHaveBeenCalled();
     const runtimeConfig = ApiGeneratorMock.mock.calls[0]?.[0] as Config | undefined;
-    expect(runtimeConfig).toMatchObject({
-      schemaPath: SAMPLE_CONFIG.schemaPath,
-      dashboardPath: SAMPLE_CONFIG.dashboardPath,
-      dtosPath: SAMPLE_CONFIG.dtosPath,
-    });
+    expect(runtimeConfig?.input.schemaPath).toBe(SAMPLE_CONFIG.input.schemaPath);
+    expect(runtimeConfig?.output.backend.dtos).toBe(SAMPLE_CONFIG.output.backend.dtos);
+    expect(runtimeConfig?.output.dashboard.root).toBe(SAMPLE_CONFIG.output.dashboard.root);
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
@@ -227,20 +262,6 @@ describe('CommandLineInterface', () => {
     expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
-  it('merges CLI overrides into runtime config', async () => {
-    const loader = createLoaderMock();
-    const cli = new CommandLineInterface({ configLoader: loader });
-
-    const exitCode = await cli.run(['api', '--schema', 'custom.prisma', '--no-update-data-provider']);
-
-    expect(exitCode).toBe(0);
-    expect(loader.load).toHaveBeenCalled();
-    const mergedConfig = ApiGeneratorMock.mock.calls[0]?.[0] as Config;
-    expect(mergedConfig.schemaPath).toBe('custom.prisma');
-    expect(mergedConfig.updateDataProvider).toBe(false);
-    expect(apiGenerateMock).toHaveBeenCalled();
-  });
-
   it('enables non-interactive mode when --yes is provided', async () => {
     const loader = createLoaderMock();
     const cli = new CommandLineInterface({ configLoader: loader });
@@ -249,14 +270,14 @@ describe('CommandLineInterface', () => {
 
     expect(exitCode).toBe(0);
     const mergedConfig = DashboardGeneratorMock.mock.calls[0]?.[0] as Config;
-    expect(mergedConfig.nonInteractive).toBe(true);
+    expect(mergedConfig.behavior.nonInteractive).toBe(true);
   });
 
   it('forces interactive prompts when --interactive overrides config', async () => {
     const loader = createLoaderMock({
       load: jest.fn().mockReturnValue({
         ...SAMPLE_CONFIG,
-        nonInteractive: true,
+        behavior: { ...SAMPLE_CONFIG.behavior, nonInteractive: true },
       }),
     });
     const cli = new CommandLineInterface({ configLoader: loader });
@@ -265,7 +286,7 @@ describe('CommandLineInterface', () => {
 
     expect(exitCode).toBe(0);
     const mergedConfig = ApiGeneratorMock.mock.calls[0]?.[0] as Config;
-    expect(mergedConfig.nonInteractive).toBe(false);
+    expect(mergedConfig.behavior.nonInteractive).toBe(false);
   });
 });
 
@@ -415,9 +436,9 @@ describe('CommandLineInterface - doctor command', () => {
     expect(systemValidatorRunDiagnosticsMock).toHaveBeenCalled();
     // Verify that it still runs diagnostics even when config is missing
     // (it uses a minimal default config internally just to run the checks)
-    const callArg = systemValidatorRunDiagnosticsMock.mock.calls[0]?.[0];
+    const callArg = systemValidatorRunDiagnosticsMock.mock.calls[0]?.[0] as Config | undefined;
     expect(callArg).toBeDefined();
-    expect(callArg?.schemaPath).toBe('prisma/schema.prisma');
+    expect(callArg?.input.schemaPath).toBe('prisma/schema.prisma');
   });
 
   it('prints diagnostic categories with proper formatting', async () => {

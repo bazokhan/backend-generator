@@ -49,23 +49,32 @@ describe('ConfigLoader', () => {
     const schemaPath = path.join(tempDir, 'schema.prisma');
     fs.writeFileSync(schemaPath, 'model Test { id Int @id }', 'utf-8');
 
-    const configContent = `module.exports = { config: { schemaPath: 'schema.prisma', dashboardPath: 'dash', dtosPath: 'dtos', suffix: 'App' } };`;
+    const configContent = `module.exports = { config: { 
+      input: { schemaPath: 'schema.prisma', prismaService: 'src/infrastructure/database/prisma.service.ts' }, 
+      output: { 
+        backend: { dtos: 'dtos', modules: { searchPaths: ['src/features'], defaultRoot: 'src/features' }, staticFiles: { guards: 'src/guards', decorators: 'src/decorators', dtos: 'src/dtos', interceptors: 'src/interceptors', utils: 'src/utils' } }, 
+        dashboard: { root: 'dash', resources: 'dash/resources' } 
+      }, 
+      api: { suffix: 'App', prefix: 'api', authentication: { enabled: true, requireAdmin: false, guards: [] } }, 
+      dashboard: { enabled: true, updateDataProvider: false, components: { form: {}, display: {} } }, 
+      behavior: { nonInteractive: false } 
+    } };`;
     fs.writeFileSync(path.join(tempDir, 'tgraph.config.js'), configContent, 'utf-8');
 
     const loader = new ConfigLoader({ cwd: tempDir });
     const config = loader.load();
 
-    expect(config.schemaPath).toBe('schema.prisma');
-    expect(config.dashboardPath).toBe('dash');
-    expect(config.dtosPath).toBe('dtos');
-    expect(config.suffix).toBe('App');
+    expect(config.input.schemaPath).toBe('schema.prisma');
+    expect(config.output.dashboard.root).toBe('dash');
+    expect(config.output.backend.dtos).toBe('dtos');
+    expect(config.api.suffix).toBe('App');
   });
 
   it('throws a ConfigLoaderError when required fields are missing', () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'config-loader-missing-'));
     tempDirs.push(tempDir);
 
-    const invalidConfig = `module.exports = { config: { dashboardPath: 'dash', dtosPath: 'dtos', suffix: 'App' } };`;
+    const invalidConfig = `module.exports = { config: { output: { dashboard: { root: 'dash' }, backend: { dtos: 'dtos' } }, api: { suffix: 'App' } } };`;
     fs.writeFileSync(path.join(tempDir, 'tgraph.config.js'), invalidConfig, 'utf-8');
 
     const loader = new ConfigLoader({ cwd: tempDir });
@@ -104,7 +113,16 @@ describe('ConfigLoader', () => {
     const schemaPath = path.join(tempDir, 'schema.prisma');
     fs.writeFileSync(schemaPath, 'model Test { id Int @id }', 'utf-8');
 
-    const configContent = `module.exports = { config: { schemaPath: 'schema.prisma', dashboardPath: 'dash', dtosPath: 'dtos', suffix: 'notPascal' } };`;
+    const configContent = `module.exports = { config: { 
+      input: { schemaPath: 'schema.prisma', prismaService: 'src/infrastructure/database/prisma.service.ts' }, 
+      output: { 
+        backend: { dtos: 'dtos', modules: { searchPaths: ['src/features'], defaultRoot: 'src/features' }, staticFiles: { guards: 'src/guards', decorators: 'src/decorators', dtos: 'src/dtos', interceptors: 'src/interceptors', utils: 'src/utils' } }, 
+        dashboard: { root: 'dash', resources: 'dash/resources' } 
+      }, 
+      api: { suffix: 'notPascal', prefix: 'api', authentication: { enabled: true, requireAdmin: false, guards: [] } }, 
+      dashboard: { enabled: true, updateDataProvider: false, components: { form: {}, display: {} } }, 
+      behavior: { nonInteractive: false } 
+    } };`;
     fs.writeFileSync(path.join(tempDir, 'tgraph.config.js'), configContent, 'utf-8');
 
     // Temporarily restore console.warn to check if it was called
@@ -114,9 +132,9 @@ describe('ConfigLoader', () => {
     const loader = new ConfigLoader({ cwd: tempDir });
     const config = loader.load();
 
-    expect(config.suffix).toBe('notPascal');
+    expect(config.api.suffix).toBe('notPascal');
     expect(mockWarn).toHaveBeenCalledWith(
-      expect.stringContaining("Warning: Config field 'suffix' should be PascalCase")
+      expect.stringContaining("Warning: Config field 'api.suffix' should be PascalCase")
     );
   });
 
@@ -124,7 +142,16 @@ describe('ConfigLoader', () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'config-loader-no-schema-'));
     tempDirs.push(tempDir);
 
-    const configContent = `module.exports = { config: { schemaPath: 'nonexistent.prisma', dashboardPath: 'dash', dtosPath: 'dtos', suffix: 'App' } };`;
+    const configContent = `module.exports = { config: { 
+      input: { schemaPath: 'nonexistent.prisma' }, 
+      output: { 
+        backend: { dtos: 'dtos', modules: { searchPaths: ['src/features'], defaultRoot: 'src/features' }, staticFiles: { guards: 'src/guards', decorators: 'src/decorators', dtos: 'src/dtos', interceptors: 'src/interceptors', utils: 'src/utils' } }, 
+        dashboard: { root: 'dash', resources: 'dash/resources' } 
+      }, 
+      api: { suffix: 'App', prefix: 'api', authentication: { enabled: true, requireAdmin: false, guards: [] } }, 
+      dashboard: { enabled: true, updateDataProvider: false, components: { form: {}, display: {} } }, 
+      behavior: { nonInteractive: false } 
+    } };`;
     fs.writeFileSync(path.join(tempDir, 'tgraph.config.js'), configContent, 'utf-8');
 
     const loader = new ConfigLoader({ cwd: tempDir });
@@ -146,13 +173,22 @@ describe('ConfigLoader', () => {
     const schemaPath = path.join(tempDir, 'schema.prisma');
     fs.writeFileSync(schemaPath, 'model Test { id Int @id }', 'utf-8');
 
-    const configContent = `module.exports = { config: { schemaPath: 'schema.prisma', dashboardPath: 'dash', dtosPath: 'dtos', suffix: '' } };`;
+    const configContent = `module.exports = { config: { 
+      input: { schemaPath: 'schema.prisma', prismaService: 'src/infrastructure/database/prisma.service.ts' }, 
+      output: { 
+        backend: { dtos: 'dtos', modules: { searchPaths: ['src/features'], defaultRoot: 'src/features' }, staticFiles: { guards: 'src/guards', decorators: 'src/decorators', dtos: 'src/dtos', interceptors: 'src/interceptors', utils: 'src/utils' } }, 
+        dashboard: { root: 'dash', resources: 'dash/resources' } 
+      }, 
+      api: { suffix: '', prefix: 'api', authentication: { enabled: true, requireAdmin: false, guards: [] } }, 
+      dashboard: { enabled: true, updateDataProvider: false, components: { form: {}, display: {} } }, 
+      behavior: { nonInteractive: false } 
+    } };`;
     fs.writeFileSync(path.join(tempDir, 'tgraph.config.js'), configContent, 'utf-8');
 
     const loader = new ConfigLoader({ cwd: tempDir });
     const config = loader.load();
 
-    expect(config.suffix).toBe('');
+    expect(config.api.suffix).toBe('');
   });
 
   it('throws ConfigLoaderError when suffix is undefined', () => {
@@ -163,7 +199,16 @@ describe('ConfigLoader', () => {
     const schemaPath = path.join(tempDir, 'schema.prisma');
     fs.writeFileSync(schemaPath, 'model Test { id Int @id }', 'utf-8');
 
-    const configContent = `module.exports = { config: { schemaPath: 'schema.prisma', dashboardPath: 'dash', dtosPath: 'dtos' } };`;
+    const configContent = `module.exports = { config: { 
+      input: { schemaPath: 'schema.prisma', prismaService: 'src/infrastructure/database/prisma.service.ts' }, 
+      output: { 
+        backend: { dtos: 'dtos', modules: { searchPaths: ['src/features'], defaultRoot: 'src/features' }, staticFiles: { guards: 'src/guards', decorators: 'src/decorators', dtos: 'src/dtos', interceptors: 'src/interceptors', utils: 'src/utils' } }, 
+        dashboard: { root: 'dash', resources: 'dash/resources' } 
+      }, 
+      api: { prefix: 'api', authentication: { enabled: true, requireAdmin: false, guards: [] } }, 
+      dashboard: { enabled: true, updateDataProvider: false, components: { form: {}, display: {} } }, 
+      behavior: { nonInteractive: false } 
+    } };`;
     fs.writeFileSync(path.join(tempDir, 'tgraph.config.js'), configContent, 'utf-8');
 
     const loader = new ConfigLoader({ cwd: tempDir });
@@ -173,7 +218,7 @@ describe('ConfigLoader', () => {
       loader.load();
     } catch (error) {
       expect((error as ConfigLoaderError).cause).toBeDefined();
-      expect(String((error as ConfigLoaderError).cause)).toMatch(/missing required field 'suffix'/);
+      expect(String((error as ConfigLoaderError).cause)).toMatch(/missing required field 'api\.suffix'/);
     }
   });
 });

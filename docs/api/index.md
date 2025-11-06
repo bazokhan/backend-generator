@@ -7,12 +7,12 @@ has_children: true
 
 # API Reference
 
-Detailed API documentation for all exported classes and utilities.
+Everything exported by `@tgraph/backend-generator` is documented here. Use these pages to wire generators into custom scripts, understand parser behavior, or fine‑tune configuration.
 
-## Available Documentation
+## Reference Sections
 
-- **[Generators](./generators)** - Generator classes for API, dashboard, and DTOs
-- **[Parsers](./parsers)** - Schema and code parsing utilities
-- **[Utilities](./utilities)** - Helper functions and utility classes
-- **[Configuration](./configuration)** - Complete configuration reference
+- **[Generators](./generators.md)** – API, dashboard, DTO, and data-provider generators with lifecycle details
+- **[Parsers](./parsers.md)** – Prisma and Nest parsers plus their data structures
+- **[Utilities](./utilities.md)** – Config loading, path resolution, module updaters, prompts, and formatters
+- **[Configuration](./configuration.md)** – Exhaustive description of the `Config` contract used across the toolkit
 

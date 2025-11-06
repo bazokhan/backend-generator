@@ -15,7 +15,7 @@ The design principles and philosophy behind TGraph Backend Generator.
 
 TGraph Backend Generator embraces strong conventions to minimize configuration:
 
-- Models in `src/features/` or `src/infrastructure/`
+- Models organized in configurable module folders (e.g., `src/features/`, `src/modules/`, etc.)
 - Generated files use `.tg.` suffix
 - REST endpoints follow `tg-api/{resource}` pattern
 - Dashboard resources match API endpoints

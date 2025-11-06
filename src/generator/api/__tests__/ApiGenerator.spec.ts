@@ -11,12 +11,50 @@ import {
 import type { PrismaModel, Config } from '@tg-scripts/types';
 
 const config: Config = {
-  schemaPath: 'prisma/schema.prisma',
-  dashboardPath: 'src/dashboard/src',
-  dtosPath: 'src/dtos/generated',
-  suffix: 'Tg',
-  updateDataProvider: true,
-  nonInteractive: false,
+      input: {
+        schemaPath: 'prisma/schema.prisma',
+        prismaService: 'src/infrastructure/database/prisma.service.ts',
+      },
+  output: {
+    backend: {
+      dtos: 'src/dtos/generated',
+      modules: {
+        searchPaths: ['src/features', 'src/infrastructure'],
+        defaultRoot: 'src/features',
+      },
+      staticFiles: {
+        guards: 'src/guards',
+        decorators: 'src/decorators',
+        dtos: 'src/dtos',
+        interceptors: 'src/interceptors',
+          utils: 'src/utils',
+        },
+    },
+    dashboard: {
+      root: 'src/dashboard/src',
+      resources: 'src/dashboard/src/resources',
+    },
+  },
+  api: {
+    suffix: 'Tg',
+    prefix: 'api',
+    authentication: {
+      enabled: true,
+      requireAdmin: false,
+      guards: [],
+    },
+  },
+  dashboard: {
+    enabled: true,
+    updateDataProvider: true,
+    components: {
+      form: {},
+      display: {},
+    },
+  },
+  behavior: {
+    nonInteractive: false,
+  },
 };
 
 const mockFindModulePath = jest.fn();
@@ -46,6 +84,8 @@ jest.mock('fs', () => {
     writeFileSync: jest.fn(),
     mkdirSync: jest.fn(),
     promises: {
+      ...actualFs.promises,
+      mkdir: jest.fn().mockResolvedValue(undefined),
       writeFile: jest.fn().mockResolvedValue(undefined),
     },
   };
@@ -418,7 +458,7 @@ model Post {
 
       const nonInteractiveGenerator = new ApiGenerator({
         ...config,
-        nonInteractive: true,
+        behavior: { ...config.behavior, nonInteractive: true },
       });
 
       await nonInteractiveGenerator.generate();

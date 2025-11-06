@@ -5,12 +5,50 @@ import type { Config } from '@tg-scripts/types';
 import { ProjectPathResolver } from './ProjectPathResolver';
 
 const baseConfig: Config = {
-  schemaPath: 'schema.prisma',
-  dashboardPath: 'dashboard',
-  dtosPath: 'dtos',
-  suffix: 'Tg',
-  isAdmin: true,
-  updateDataProvider: true,
+  input: {
+    schemaPath: 'schema.prisma',
+    prismaService: 'src/infrastructure/database/prisma.service.ts',
+  },
+  output: {
+    backend: {
+      dtos: 'dtos',
+      modules: {
+        searchPaths: ['src/features', 'src/infrastructure'],
+        defaultRoot: 'src/features',
+      },
+      staticFiles: {
+        guards: 'src/guards',
+        decorators: 'src/decorators',
+        dtos: 'src/dtos',
+        interceptors: 'src/interceptors',
+          utils: 'src/utils',
+        },
+    },
+    dashboard: {
+      root: 'dashboard',
+      resources: 'dashboard/resources',
+    },
+  },
+  api: {
+    suffix: 'Tg',
+    prefix: 'api',
+    authentication: {
+      enabled: true,
+      requireAdmin: true,
+      guards: [],
+    },
+  },
+  dashboard: {
+    enabled: true,
+    updateDataProvider: true,
+    components: {
+      form: {},
+      display: {},
+    },
+  },
+  behavior: {
+    nonInteractive: false,
+  },
 };
 
 describe('ProjectPathResolver', () => {
@@ -59,9 +97,15 @@ describe('ProjectPathResolver', () => {
     const resolver = new ProjectPathResolver(
       {
         ...baseConfig,
-        paths: {
-          moduleRoots: {
-            features: ['packages/api/src/feature-modules'],
+        output: {
+          ...baseConfig.output,
+          backend: {
+            ...baseConfig.output.backend,
+            modules: {
+              ...baseConfig.output.backend.modules,
+              searchPaths: ['packages/api/src/feature-modules'],
+              defaultRoot: 'src/features',
+            },
           },
         },
       },
@@ -69,7 +113,9 @@ describe('ProjectPathResolver', () => {
     );
 
     const roots = resolver.resolveModuleRoots();
-    expect(roots.features).toContain(featuresRoot);
+    // Module roots are now keyed by full search path, not by predefined types
+    const rootsArray = Object.values(roots).flat();
+    expect(rootsArray).toContain(featuresRoot);
   });
 
   it('resolves dashboard app component from configuration', () => {
@@ -80,11 +126,15 @@ describe('ProjectPathResolver', () => {
     const resolver = new ProjectPathResolver(
       {
         ...baseConfig,
-        dashboardPath: 'dashboard/src',
-        paths: {
+        output: {
+          ...baseConfig.output,
           dashboard: {
-            appComponent: 'dashboard/src/Shell.tsx',
+            ...baseConfig.output.dashboard,
+            root: 'dashboard/src',
           },
+        },
+        paths: {
+          appComponent: 'dashboard/src/Shell.tsx',
         },
       },
       { workspaceRoot: tempDir },
@@ -98,13 +148,7 @@ describe('ProjectPathResolver', () => {
     fs.mkdirSync(path.dirname(dataProvider), { recursive: true });
     fs.writeFileSync(dataProvider, 'export const dataProvider = {};');
 
-    const resolver = new ProjectPathResolver(
-      {
-        ...baseConfig,
-        dashboardPath: 'dashboard',
-      },
-      { workspaceRoot: tempDir },
-    );
+    const resolver = new ProjectPathResolver(baseConfig, { workspaceRoot: tempDir });
 
     expect(resolver.resolveDashboardDataProviderPath()).toBe(dataProvider);
   });

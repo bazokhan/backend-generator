@@ -61,6 +61,9 @@ export class PrismaSchemaParser implements IPrismaSchemaParser<PrismaModel> {
   private processLine(line: string): void {
     // Check triple-slash comments BEFORE double-slash (order matters!)
     if (line.startsWith('///')) {
+      // Check for @tg_form() and @tg_label() in triple-slash comments
+      this.handleComment(line);
+      
       if (this.state === State.InModel) {
         const content = line.replace(/^\/\/\//, '').trim();
         this.pendingFieldDocComment = this.pendingFieldDocComment
@@ -228,7 +231,7 @@ export class PrismaSchemaParser implements IPrismaSchemaParser<PrismaModel> {
       name: this.currentModel.name,
       fields: this.currentModel.fields,
       enums: usedEnums,
-      moduleType: 'features',
+      moduleType: '', // Will be set later by ApiGenerator based on where module is found
       tgLabelField: this.currentModel.tgLabelField,
     });
 

@@ -114,7 +114,7 @@ exports[`PrismaSchemaParser snapshots should snapshot a parsed schema with enums
           "type": "DateTime",
         },
       ],
-      "moduleType": "features",
+      "moduleType": "",
       "name": "User",
       "tgLabelField": "email",
     },

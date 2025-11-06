@@ -1,17 +1,7 @@
-export type GeneratedModuleFolder = 'features' | 'infrastructure';
-
 export interface ModulePathInfo {
   path: string;
-  type: GeneratedModuleFolder;
+  type: string;
   folderName: string;
-}
-
-export interface PrismaModel {
-  name: string;
-  fields: PrismaField[];
-  enums: string[];
-  // Optional: preferred display label for references, from // @tg_label(fieldName)
-  tgLabelField?: string | undefined;
 }
 
 export interface PrismaField {
@@ -57,7 +47,7 @@ export interface PrismaModel {
   fields: PrismaField[];
   enums: string[];
   modulePath?: string | undefined;
-  moduleType: GeneratedModuleFolder;
+  moduleType: string;
   // Preferred display label field for relation optionText
   tgLabelField?: string | undefined;
   // Resolved display label field after parsing (falls back to heuristic)
@@ -76,27 +66,123 @@ export type ParsedSchema<T = any> = {
  */
 export type DtoType = 'response' | 'create' | 'update';
 
+/**
+ * Main configuration interface for TGraph Backend Generator
+ */
 export interface Config {
-  schemaPath: string;
-  dashboardPath: string;
-  dtosPath: string;
-  suffix: string;
-  isAdmin?: boolean;
-  updateDataProvider?: boolean;
-  nonInteractive?: boolean;
-  paths?: ProjectPathsConfig;
+  // Input sources
+  input: {
+    schemaPath: string;
+    prismaService: string;  // Path to PrismaService file (e.g., 'src/infrastructure/database/prisma.service.ts')
+  };
+  
+  // Output destinations
+  output: {
+    backend: {
+      dtos: string;
+      modules: {
+        searchPaths: string[];      // e.g., ['src/features', 'src/modules', 'src']
+        defaultRoot: string;         // Where to create new modules: 'src/features'
+      };
+      staticFiles: {
+        guards: string;              // e.g., 'src/guards'
+        decorators: string;          // e.g., 'src/decorators'
+        dtos: string;                // e.g., 'src/dtos'
+        interceptors: string;        // e.g., 'src/interceptors'
+        utils: string;               // e.g., 'src/utils'
+      };
+    };
+    dashboard: {
+      root: string;                  // e.g., 'src/dashboard/src'
+      resources: string;             // e.g., 'src/dashboard/src/resources'
+    };
+  };
+  
+  // API generation settings
+  api: {
+    suffix: string;                  // e.g., 'Admin', 'Public', 'Tg'
+    prefix: string;                  // e.g., 'tg-api', 'api'
+    authentication: {
+      enabled: boolean;              // Add auth guards?
+      requireAdmin: boolean;         // Admin-only endpoints?
+      guards: Guard[];               // Configurable guard list
+    };
+  };
+  
+  // Dashboard generation settings
+  dashboard: {
+    enabled: boolean;                // Generate dashboard?
+    updateDataProvider: boolean;     // Auto-update data provider?
+    components: ComponentOverrides;  // Override React Admin components
+  };
+  
+  // Behavior flags
+  behavior: {
+    nonInteractive: boolean;
+  };
+  
+  // Advanced path overrides (optional)
+  paths?: {
+    appModule?: string;
+    dataProvider?: string;
+    appComponent?: string;
+  };
 }
 
+/**
+ * Component import configuration for custom React Admin components
+ */
+export interface ComponentImport {
+  name: string;                      // Component name, e.g., 'CustomTextField'
+  importPath: string;                // Import path, e.g., '@/components/custom/TextField'
+}
+
+/**
+ * Component overrides for React Admin dashboard generation
+ */
+export interface ComponentOverrides {
+  // Form/Input components
+  form?: {
+    TextInput?: ComponentImport;
+    NumberInput?: ComponentImport;
+    BooleanInput?: ComponentImport;
+    DateTimeInput?: ComponentImport;
+    SelectInput?: ComponentImport;
+    ReferenceInput?: ComponentImport;
+    ReferenceArrayInput?: ComponentImport;
+    AutocompleteInput?: ComponentImport;
+    AutocompleteArrayInput?: ComponentImport;
+    JsonInput?: ComponentImport;
+    FileInput?: ComponentImport;
+    UrlInput?: ComponentImport;
+  };
+  // Display components
+  display?: {
+    TextField?: ComponentImport;
+    NumberField?: ComponentImport;
+    BooleanField?: ComponentImport;
+    DateField?: ComponentImport;
+    DateTimeField?: ComponentImport;
+    SelectField?: ComponentImport;
+    ReferenceField?: ComponentImport;
+    JsonField?: ComponentImport;
+    FileField?: ComponentImport;
+    UrlField?: ComponentImport;
+  };
+}
+
+/**
+ * @deprecated Use the new Config structure instead
+ * Kept for reference during migration
+ */
 export interface ProjectPathsConfig {
   appModule?: string;
-  moduleRoots?: Partial<Record<GeneratedModuleFolder, string[]>>;
+  moduleRoots?: Record<string, string[]>;
   dashboard?: {
     appComponent?: string;
     dataProvider?: string;
   };
 }
-
-import type { ParsedSchema } from '@tg-scripts/types';
 
 interface IParser {
   parse(input?: any): any;
@@ -158,10 +244,13 @@ export interface GeneratorOptions {
   [key: string]: any;
 }
 
-export type Guard = {
-  name: string;
-  path: string;
-};
+/**
+ * Authentication guard configuration
+ */
+export interface Guard {
+  name: string;                      // Guard class name, e.g., 'JwtAuthGuard'
+  importPath: string;                // Import path, e.g., '@/guards/jwt-auth.guard'
+}
 
 export interface FieldDirective {
   readonly name: string;

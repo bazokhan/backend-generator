@@ -118,6 +118,13 @@ Run tests:
 npm test
 ```
 
+> **Tip:** End-to-end smoke tests for the CLI live in `src/io/cli/__tests__/CommandLineInterface.e2e.spec.ts`.  
+> They require Node 18 or newer (matching the engines in `package.json`) and spin up temporary workspaces under `__tmp__/`. Run them explicitly with:
+>
+> ```bash
+> npx jest src/io/cli/__tests__/CommandLineInterface.e2e.spec.ts
+> ```
+
 Update snapshots if needed:
 
 ```bash

@@ -139,33 +139,63 @@ export const deleteMany = (pascalCaseName: string, camelCaseName: string, naming
   }
 `;
 
-export const getControllerImportStatements = (
-  pascalCaseName: string,
-  camelCaseName: string,
-  fileSuffix: string,
-  namingSuffix: string,
-  isAdmin: boolean,
-) => {
-  return `
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-${isAdmin ? 'import { IsAdmin } from "@/decorators/is-admin.decorator";' : ''}
-import { PaginatedSearch } from '@/decorators/paginated-search.decorator';
-import { ApiResponseDto } from '@/dtos/api-response.dto';
-import { PaginatedSearchResultDto } from '@/dtos/paginated-search-result.dto';
-import { PaginatedSearchQueryDto } from '@/dtos/paginated-search-query.dto';
-import { ${pascalCaseName}${namingSuffix}Service } from './${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.service';
-import { Create${pascalCaseName}${namingSuffix}Dto } from './create-${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.dto';
-import { Update${pascalCaseName}${namingSuffix}Dto } from './update-${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.dto';
-import { ${pascalCaseName} } from '@/generated/prisma';
-`;
+interface ControllerImportOptions {
+  pascalCaseName: string;
+  camelCaseName: string;
+  fileSuffix: string;
+  namingSuffix: string;
+  isAdmin: boolean;
+  guardImports?: string;
+  includeUseGuards?: boolean;
+}
+
+export const getControllerImportStatements = ({
+  pascalCaseName,
+  camelCaseName,
+  fileSuffix,
+  namingSuffix,
+  isAdmin,
+  guardImports,
+  includeUseGuards,
+}: ControllerImportOptions) => {
+  const commonImports = [
+    'Controller',
+    'Get',
+    'Post',
+    'Put',
+    'Delete',
+    'Body',
+    'Param',
+    'Query',
+  ];
+
+  if (includeUseGuards) {
+    commonImports.push('UseGuards');
+  }
+
+  const importLines: string[] = [
+    `import { ${commonImports.join(', ')} } from '@nestjs/common';`,
+    `import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';`,
+  ];
+
+  if (isAdmin) {
+    importLines.push(`import { IsAdmin } from '@/decorators/is-admin.decorator';`);
+  }
+
+  if (guardImports && guardImports.trim().length > 0) {
+    importLines.push(...guardImports.split('\n').filter((line) => line.trim().length > 0));
+  }
+
+  importLines.push(
+    `import { PaginatedSearch } from '@/decorators/paginated-search.decorator';`,
+    `import { ApiResponseDto } from '@/dtos/api-response.dto';`,
+    `import { PaginatedSearchResultDto } from '@/dtos/paginated-search-result.dto';`,
+    `import { PaginatedSearchQueryDto } from '@/dtos/paginated-search-query.dto';`,
+    `import { ${pascalCaseName}${namingSuffix}Service } from './${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.service';`,
+    `import { Create${pascalCaseName}${namingSuffix}Dto } from './create-${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.dto';`,
+    `import { Update${pascalCaseName}${namingSuffix}Dto } from './update-${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.dto';`,
+    `import { ${pascalCaseName} } from '@/generated/prisma';`,
+  );
+
+  return `\n${importLines.join('\n')}\n`;
 };

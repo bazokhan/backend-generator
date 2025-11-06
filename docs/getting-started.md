@@ -210,7 +210,7 @@ src/dashboard/src/resources/users/
 - `src/dashboard/src/App.tsx` – Resources and routes added
 - `src/dashboard/src/providers/dataProvider.ts` – Endpoint mappings added
 
-> 💡 Non-standard project layout? Configure `paths` in `tgraph.config.ts` (for example `paths.appModule` or `paths.dashboard.dataProvider`) and run `tgraph preflight` to confirm discovery before generating.
+> 💡 Non-standard project layout? Configure `paths` in `tgraph.config.ts` (for example `paths.appModule` or `paths.dataProvider`) and run `tgraph preflight` to confirm discovery before generating.
 
 ## Testing Your API
 

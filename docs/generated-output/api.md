@@ -36,11 +36,11 @@ src/
 For every model with `@tg_form()`:
 
 1. **Locate module folder**  
-   Searches `src/features/<name>` and `src/infrastructure/<name>` using camelCase, kebab-case, and plural variants.
+   Searches all configured paths in `output.backend.modules.searchPaths` using camelCase, kebab-case, and plural variants.
 2. **Optional creation**  
    If nothing is found, the CLI prompts:  
    `Do you want to create the module directory for <Model>? (y/n)`  
-   - `y`: creates `src/features/<kebab-name>/` and seeds a module file.  
+   - `y`: creates `<defaultRoot>/<kebab-name>/` (based on `output.backend.modules.defaultRoot`) and seeds a module file.  
    - `n`: skips this model entirely.
 
 Once a module path exists, the following files are written (overwriting any existing versions):
@@ -73,7 +73,7 @@ Once a module path exists, the following files are written (overwriting any exis
 ## Dashboard data provider sync (optional)
 
 - Triggered only if `config.updateDataProvider !== false`.
-- Rewrites the dashboard data provider (defaults to `src/dashboard/src/providers/dataProvider.ts`, configurable via `paths.dashboard.dataProvider`) by replacing the `const endpointMap` object with:
+- Rewrites the dashboard data provider (defaults to `src/dashboard/src/providers/dataProvider.ts`, configurable via `paths.dataProvider`) by replacing the `const endpointMap` object with:
   - `// Auto-generated API endpoints` block listing each generated controller route.
   - `// Custom endpoints` block containing any pre-existing entries that were not in the auto-generated section.
 - If the `endpointMap` declaration is missing, a warning is logged and the file is left unchanged.

@@ -12,16 +12,17 @@ import type { PreflightReport } from '../preflight/PreflightChecker';
 
 export type CliCommand = 'api' | 'dashboard' | 'dtos' | 'all' | 'init' | 'doctor' | 'preflight';
 
-export interface CliOptions
-  extends Partial<
-    Pick<Config, 'schemaPath' | 'dashboardPath' | 'dtosPath' | 'suffix' | 'isAdmin' | 'updateDataProvider' | 'nonInteractive'>
-  > {}
+export interface CliOptions {
+  configPath?: string;
+  nonInteractive?: boolean;
+}
 
 interface ParsedArguments {
   command?: CliCommand;
   options: CliOptions;
   helpRequested: boolean;
   errors: string[];
+  configPath?: string;
 }
 
 export class CommandLineInterface {
@@ -64,19 +65,30 @@ export class CommandLineInterface {
     }
 
     if (parsed.command === 'doctor') {
-      return await this.executeDoctorCommand();
+      return await this.executeDoctorCommand(parsed.configPath, parsed.options);
     }
 
-    if (!this.configLoader.exists()) {
-      console.error(`❌ Error: No configuration file found.`);
-      console.error(`   Run 'tgraph init' to create a configuration file.`);
-      console.error(`   Expected file: tgraph.config.ts or tgraph.config.js in project root.`);
+    // Check if config file exists (or was specified)
+    const configLoader = parsed.configPath 
+      ? new ConfigLoader({ configPath: parsed.configPath })
+      : this.configLoader;
+
+    if (!configLoader.exists()) {
+      if (parsed.configPath) {
+        console.error(`❌ Error: Configuration file not found at: ${parsed.configPath}`);
+      } else {
+        console.error(`❌ Error: No configuration file found.`);
+        console.error(`   Run 'tgraph init' to create a configuration file.`);
+        console.error(`   Expected file: tgraph.config.ts or tgraph.config.js in project root.`);
+        console.error(`   Or specify a config file with: --config <path>`);
+      }
       return 1;
     }
 
     try {
-      const runtimeConfig = this.resolveConfig(parsed.options);
-      await this.executeCommand(parsed.command, runtimeConfig);
+      const runtimeConfig = configLoader.load();
+      const mergedConfig = this.applyCliOverrides(runtimeConfig, parsed.options);
+      await this.executeCommand(parsed.command, mergedConfig);
       return 0;
     } catch (error) {
       this.handleExecutionError(error);
@@ -101,33 +113,10 @@ export class CommandLineInterface {
           parsed.helpRequested = true;
           index += 1;
           continue;
-        case '--schema':
-          index = this.readNextValue(args, index, (value) => (parsed.options.schemaPath = value), parsed);
-          continue;
-        case '--dashboard':
-          index = this.readNextValue(args, index, (value) => (parsed.options.dashboardPath = value), parsed);
-          continue;
-        case '--dtos':
-          index = this.readNextValue(args, index, (value) => (parsed.options.dtosPath = value), parsed);
-          continue;
-        case '--suffix':
-          index = this.readNextValue(args, index, (value) => (parsed.options.suffix = value), parsed);
-          continue;
-        case '--admin':
-          parsed.options.isAdmin = true;
-          index += 1;
-          continue;
-        case '--no-admin':
-          parsed.options.isAdmin = false;
-          index += 1;
-          continue;
-        case '--update-data-provider':
-          parsed.options.updateDataProvider = true;
-          index += 1;
-          continue;
-        case '--no-update-data-provider':
-          parsed.options.updateDataProvider = false;
-          index += 1;
+        case '--config':
+        case '--file':
+        case '-c':
+          index = this.readNextValue(args, index, (value) => (parsed.configPath = value), parsed);
           continue;
         case '--yes':
         case '-y':
@@ -135,7 +124,6 @@ export class CommandLineInterface {
           parsed.options.nonInteractive = true;
           index += 1;
           continue;
-        case '--no-yes':
         case '--interactive':
           parsed.options.nonInteractive = false;
           index += 1;
@@ -183,25 +171,6 @@ export class CommandLineInterface {
     return index + 2;
   }
 
-  private resolveConfig(overrides: CliOptions): Config {
-    const baseConfig = this.configLoader.load();
-
-    const resolved: Config = {
-      ...baseConfig,
-      ...overrides,
-      updateDataProvider:
-        typeof overrides.updateDataProvider === 'boolean'
-          ? overrides.updateDataProvider
-          : (baseConfig.updateDataProvider ?? false),
-      isAdmin: typeof overrides.isAdmin === 'boolean' ? overrides.isAdmin : (baseConfig.isAdmin ?? false),
-      nonInteractive:
-        typeof overrides.nonInteractive === 'boolean'
-          ? overrides.nonInteractive
-          : (baseConfig.nonInteractive ?? false),
-    };
-
-    return resolved;
-  }
 
   private async executeCommand(command: CliCommand, config: Config): Promise<void> {
     switch (command) {
@@ -225,6 +194,20 @@ export class CommandLineInterface {
       default:
         throw new Error(`Unsupported command: ${command}`);
     }
+  }
+
+  private applyCliOverrides(config: Config, options: CliOptions): Config {
+    if (options.nonInteractive === undefined) {
+      return config;
+    }
+
+    return {
+      ...config,
+      behavior: {
+        ...config.behavior,
+        nonInteractive: options.nonInteractive,
+      },
+    };
   }
 
   private initializeConfig(): number {
@@ -255,54 +238,140 @@ export class CommandLineInterface {
     return `import type { Config } from '@tgraph/backend-generator';
 
 export const config: Config = {
-  // Path to your Prisma schema file
-  // Default: 'prisma/schema.prisma'
-  schemaPath: 'prisma/schema.prisma',
+  // ============================================================================
+  // INPUT: Where to read from
+  // ============================================================================
+    input: {
+      // Path to your Prisma schema file
+      schemaPath: 'prisma/schema.prisma',
+      
+      // Path to your PrismaService file (used for generating correct imports)
+      prismaService: 'src/infrastructure/database/prisma.service.ts',
+    },
 
-  // Path to your React Admin dashboard source directory
-  // Default: 'src/dashboard/src'
-  dashboardPath: 'src/dashboard/src',
+  // ============================================================================
+  // OUTPUT: Where to write generated files
+  // ============================================================================
+  output: {
+    backend: {
+      // Where to generate DTOs
+      dtos: 'src/dtos/generated',
 
-  // Path where DTO files will be generated
-  // Default: 'src/dtos/generated'
-  dtosPath: 'src/dtos/generated',
+      // Module location configuration
+      modules: {
+        // Directories to search for existing modules (in order of priority)
+        // The generator will look in these locations when finding modules
+        searchPaths: ['src/features', 'src/modules', 'src'],
 
-  // Suffix for generated classes (e.g., UserTgService, UserTgController)
-  // Default: 'Tg'
-  suffix: 'Tg',
+        // Default directory for creating new modules
+        // When a model doesn't have an existing module, create it here
+        defaultRoot: 'src/features',
+      },
 
-  // Generate admin-only endpoints with authentication guards
-  // Default: true
-  isAdmin: true,
+      // Where to generate static helper files (guards, decorators, etc.)
+      staticFiles: {
+        guards: 'src/guards',
+        decorators: 'src/decorators',
+        dtos: 'src/dtos',
+        interceptors: 'src/interceptors',
+        utils: 'src/utils',
+        prismaService: 'src/infrastructure/database/prisma.service.ts',
+      },
+    },
 
-  // Automatically update data provider endpoint mappings
-  // Default: true
-  updateDataProvider: true,
+    dashboard: {
+      // Root directory of your React Admin dashboard
+      root: 'src/dashboard/src',
 
-  // Skip interactive prompts and assume "yes"
-  // Default: false
-  nonInteractive: false,
+      // Where to generate dashboard resource folders
+      resources: 'src/dashboard/src/resources',
+    },
+  },
 
-  // Optional path overrides for non-standard project structures
+  // ============================================================================
+  // API: Backend API generation settings
+  // ============================================================================
+  api: {
+    // Suffix for generated classes (e.g., 'Admin' -> UserAdminService)
+    // Use different suffixes for different APIs (e.g., 'Admin', 'Public')
+    suffix: 'Admin',
+
+    // API route prefix (e.g., 'tg-api' -> /tg-api/users)
+    // Use different prefixes to separate multiple APIs
+    prefix: 'tg-api',
+
+    // Authentication and authorization configuration
+    authentication: {
+      // Whether to add authentication guards to generated controllers
+      enabled: true,
+
+      // Whether endpoints require admin role (affects guard configuration)
+      requireAdmin: true,
+
+      // List of guards to apply to controllers
+      // When authentication.enabled is true, these guards are added
+      guards: [
+        { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+        { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
+      ],
+    },
+  },
+
+  // ============================================================================
+  // DASHBOARD: Frontend dashboard generation settings
+  // ============================================================================
+  dashboard: {
+    // Whether to generate dashboard resources
+    enabled: true,
+
+    // Automatically update data provider with new endpoint mappings
+    updateDataProvider: true,
+
+    // Override default React Admin components
+    // Useful for custom styling or behavior
+    components: {
+      // Form/Input components (used in Create/Edit pages)
+      form: {
+        // Example: Use custom text input
+        // TextInput: { name: 'CustomTextInput', importPath: '@/components/inputs/TextInput' },
+        
+        // Example: Use custom number input  
+        // NumberInput: { name: 'CustomNumberInput', importPath: '@/components/inputs/NumberInput' },
+      },
+
+      // Display components (used in List/Show pages)
+      display: {
+        // Example: Use custom text field
+        // TextField: { name: 'CustomTextField', importPath: '@/components/fields/TextField' },
+        
+        // Example: Use custom date field
+        // DateField: { name: 'CustomDateField', importPath: '@/components/fields/DateField' },
+      },
+    },
+  },
+
+  // ============================================================================
+  // BEHAVIOR: CLI and generation behavior
+  // ============================================================================
+  behavior: {
+    // Automatically answer 'yes' to all prompts (useful for CI/CD)
+    nonInteractive: false,
+  },
+
+  // ============================================================================
+  // PATHS: Advanced path overrides (optional)
+  // ============================================================================
+  // Override auto-discovery for specific files
+  // Useful for non-standard project structures
   paths: {
-    // NestJS AppModule location
-    // Example: 'apps/api/src/app.module.ts'
+    // NestJS root module (auto-discovered if not specified)
     // appModule: 'src/app.module.ts',
 
-    // Where to look for generated NestJS feature and infrastructure modules
-    moduleRoots: {
-      // features: ['src/features'],
-      // infrastructure: ['src/infrastructure'],
-    },
+    // React Admin data provider file (auto-discovered if not specified)
+    // dataProvider: 'src/dashboard/src/providers/dataProvider.ts',
 
-    // Dashboard-specific overrides
-    dashboard: {
-      // React Admin App entrypoint
-      // appComponent: 'src/dashboard/src/App.tsx',
-
-      // React Admin data provider implementation
-      // dataProvider: 'src/dashboard/src/providers/dataProvider.ts',
-    },
+    // React Admin App component (auto-discovered if not specified)
+    // appComponent: 'src/dashboard/src/App.tsx',
   },
 };
 `;
@@ -322,41 +391,78 @@ Commands:
   all         Run api, dashboard, and dtos generators sequentially
 
 Options:
-  --schema <path>              Override Prisma schema path
-  --dashboard <path>           Override dashboard source directory
-  --dtos <path>                Override DTO output directory
-  --suffix <name>              Override suffix used for generated artifacts
-  --admin                      Force admin mode (isAdmin = true)
-  --no-admin                   Disable admin mode (isAdmin = false)
-  --update-data-provider       Enable data provider updates
-  --no-update-data-provider    Disable data provider updates
+  -c, --config, --file <path>  Path to configuration file (default: tgraph.config.ts)
   -y, --yes, --non-interactive Automatically confirm interactive prompts
-  --interactive                Force interactive prompts even if config sets nonInteractive
+  --interactive                Force interactive prompts
   -h, --help                   Display this help message
+
+Examples:
+  tgraph init                                    Create default config file
+  tgraph all                                     Generate using default config
+  tgraph api --config tgraph.admin.config.ts    Generate admin API
+  tgraph api --config tgraph.public.config.ts   Generate public API
+  tgraph doctor --config custom.config.ts       Run diagnostics with custom config
 `;
     console.log(helpText.trim());
   }
 
-  private async executeDoctorCommand(): Promise<number> {
+  private async executeDoctorCommand(configPath: string | undefined, cliOptions: CliOptions): Promise<number> {
     const startTime = Date.now();
     console.log(`🔍 Running system diagnostics... [${new Date().toLocaleTimeString()}]\n`);
 
     try {
       // Try to load config - if it doesn't exist, validator will report it as an error
       let config: Config;
+      const loader = configPath ? new ConfigLoader({ configPath }) : this.configLoader;
+      
       try {
-        config = this.configLoader.load();
+        config = loader.load();
       } catch (error) {
+        const message = error instanceof ConfigLoaderError ? error.cause : error instanceof Error ? error.message : String(error);
+        console.error('❌ Error loading config:', message);
         // Config load failed - use minimal config just to run diagnostics
-        // The validator will detect and report the missing config file
         config = {
-          schemaPath: 'prisma/schema.prisma',
-          dashboardPath: 'src/dashboard/src',
-          dtosPath: 'src/dtos/generated',
-          suffix: 'Tg',
-          isAdmin: true,
-          updateDataProvider: true,
-          nonInteractive: false,
+          input: { 
+            schemaPath: '',
+            prismaService: '',
+          },
+          output: {
+            backend: {
+              dtos: '',
+              modules: {
+                searchPaths: [],
+                defaultRoot: '',
+              },
+              staticFiles: {
+                guards: '',
+                decorators: '',
+                dtos: '',
+                interceptors: '',
+                utils: '',
+              },
+            },
+            dashboard: {
+              root: '',
+              resources: '',
+            },
+          },
+          api: {
+            suffix: '',
+            prefix: '',
+            authentication: {
+              enabled: true,
+              requireAdmin: true,
+              guards: [],
+            },
+          },
+          dashboard: {
+            enabled: false,
+            updateDataProvider: false,
+            components: { form: {}, display: {} },
+          },
+          behavior: {
+            nonInteractive: false,
+          },
         };
       }
 
@@ -364,7 +470,8 @@ Options:
       console.log(`⏳ Running diagnostic checks... [${new Date().toLocaleTimeString()}] (config loaded in ${configLoadTime - startTime}ms)\n`);
 
       const validator = new SystemValidator();
-      const report: DiagnosticReport = await validator.runDiagnostics(config);
+      const runtimeConfig = this.applyCliOverrides(config, cliOptions);
+      const report: DiagnosticReport = await validator.runDiagnostics(runtimeConfig);
 
       const diagnosticsTime = Date.now();
       console.log(`✓ Diagnostics completed in ${diagnosticsTime - configLoadTime}ms [${new Date().toLocaleTimeString()}]\n`);
@@ -451,7 +558,7 @@ Options:
   private printPreflightReport(report: PreflightReport, config: Config): void {
     console.log('📂 Key Paths');
     this.printPathStatus(report.appModule, false);
-    this.printPathStatus(report.dataProvider, !(config.updateDataProvider ?? true));
+    this.printPathStatus(report.dataProvider, !(config.dashboard.updateDataProvider ?? true));
     this.printPathStatus(report.appComponent, false);
     this.printPathStatus(report.swagger, false);
 

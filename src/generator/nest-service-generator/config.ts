@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 export const getList = (camelCaseName: string, searchableFields: string, defaultSortBy: string = 'id') => `
   async getList(query: PaginatedSearchQueryDto) {
     return paginatedSearch({
@@ -167,12 +169,78 @@ export const getImportStatements = (
   hasUniqueFields: boolean,
   fileSuffix: string,
   namingSuffix: string,
+  options?: {
+    serviceFilePath?: string;
+    dtosPath?: string;
+    utilsPath?: string;
+    workspaceRoot?: string;
+    prismaServicePath?: string;
+  },
 ) => {
+  // Require all path information - fail fast if not provided
+  if (!options?.serviceFilePath) {
+    throw new Error(
+      'Service generator requires serviceFilePath to compute import paths. ' +
+      'This is a configuration error in the generator setup.'
+    );
+  }
+  
+  if (!options?.dtosPath) {
+    throw new Error(
+      'Service generator requires dtosPath (output.backend.staticFiles.dtos) to compute import paths. ' +
+      'Please ensure this is configured in your tgraph.config file.'
+    );
+  }
+  
+  if (!options?.utilsPath) {
+    throw new Error(
+      'Service generator requires utilsPath (output.backend.staticFiles.utils) to compute import paths. ' +
+      'Please ensure this is configured in your tgraph.config file.'
+    );
+  }
+  
+  if (!options?.workspaceRoot) {
+    throw new Error(
+      'Service generator requires workspaceRoot to compute import paths. ' +
+      'This is a configuration error in the generator setup.'
+    );
+  }
+
+  const serviceDir = path.dirname(options.serviceFilePath);
+  
+  // Compute relative path to paginated-search-query.dto.ts
+  const dtosFile = path.join(options.workspaceRoot, options.dtosPath, 'paginated-search-query.dto.ts');
+  let paginatedSearchQueryDtoImport = path.relative(serviceDir, dtosFile).replace(/\\/g, '/').replace(/\.ts$/, '');
+  if (!paginatedSearchQueryDtoImport.startsWith('.')) {
+    paginatedSearchQueryDtoImport = './' + paginatedSearchQueryDtoImport;
+  }
+  
+  // Compute relative path to paginated-search.ts
+  const utilsFile = path.join(options.workspaceRoot, options.utilsPath, 'paginated-search.ts');
+  let paginatedSearchImport = path.relative(serviceDir, utilsFile).replace(/\\/g, '/').replace(/\.ts$/, '');
+  if (!paginatedSearchImport.startsWith('.')) {
+    paginatedSearchImport = './' + paginatedSearchImport;
+  }
+  
+  // Compute relative path to prisma.service.ts
+  if (!options?.prismaServicePath) {
+    throw new Error(
+      'Service generator requires prismaServicePath (input.prismaService) to compute import paths. ' +
+      'Please ensure this is configured in your tgraph.config file.'
+    );
+  }
+  
+  const prismaFile = path.join(options.workspaceRoot, options.prismaServicePath);
+  let prismaServiceImport = path.relative(serviceDir, prismaFile).replace(/\\/g, '/').replace(/\.ts$/, '');
+  if (!prismaServiceImport.startsWith('.')) {
+    prismaServiceImport = './' + prismaServiceImport;
+  }
+
   return `
 import { Injectable, NotFoundException${hasUniqueFields ? ', ConflictException' : ''} } from '@nestjs/common';
-import { PrismaService } from '@/infrastructure/database/prisma.service';
-import { PaginatedSearchQueryDto } from '@/dtos/paginated-search-query.dto';
-import { paginatedSearch } from '@/utils/paginated-search';
+import { PrismaService } from '${prismaServiceImport}';
+import { PaginatedSearchQueryDto } from '${paginatedSearchQueryDtoImport}';
+import { paginatedSearch } from '${paginatedSearchImport}';
 import { Create${pascalCaseName}${namingSuffix}Dto } from './create-${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.dto';
 import { Update${pascalCaseName}${namingSuffix}Dto } from './update-${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.dto';`;
 };

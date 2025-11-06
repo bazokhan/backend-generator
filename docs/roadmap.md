@@ -38,7 +38,7 @@ description: "Milestone-based roadmap for the TGraph Backend Generator"
 - Hard-coded file path assumptions (`src/app.module.ts`, `src/dashboard/src/...`) make adoption brittle for non-standard project layouts.
 - CLI prompts block CI/non-interactive workflows; there is no `--yes`, dry-run, or diff preview.
 - Missing environment preflight: absent schema files, Swagger JSON, or formatting tools cause late failures.
-- Limited end-to-end coverage: only unit-level tests exist; regeneration behaviour on real projects is unverified.
+- Limited end-to-end coverage: CLI smoke tests now validate single-run generation, but idempotency and multi-project scenarios still need automation.
 - Dashboard generation depends on a pre-built Swagger JSON without guided automation or safeguards.
 
 ---

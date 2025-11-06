@@ -135,29 +135,65 @@ This creates `tgraph.config.ts` in your project root with default values:
 import type { Config } from '@tgraph/backend-generator';
 
 export const config: Config = {
-  schemaPath: 'prisma/schema.prisma',
-  dashboardPath: 'src/dashboard/src',
-  dtosPath: 'src/dtos/generated',
-  suffix: 'Tg',
-  isAdmin: true,
-  updateDataProvider: true,
-  nonInteractive: false,
-
-  paths: {
-    // appModule: 'apps/api/src/app.module.ts',
-    // moduleRoots: {
-    //   features: ['apps/api/src/modules/features'],
-    //   infrastructure: ['apps/api/src/modules/infrastructure'],
-    // },
-    // dashboard: {
-    //   appComponent: 'apps/admin/src/App.tsx',
-    //   dataProvider: 'apps/admin/src/providers/dataProvider.ts',
-    // },
+  input: {
+    schemaPath: 'prisma/schema.prisma',
+  },
+  
+  output: {
+    backend: {
+      dtos: 'src/dtos/generated',
+      modules: {
+        searchPaths: ['src/features', 'src/modules', 'src'],
+        defaultRoot: 'src/features',
+      },
+      staticFiles: {
+        guards: 'src/guards',
+        decorators: 'src/decorators',
+        dtos: 'src/dtos',
+        interceptors: 'src/interceptors',
+      },
+    },
+    dashboard: {
+      root: 'src/dashboard/src',
+      resources: 'src/dashboard/src/resources',
+    },
+  },
+  
+  api: {
+    suffix: 'Admin',
+    prefix: 'tg-api',
+    authentication: {
+      enabled: true,
+      requireAdmin: true,
+      guards: [
+        { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+        { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
+      ],
+    },
+  },
+  
+  dashboard: {
+    enabled: true,
+    updateDataProvider: true,
+    components: {
+      form: {},     // Override React Admin form components
+      display: {},  // Override React Admin display components
+    },
+  },
+  
+  behavior: {
+    nonInteractive: false,
   },
 };
 ```
 
-Customize the values for your project, or use CLI flags to override on the fly.
+The new structured configuration makes it easy to:
+- Generate multiple APIs with different configs (`--config tgraph.admin.config.ts`)
+- Customize component imports for consistent UI
+- Configure authentication guards per API
+- Control where files are generated
+
+Customize the values for your project, or use the `--config` flag to use different configurations.
 
 ## Programmatic Usage
 

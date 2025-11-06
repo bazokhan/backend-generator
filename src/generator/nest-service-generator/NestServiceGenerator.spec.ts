@@ -259,7 +259,13 @@ describe('Nest Service Generator', () => {
         moduleType: 'features',
       };
 
-      const result = generator.generate(model);
+      const result = generator.generate(model, {
+        serviceFilePath: 'src/features/request/request.tg.service.ts',
+        dtosPath: 'src/dtos',
+        utilsPath: 'src/utils',
+        workspaceRoot: '/mock/workspace',
+        prismaServicePath: 'src/infrastructure/database/prisma.service.ts',
+      });
 
       // Verify that searchable fields include correct types
       expect(result).toContain('fieldsToSearch: [');
@@ -326,7 +332,13 @@ describe('Nest Service Generator', () => {
         moduleType: 'features',
       };
 
-      const result = generator.generate(model);
+      const result = generator.generate(model, {
+        serviceFilePath: 'src/features/request/request.tg.service.ts',
+        dtosPath: 'src/dtos',
+        utilsPath: 'src/utils',
+        workspaceRoot: '/mock/workspace',
+        prismaServicePath: 'src/infrastructure/database/prisma.service.ts',
+      });
 
       // Verify that only searchable fields are included in fieldsToSearch
       expect(result).toContain("{ name: 'id', type: 'string' }");
@@ -389,7 +401,14 @@ describe('Nest Service Generator', () => {
         moduleType: 'features',
       };
 
-      const result = generator.generate(model, { excludeFields: ['password'] });
+      const result = generator.generate(model, {
+        excludeFields: ['password'],
+        serviceFilePath: 'src/features/request/request.tg.service.ts',
+        dtosPath: 'src/dtos',
+        utilsPath: 'src/utils',
+        workspaceRoot: '/mock/workspace',
+        prismaServicePath: 'src/infrastructure/database/prisma.service.ts',
+      });
 
       // Verify that excluded fields are not in searchable fields
       expect(result).toContain("{ name: 'id', type: 'string' }");
@@ -468,7 +487,13 @@ describe('Nest Service Generator', () => {
         moduleType: 'features',
       };
 
-      const result = generator.generate(model);
+      const result = generator.generate(model, {
+        serviceFilePath: 'src/features/request/request.tg.service.ts',
+        dtosPath: 'src/dtos',
+        utilsPath: 'src/utils',
+        workspaceRoot: '/mock/workspace',
+        prismaServicePath: 'src/infrastructure/database/prisma.service.ts',
+      });
 
       // Verify all types are correctly included
       expect(result).toContain("{ name: 'textField', type: 'string' }");

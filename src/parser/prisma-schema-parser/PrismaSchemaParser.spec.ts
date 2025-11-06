@@ -182,7 +182,7 @@ model Post {
       parser.load(schema);
       const { models } = parser.parse();
 
-      expect(models[0].moduleType).toBe('features');
+      expect(models[0].moduleType).toBe('');
     });
 
     it('should parse fields with complex modifiers', () => {

@@ -5,12 +5,50 @@ import type { Config } from '@tg-scripts/types';
 import { PreflightChecker } from './PreflightChecker';
 
 const baseConfig: Config = {
-  schemaPath: 'prisma/schema.prisma',
-  dashboardPath: 'dashboard/src',
-  dtosPath: 'src/dtos/generated',
-  suffix: 'Tg',
-  isAdmin: true,
-  updateDataProvider: true,
+      input: {
+        schemaPath: 'prisma/schema.prisma',
+        prismaService: 'src/infrastructure/database/prisma.service.ts',
+      },
+  output: {
+    backend: {
+      dtos: 'src/dtos/generated',
+      modules: {
+        searchPaths: ['src/features', 'src/infrastructure'],
+        defaultRoot: 'src/features',
+      },
+      staticFiles: {
+        guards: 'src/guards',
+        decorators: 'src/decorators',
+        dtos: 'src/dtos',
+        interceptors: 'src/interceptors',
+          utils: 'src/utils',
+        },
+    },
+    dashboard: {
+      root: 'dashboard/src',
+      resources: 'dashboard/src/resources',
+    },
+  },
+  api: {
+    suffix: 'Tg',
+    prefix: 'api',
+    authentication: {
+      enabled: true,
+      requireAdmin: true,
+      guards: [],
+    },
+  },
+  dashboard: {
+    enabled: true,
+    updateDataProvider: true,
+    components: {
+      form: {},
+      display: {},
+    },
+  },
+  behavior: {
+    nonInteractive: false,
+  },
 };
 
 const PRISMA_CONTENT = `

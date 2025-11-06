@@ -492,7 +492,7 @@ tgraph all \
 
 ### Custom Module Paths
 
-If your modules are not in `src/features` or `src/infrastructure`, customize the `ModulePathResolver`:
+Module paths are fully configurable via the `output.backend.modules.searchPaths` configuration. No need to customize the `ModulePathResolver` unless you have very specific requirements:
 
 ```typescript
 // custom-resolver.ts

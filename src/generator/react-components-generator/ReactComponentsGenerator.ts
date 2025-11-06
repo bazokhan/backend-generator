@@ -1,4 +1,4 @@
-import type { ParsedSchema, PrismaModel } from '@tg-scripts/types';
+import type { ParsedSchema, PrismaModel, ComponentOverrides } from '@tg-scripts/types';
 import type { IGenerator } from '@tg-scripts/types';
 import { listPage } from './list/page-config';
 import { editPage } from './edit/page-config';
@@ -6,6 +6,7 @@ import { createPage } from './create/page-config';
 import { showPage } from './show/page-config';
 import { studioPage } from './studio/page-config';
 import { indexPage } from './index/page-config';
+import { ComponentResolver } from './ComponentResolver';
 
 type PageType = 'list' | 'edit' | 'create' | 'show' | 'studio' | 'index';
 
@@ -22,6 +23,12 @@ type GenerateReactComponentsOutput = {
 export class ReactComponentsGenerator
   implements IGenerator<GenerateReactComponentsInput, GenerateReactComponentsOutput>
 {
+  private componentResolver: ComponentResolver;
+
+  constructor(componentOverrides: ComponentOverrides = { form: {}, display: {} }) {
+    this.componentResolver = new ComponentResolver(componentOverrides);
+  }
+
   public generate(input: GenerateReactComponentsInput): GenerateReactComponentsOutput {
     const result: GenerateReactComponentsOutput = {};
     for (const page of input.pages) {
@@ -65,5 +72,9 @@ export class ReactComponentsGenerator
       }
     }
     return result;
+  }
+
+  public getComponentResolver(): ComponentResolver {
+    return this.componentResolver;
   }
 }

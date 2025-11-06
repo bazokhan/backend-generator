@@ -8,16 +8,141 @@ describe('SystemValidator', () => {
   const tempDirs: string[] = [];
   let mockExec: jest.Mock;
 
-  const createMockConfig = (overrides: Partial<Config> = {}): Config => ({
-    schemaPath: 'prisma/schema.prisma',
-    dashboardPath: 'src/dashboard/src',
-    dtosPath: 'src/dtos/generated',
-    suffix: 'Tg',
-    isAdmin: true,
-    updateDataProvider: true,
-    nonInteractive: false,
-    ...overrides,
-  });
+  type MockConfigOverrides = Partial<Config> & {
+    schemaPath?: string;
+    dashboardPath?: string;
+    dashboardResourcesPath?: string;
+    dtosPath?: string;
+    suffix?: string;
+  };
+
+  const createMockConfig = (overrides: MockConfigOverrides = {}): Config => {
+    const base: Config = {
+      input: {
+        schemaPath: 'prisma/schema.prisma',
+        prismaService: 'src/infrastructure/database/prisma.service.ts',
+      },
+      output: {
+        backend: {
+          dtos: 'src/dtos/generated',
+          modules: {
+            searchPaths: ['src/features', 'src/infrastructure'],
+            defaultRoot: 'src/features',
+          },
+          staticFiles: {
+            guards: 'src/guards',
+            decorators: 'src/decorators',
+            dtos: 'src/dtos',
+            interceptors: 'src/interceptors',
+          utils: 'src/utils',
+        },
+        },
+        dashboard: {
+          root: 'src/dashboard/src',
+          resources: 'src/dashboard/src/resources',
+        },
+      },
+      api: {
+        suffix: 'Tg',
+        prefix: 'api',
+        authentication: {
+          enabled: true,
+          requireAdmin: true,
+          guards: [],
+        },
+      },
+      dashboard: {
+        enabled: true,
+        updateDataProvider: true,
+        components: {
+          form: {},
+          display: {},
+        },
+      },
+      behavior: {
+        nonInteractive: false,
+      },
+    };
+
+    if (overrides.input) {
+      base.input = { ...base.input, ...overrides.input };
+    }
+
+    if (overrides.output) {
+      base.output = {
+        backend: {
+          ...base.output.backend,
+          ...(overrides.output.backend
+            ? {
+                dtos: overrides.output.backend.dtos ?? base.output.backend.dtos,
+                modules: overrides.output.backend.modules
+                  ? { ...base.output.backend.modules, ...overrides.output.backend.modules }
+                  : base.output.backend.modules,
+                staticFiles: overrides.output.backend.staticFiles
+                  ? { ...base.output.backend.staticFiles, ...overrides.output.backend.staticFiles }
+                  : base.output.backend.staticFiles,
+              }
+            : base.output.backend),
+        },
+        dashboard: overrides.output.dashboard
+          ? { ...base.output.dashboard, ...overrides.output.dashboard }
+          : base.output.dashboard,
+      };
+    }
+
+    if (overrides.api) {
+      base.api = {
+        ...base.api,
+        ...overrides.api,
+        authentication: overrides.api.authentication
+          ? { ...base.api.authentication, ...overrides.api.authentication }
+          : base.api.authentication,
+      };
+    }
+
+    if (overrides.dashboard) {
+      base.dashboard = {
+        ...base.dashboard,
+        ...overrides.dashboard,
+      };
+    }
+
+    if (overrides.behavior) {
+      base.behavior = {
+        ...base.behavior,
+        ...overrides.behavior,
+      };
+    }
+
+    if (overrides.paths) {
+      base.paths = {
+        ...base.paths,
+        ...overrides.paths,
+      };
+    }
+
+    if (overrides.schemaPath !== undefined) {
+      base.input.schemaPath = overrides.schemaPath;
+    }
+
+    if (overrides.dtosPath !== undefined) {
+      base.output.backend.dtos = overrides.dtosPath;
+    }
+
+    if (overrides.dashboardPath !== undefined) {
+      base.output.dashboard.root = overrides.dashboardPath;
+    }
+
+    if (overrides.dashboardResourcesPath !== undefined) {
+      base.output.dashboard.resources = overrides.dashboardResourcesPath;
+    }
+
+    if (overrides.suffix !== undefined) {
+      base.api.suffix = overrides.suffix;
+    }
+
+    return base;
+  };
 
   beforeEach(() => {
     mockExec = jest.fn();
@@ -231,9 +356,10 @@ describe('SystemValidator', () => {
       const config = createMockConfig();
       const results = await validator.checkConfigPaths(config);
 
-      const warningResults = results.filter((r) => r.severity === 'warning');
-      expect(warningResults.length).toBeGreaterThanOrEqual(2);
+    const warningResults = results.filter((r) => r.severity === 'warning');
+      expect(warningResults.length).toBeGreaterThanOrEqual(3);
       expect(warningResults.some((r) => r.message.includes('Dashboard directory does not exist'))).toBe(true);
+      expect(warningResults.some((r) => r.message.includes('Dashboard resources directory does not exist'))).toBe(true);
       expect(warningResults.some((r) => r.message.includes('DTOs directory does not exist'))).toBe(true);
     });
 
@@ -270,9 +396,16 @@ describe('SystemValidator', () => {
 
       expect(results.some((r) => r.message.includes('Config file found'))).toBe(true);
       expect(results.some((r) => r.message.includes('Schema path configured'))).toBe(true);
-      expect(results.some((r) => r.message.includes('Dashboard path configured'))).toBe(true);
-      expect(results.some((r) => r.message.includes('DTOs path configured'))).toBe(true);
-      expect(results.some((r) => r.message.includes('Suffix configured'))).toBe(true);
+      expect(results.some((r) => r.message.includes('DTO output path configured'))).toBe(true);
+      expect(results.some((r) => r.message.includes('Module search paths configured'))).toBe(true);
+      expect(results.some((r) => r.message.includes('Module default root configured'))).toBe(true);
+      expect(results.some((r) => r.message.includes('Dashboard root configured'))).toBe(true);
+      expect(results.some((r) => r.message.includes('Dashboard resources path configured'))).toBe(true);
+      expect(results.some((r) => r.message.includes('API suffix configured'))).toBe(true);
+      expect(results.some((r) => r.message.includes('API route prefix configured'))).toBe(true);
+      expect(results.some((r) => r.message.includes('Authentication configured'))).toBe(true);
+      expect(results.some((r) => r.message.includes('Dashboard component overrides configured'))).toBe(true);
+      expect(results.some((r) => r.message.includes('Non-interactive mode default'))).toBe(true);
     });
 
     it('should warn when suffix is not PascalCase', async () => {
@@ -325,7 +458,7 @@ describe('SystemValidator', () => {
       const config = createMockConfig({ suffix: '' });
       const results = await (validator as any).checkConfiguration(config);
 
-      const suffixResult = results.find((r) => r.message.includes('Suffix configured'));
+      const suffixResult = results.find((r) => r.message.includes('API suffix configured'));
       expect(suffixResult?.severity).toBe('ok');
       expect(suffixResult?.message).toContain('(empty string)');
     });

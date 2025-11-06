@@ -61,9 +61,8 @@ describe('ModulePathResolver', () => {
       fs.writeFileSync(path.join(moduleDir, 'user.module.ts'), '// test module');
 
       const customResolver = new ModulePathResolver({
-        moduleRoots: {
-          features: [customRoot],
-        },
+        searchPaths: [customRoot],
+        defaultRoot: customRoot,
       });
 
       const result = customResolver.findModulePath('User', tempDir);
@@ -115,7 +114,7 @@ describe('ModulePathResolver', () => {
         const result = resolver.findModulePath(modelName, baseDir);
         if (result) {
           expect(result.path).toBeTruthy();
-          expect(result.type).toMatch(/^(features|infrastructure)$/);
+          expect(result.type).toBeTruthy(); // Module type is now dynamically inferred from search path
           expect(result.folderName).toBeTruthy();
         }
       });

@@ -7,161 +7,110 @@ nav_order: 2
 
 # Parsers API
 
-Schema and code parsing utilities used internally by generators.
+Parser classes convert files on disk into structured metadata that every generator consumes. They are exposed as deep exports under `dist/parser/...` for advanced customization or testing.
 
-## Overview
+```typescript
+import { PrismaSchemaParser } from '@tgraph/backend-generator/dist/parser/prisma-schema-parser/PrismaSchemaParser';
+```
 
-Parsers extract structured data from Prisma schemas and existing code files to enable safe code generation.
+---
 
 ## PrismaSchemaParser
 
-Parses Prisma schema files into structured data.
+Parses a Prisma schema string and returns enriched models/enums. Only models decorated with `@tg_form()` are kept—this keeps generators focused on resources you explicitly opted in for.
 
-### Usage
+### Constructor
 
 ```typescript
-import { PrismaSchemaParser } from '@tgraph/backend-generator';
+import { PrismaSchemaParser } from '@tgraph/backend-generator/dist/parser/prisma-schema-parser/PrismaSchemaParser';
+import { PrismaFieldParser } from '@tgraph/backend-generator/dist/parser/prisma-field-parser/PrismaFieldParser';
+import { PrismaRelationsParser } from '@tgraph/backend-generator/dist/parser/prisma-relation-parser/PrismaRelationsParser';
 
-const parser = new PrismaSchemaParser();
-parser.load(schemaContent);
-const parsed = parser.parse();
-
-console.log(parsed.models); // Array of models
-console.log(parsed.enums); // Map of enum names to values
+const parser = new PrismaSchemaParser(new PrismaFieldParser(), new PrismaRelationsParser());
 ```
 
 ### Methods
 
-#### `load(schema: string): void`
+- `load(schema: string): void` – Stores the raw schema for parsing.
+- `parse(): ParsedSchema<PrismaModel>` – Walks the schema line by line, tracks parser state, collects enums, and materializes Prisma models with relation metadata.
+- `reset(): void` – Clears intermediate state so the parser can be reused.
 
-Loads schema content into the parser.
+### Behavior Highlights
 
-#### `parse(): ParsedSchema`
-
-Parses the loaded schema and returns structured data.
-
-**Returns:**
-
-```typescript
-interface ParsedSchema {
-  models: PrismaModel[];
-  enums: Map<string, string[]>;
-}
-```
-
-#### `reset(): void`
-
-Resets the parser state.
+- Triple-slash doc comments (`///`) are inspected for `@tg_form()` and `@tg_label()` directives.
+- Models without `@tg_form()` are skipped automatically.
+- Handles inline models (`model Foo { field String }`) and classic multi-line blocks.
+- Delegates per-field parsing to `PrismaFieldParser` and relation enrichment to `PrismaRelationsParser`.
 
 ---
 
 ## PrismaFieldParser
 
-Parses individual Prisma field lines.
+Parses an individual Prisma model line and returns a `PrismaField` description.
+
+### Capabilities
+
+- Detects optional fields (`?`), arrays (`[]`), `@id`, `@unique`, and `@default`.
+- Extracts `@relation()` metadata including `fields`/`references`.
+- Discovers inline doc directives handled by the `fieldDirectiveManager` (e.g., `@tg_format(url)`).
+- Parses custom validation comments such as `@max(50)` or `@required([create, update])`.
+- Derives `baseType`, TypeScript types, search type hints, and flags for scalar/enum/relation fields.
 
 ### Usage
 
 ```typescript
-import { PrismaFieldParser } from '@tgraph/backend-generator';
+import { PrismaFieldParser } from '@tgraph/backend-generator/dist/parser/prisma-field-parser/PrismaFieldParser';
 
 const parser = new PrismaFieldParser();
-const field = parser.parse('name String @unique', '/// @tg_format(email)');
-```
-
-### Methods
-
-#### `parse(line: string, docComment?: string): PrismaField | null`
-
-Parses a field line with optional doc comment.
-
-**Returns:**
-
-```typescript
-interface PrismaField {
-  name: string;
-  type: string;
-  isOptional: boolean;
-  isArray: boolean;
-  isId: boolean;
-  isUnique: boolean;
-  hasDefaultValue: boolean;
-  baseType: string;
-  tsType?: string;
-  searchType?: 'string' | 'number' | 'boolean' | 'date' | null;
-  isRelation?: boolean;
-  isScalar?: boolean;
-  isEnum?: boolean;
-  relationName?: string;
-  relationFromFields?: string[];
-  relationToFields?: string[];
-  foreignKeyName?: string;
-  customValidations: CustomValidation[];
-  tgFormat?: 'url' | 'email' | 'password' | 'tel';
-  tgUpload?: 'image' | 'file';
-  tgReadOnly?: boolean;
-  directives?: Record<string, Record<string, unknown>>;
+const field = parser.parse('title String @unique', '/// @tg_format(title)');
+if (field) {
+  console.log(field.name, field.baseType, field.customValidations);
 }
 ```
 
 ---
 
-## NestAppModuleParser
+## PrismaRelationsParser
 
-Parses NestJS `app.module.ts` files to safely update imports.
-
-### Usage
-
-```typescript
-import { NestAppModuleParser } from '@tgraph/backend-generator';
-
-const parser = new NestAppModuleParser();
-const appModuleContent = fs.readFileSync('src/app.module.ts', 'utf-8');
-parser.load(appModuleContent);
-
-const imports = parser.extractImports();
-const autoGenSection = parser.getAutoGeneratedSection();
-```
+Enriches parsed models with metadata that is only available once every field is known.
 
 ### Methods
 
-#### `load(content: string): void`
+- `parse(parsed: ParsedSchema<PrismaModel>): void` – Mutates `parsed.models` in place and assigns derived properties.
 
-Loads module file content.
+### Responsibilities
 
-#### `extractImports(): string[]`
-
-Extracts existing import statements.
-
-#### `getAutoGeneratedSection(): { start: number; end: number } | null`
-
-Finds the auto-generated section boundaries.
+- Marks `isRelation`, `isScalar`, `isEnum`, and `searchType` on fields.
+- Identifies and annotates foreign key pairs (`icon` ↔ `iconId`).
+- Computes `displayField` and `defaultSortBy` on every model so React Admin pages have sensible defaults.
 
 ---
 
-## PrismaRelationsParser
+## NestAppModuleParser
 
-Enriches parsed schema with relation metadata.
+Specialized parser that understands `@Module()` decorators and the `imports: []` array inside `app.module.ts`. It powers `NestAppModuleUpdater`.
+
+### Methods
+
+- `parse(source: string): { tokens: string[]; moduleBounds: Bounds | null; importsBounds: Bounds | null }`
+
+The returned `tokens` array represents sanitized items already present inside `imports: []`. The `Bounds` objects (start, end, content) help injector code build new strings without losing formatting.
 
 ### Usage
 
 ```typescript
-import { PrismaRelationsParser } from '@tgraph/backend-generator';
+import { NestAppModuleParser } from '@tgraph/backend-generator/dist/parser/nest-app-module-parser/NestAppModuleParser';
 
-const relationsParser = new PrismaRelationsParser();
-relationsParser.parse(parsedSchema);
-
-// parsedSchema.models now have enhanced relation data
+const parser = new NestAppModuleParser();
+const { tokens, importsBounds } = parser.parse(appModuleSource);
+console.log(tokens); // Existing imports array entries
 ```
-
-### Methods
-
-#### `parse(parsedSchema: ParsedSchema): void`
-
-Processes relations and updates field metadata in place.
 
 ---
 
 ## Parsed Data Structures
+
+The parsers populate the shared interfaces defined in `src/types/index.d.ts`.
 
 ### PrismaModel
 
@@ -170,11 +119,11 @@ interface PrismaModel {
   name: string;
   fields: PrismaField[];
   enums: string[];
-  modulePath?: string;
-  moduleType: 'features' | 'infrastructure';
-  tgLabelField?: string;
-  displayField?: string;
-  defaultSortBy?: string;
+  modulePath?: string;      // Filled when ModulePathResolver finds a folder
+  moduleType: string;       // Folder key such as 'features'
+  tgLabelField?: string;    // From @tg_label()
+  displayField?: string;    // Computed label field for selects
+  defaultSortBy?: string;   // Computed default sort key
 }
 ```
 
@@ -182,7 +131,6 @@ interface PrismaModel {
 
 ```typescript
 interface PrismaField {
-  // Basic properties
   name: string;
   type: string;
   isOptional: boolean;
@@ -190,27 +138,17 @@ interface PrismaField {
   isId: boolean;
   isUnique: boolean;
   hasDefaultValue: boolean;
-
-  // Type information
   baseType: string;
-  tsType?: string;
-  searchType?: 'string' | 'number' | 'boolean' | 'date' | null;
-
-  // Field classification
-  isRelation?: boolean;
-  isScalar?: boolean;
-  isEnum?: boolean;
-
-  // Relation metadata
   relationName?: string;
   relationFromFields?: string[];
   relationToFields?: string[];
   foreignKeyName?: string;
-
-  // Validation
   customValidations: CustomValidation[];
-
-  // Field directives
+  tsType?: string;          // Non-enumerable property set at runtime
+  searchType?: 'string' | 'number' | 'boolean' | 'date' | null;
+  isRelation?: boolean;
+  isScalar?: boolean;
+  isEnum?: boolean;
   tgFormat?: 'url' | 'email' | 'password' | 'tel';
   tgUpload?: 'image' | 'file';
   tgReadOnly?: boolean;
@@ -222,11 +160,20 @@ interface PrismaField {
 
 ```typescript
 interface CustomValidation {
-  decorator: string;
-  value: any;
-  operations?: string[];
+  decorator: string;       // e.g., 'max', 'required'
+  value: any;              // decorator argument
+  operations?: string[];   // target operations like ['create', 'update']
 }
 ```
+
+These structures flow directly into the generators, so any custom parser logic you add becomes available to the rest of the pipeline.
+
+---
+
+## Related Topics
+
+- How generators use this metadata: [Generators API](./generators.md)
+- Loading configuration and resolving project paths: [Utilities](./utilities.md)
 
 ### ParsedSchema
 

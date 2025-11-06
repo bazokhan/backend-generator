@@ -1,23 +1,27 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { GeneratedModuleFolder, ModulePathInfo } from '@tg-scripts/types';
+import type { ModulePathInfo } from '@tg-scripts/types';
 import { pluralize, toKebabCase } from '../../generator/utils';
 
 interface ModulePathResolverOptions {
   fsModule?: typeof fs;
   pathModule?: typeof path;
-  moduleRoots?: Partial<Record<GeneratedModuleFolder, string[]>>;
+  searchPaths?: string[];
+  defaultRoot?: string;
 }
 
 export class ModulePathResolver {
   private readonly fsModule: typeof fs;
   private readonly pathModule: typeof path;
-  private readonly moduleRoots: Partial<Record<GeneratedModuleFolder, string[]>>;
+  private readonly searchPaths: string[];
+  private readonly defaultRoot: string;
 
   constructor(private readonly options: ModulePathResolverOptions = {}) {
     this.fsModule = this.options.fsModule ?? fs;
     this.pathModule = this.options.pathModule ?? path;
-    this.moduleRoots = this.options.moduleRoots ?? {};
+    // Default search paths if not provided
+    this.searchPaths = this.options.searchPaths ?? ['src/features', 'src/modules', 'src'];
+    this.defaultRoot = this.options.defaultRoot ?? 'src/features';
   }
 
   public findModulePath(modelName: string, baseDir: string): ModulePathInfo | null {
@@ -30,16 +34,18 @@ export class ModulePathResolver {
 
     const uniqueVariations = [...new Set(namingVariations)];
 
-    for (const folder of ['features', 'infrastructure'] as GeneratedModuleFolder[]) {
-      const roots = this.resolveRoots(folder, baseDir);
+    // Search through all configured search paths
+    for (const searchPath of this.searchPaths) {
+      const absoluteSearchPath = this.toAbsolute(searchPath, baseDir);
+      
       for (const variation of uniqueVariations) {
-        for (const root of roots) {
-          const folderPath = this.pathModule.join(root, variation);
-          if (this.fsModule.existsSync(folderPath)) {
-          return { path: folderPath, type: folder, folderName: variation };
+        const folderPath = this.pathModule.join(absoluteSearchPath, variation);
+        if (this.fsModule.existsSync(folderPath)) {
+          // Determine type based on path (for backward compatibility)
+          const type = this.inferModuleType(searchPath);
+          return { path: folderPath, type, folderName: variation };
         }
       }
-    }
     }
 
     return null;
@@ -55,13 +61,19 @@ export class ModulePathResolver {
     return moduleFile || '';
   }
 
-  private resolveRoots(type: GeneratedModuleFolder, baseDir: string): string[] {
-    const configuredRoots = this.moduleRoots[type] ?? [];
-    if (configuredRoots.length > 0) {
-      return configuredRoots.map((root) => this.toAbsolute(root, baseDir));
-    }
+  public getDefaultRoot(): string {
+    return this.defaultRoot;
+  }
 
-    return [this.pathModule.join(baseDir, 'src', type)];
+  public getSearchPaths(): string[] {
+    return this.searchPaths;
+  }
+
+  private inferModuleType(searchPath: string): string {
+    // Extract the folder name from the search path
+    // e.g., 'src/features' -> 'features', 'apps/api/src/modules' -> 'modules'
+    const parts = searchPath.split(this.pathModule.sep);
+    return parts[parts.length - 1] || 'features';
   }
 
   private toAbsolute(root: string, baseDir: string): string {

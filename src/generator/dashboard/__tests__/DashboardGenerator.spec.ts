@@ -7,16 +7,55 @@ import { getResourceName } from '@tg-scripts/generator/utils/naming';
 import type { Config } from '@tg-scripts/types';
 
 const config: Config = {
-  schemaPath: 'prisma/schema.prisma',
-  dashboardPath: 'src/dashboard/src',
-  dtosPath: 'src/dtos/generated',
-  suffix: 'Test',
-  nonInteractive: false,
+      input: {
+        schemaPath: 'prisma/schema.prisma',
+        prismaService: 'src/infrastructure/database/prisma.service.ts',
+      },
+  output: {
+    backend: {
+      dtos: 'src/dtos/generated',
+      modules: {
+        searchPaths: ['src/features', 'src/infrastructure'],
+        defaultRoot: 'src/features',
+      },
+      staticFiles: {
+        guards: 'src/guards',
+        decorators: 'src/decorators',
+        dtos: 'src/dtos',
+        interceptors: 'src/interceptors',
+          utils: 'src/utils',
+        },
+    },
+    dashboard: {
+      root: 'src/dashboard/src',
+      resources: 'src/dashboard/src/resources',
+    },
+  },
+  api: {
+    suffix: 'Test',
+    prefix: 'api',
+    authentication: {
+      enabled: true,
+      requireAdmin: false,
+      guards: [],
+    },
+  },
+  dashboard: {
+    enabled: true,
+    updateDataProvider: false,
+    components: {
+      form: {},
+      display: {},
+    },
+  },
+  behavior: {
+    nonInteractive: false,
+  },
 };
 
 const MOCK_CWD = '/mock/project/root';
-const SCHEMA_ABSOLUTE_PATH = path.join(MOCK_CWD, config.schemaPath);
-const DASHBOARD_ABSOLUTE_PATH = path.join(MOCK_CWD, config.dashboardPath);
+const SCHEMA_ABSOLUTE_PATH = path.join(MOCK_CWD, config.input.schemaPath);
+const DASHBOARD_ABSOLUTE_PATH = path.join(MOCK_CWD, config.output.dashboard.root);
 const mockResolveModuleRoots = jest.fn();
 const mockResolveAppModulePath = jest.fn();
 const mockResolveDashboardDataProviderPath = jest.fn();
@@ -496,7 +535,7 @@ model Post {
 
       const nonInteractiveGenerator = new DashboardGenerator({
         ...config,
-        nonInteractive: true,
+        behavior: { ...config.behavior, nonInteractive: true },
       });
 
       await nonInteractiveGenerator.generate();

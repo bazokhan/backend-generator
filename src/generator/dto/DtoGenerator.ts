@@ -25,18 +25,18 @@ export class DtoGenerator {
   constructor(config: Config) {
     this.config = config;
     this.workspaceRoot = process.cwd();
-    this.schemaPath = config.schemaPath;
+    this.schemaPath = config.input.schemaPath;
     this.schemaAbsolutePath = path.isAbsolute(this.schemaPath)
       ? this.schemaPath
       : path.join(this.workspaceRoot, this.schemaPath);
-    this.outputDir = config.dtosPath;
+    this.outputDir = config.output.backend.dtos;
     this.outputAbsolutePath = path.isAbsolute(this.outputDir)
       ? this.outputDir
       : path.join(this.workspaceRoot, this.outputDir);
     this.fieldParser = new PrismaFieldParser();
     this.fieldRelationsParser = new PrismaRelationsParser();
     this.schemaParser = new PrismaSchemaParser(this.fieldParser, this.fieldRelationsParser);
-    this.dtoGenerator = new NestDtoGenerator({ suffix: config.suffix });
+    this.dtoGenerator = new NestDtoGenerator({ suffix: config.api.suffix });
   }
 
   generate(): void {

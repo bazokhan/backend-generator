@@ -233,7 +233,7 @@ tgraph dry-run
   ✓ invoices: src/dashboard/src/resources/invoices
 
 📝 Manual Steps
-  ⚠️ Dashboard data provider not found. Configure config.paths.dashboard.dataProvider or create the file before running generation.
+  ⚠️ Dashboard data provider not found. Configure config.paths.dataProvider or create the file before running generation.
   ℹ️ Swagger JSON missing. Run "npm run generate:swagger" before generating dashboard types.
 
 ⚠️ Preflight completed with warnings. Review the manual steps above.

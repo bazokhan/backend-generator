@@ -33,16 +33,16 @@ export class DashboardGenerator {
     this.fieldParser = new PrismaFieldParser();
     this.fieldRelationsParser = new PrismaRelationsParser();
     this.schemaParser = new PrismaSchemaParser(this.fieldParser, this.fieldRelationsParser);
-    this.reactComponentsGenerator = new ReactComponentsGenerator();
+    this.reactComponentsGenerator = new ReactComponentsGenerator(config.dashboard.components);
     this.workspaceRoot = process.cwd();
     this.projectPathResolver = new ProjectPathResolver(config, { workspaceRoot: this.workspaceRoot });
-    this.schemaPath = this.config.schemaPath;
+    this.schemaPath = this.config.input.schemaPath;
     this.schemaAbsolutePath = path.isAbsolute(this.schemaPath)
       ? this.schemaPath
       : path.join(this.workspaceRoot, this.schemaPath);
-    this.dashboardPath = this.config.dashboardPath;
+    this.dashboardPath = this.config.output.dashboard.root;
     this.dashboardAbsolutePath = this.projectPathResolver.getDashboardRoot();
-    this.nonInteractive = config.nonInteractive ?? false;
+    this.nonInteractive = config.behavior.nonInteractive;
     this.appComponentPath = this.projectPathResolver.resolveDashboardAppComponentPath();
   }
 
@@ -208,13 +208,13 @@ export class DashboardGenerator {
 
     if (!resolvedAppPath) {
       console.warn('⚠️ Could not locate App component. Skipping automatic App.tsx updates.');
-      console.warn('   Configure config.paths.dashboard.appComponent if your entrypoint lives elsewhere.');
+      console.warn('   Configure config.paths.appComponent if your entrypoint lives elsewhere.');
       return;
     }
 
     if (!fs.existsSync(resolvedAppPath)) {
       console.warn(`⚠️ App component file not found at ${resolvedAppPath}. Skipping update.`);
-      console.warn('   Configure config.paths.dashboard.appComponent if your entrypoint lives elsewhere.');
+      console.warn('   Configure config.paths.appComponent if your entrypoint lives elsewhere.');
       return;
     }
 

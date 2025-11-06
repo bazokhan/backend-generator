@@ -95,7 +95,7 @@ exports[`PrismaFieldParser snapshots should snapshot a parsed schema with enums 
           "type": "User",
         },
       ],
-      "moduleType": "features",
+      "moduleType": "",
       "name": "Post",
       "tgLabelField": undefined,
     },

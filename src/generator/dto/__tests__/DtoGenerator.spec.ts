@@ -6,15 +6,55 @@ import { DtoGenerator } from '@tg-scripts/generator/dto/DtoGenerator';
 import type { Config } from '@tg-scripts/types';
 
 const config: Config = {
-  schemaPath: 'prisma/schema.prisma',
-  dashboardPath: 'src/dashboard/src',
-  dtosPath: 'src/dtos/generated',
-  suffix: 'Test',
+      input: {
+        schemaPath: 'prisma/schema.prisma',
+        prismaService: 'src/infrastructure/database/prisma.service.ts',
+      },
+  output: {
+    backend: {
+      dtos: 'src/dtos/generated',
+      modules: {
+        searchPaths: ['src/features', 'src/infrastructure'],
+        defaultRoot: 'src/features',
+      },
+      staticFiles: {
+        guards: 'src/guards',
+        decorators: 'src/decorators',
+        dtos: 'src/dtos',
+        interceptors: 'src/interceptors',
+          utils: 'src/utils',
+        },
+    },
+    dashboard: {
+      root: 'src/dashboard/src',
+      resources: 'src/dashboard/src/resources',
+    },
+  },
+  api: {
+    suffix: 'Test',
+    prefix: 'api',
+    authentication: {
+      enabled: true,
+      requireAdmin: false,
+      guards: [],
+    },
+  },
+  dashboard: {
+    enabled: true,
+    updateDataProvider: false,
+    components: {
+      form: {},
+      display: {},
+    },
+  },
+  behavior: {
+    nonInteractive: false,
+  },
 };
 
 const MOCK_CWD = '/mock/project/root';
-const SCHEMA_ABSOLUTE_PATH = path.join(MOCK_CWD, config.schemaPath);
-const OUTPUT_ABSOLUTE_PATH = path.join(MOCK_CWD, config.dtosPath);
+const SCHEMA_ABSOLUTE_PATH = path.join(MOCK_CWD, config.input.schemaPath);
+const OUTPUT_ABSOLUTE_PATH = path.join(MOCK_CWD, config.output.backend.dtos);
 
 // Mock all dependencies
 jest.mock('fs');
