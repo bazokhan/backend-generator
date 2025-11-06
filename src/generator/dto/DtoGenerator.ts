@@ -10,18 +10,17 @@ import { NestDtoGenerator } from '../nest-dto-generator/NestDtoGenerator';
 
 export class DtoGenerator {
   private readonly config: Config;
-  private readonly workspaceRoot: string;
-  private readonly schemaPath: string;
-  private readonly schemaAbsolutePath: string;
-  private readonly outputDir: string;
-  private readonly outputAbsolutePath: string;
+  private readonly dtoGenerator: NestDtoGenerator;
+  private enums: Map<string, string[]> = new Map();
   private readonly fieldParser: PrismaFieldParser;
   private readonly fieldRelationsParser: PrismaRelationsParser;
-  private readonly schemaParser: PrismaSchemaParser;
-  private readonly dtoGenerator: NestDtoGenerator;
   private models: PrismaModel[] = [];
-  private enums: Map<string, string[]> = new Map();
-
+  private readonly outputAbsolutePath: string;
+  private readonly outputDir: string;
+  private readonly schemaAbsolutePath: string;
+  private readonly schemaParser: PrismaSchemaParser;
+  private readonly schemaPath: string;
+  private readonly workspaceRoot: string;
   constructor(config: Config) {
     this.config = config;
     this.workspaceRoot = process.cwd();
@@ -39,54 +38,9 @@ export class DtoGenerator {
     this.dtoGenerator = new NestDtoGenerator({ suffix: config.api.suffix });
   }
 
-  generate(): void {
-    console.log('🚀 Starting DTO generation...');
-
-    try {
-      this.setupOutputDirectory();
-      this.parseSchema();
-      this.generateDtos();
-      this.generateIndexFile();
-      this.formatFiles();
-      console.log('✅ DTO generation completed successfully!');
-    } catch (error) {
-      console.error('❌ Error during DTO generation:', error);
-      throw error;
-    }
-  }
-
-  private setupOutputDirectory(): void {
-    const displayPath = this.toWorkspaceRelative(this.outputAbsolutePath);
-    console.log(`📁 Setting up output directory at ${displayPath}...`);
-    if (fs.existsSync(this.outputAbsolutePath)) {
-      fs.rmSync(this.outputAbsolutePath, { recursive: true, force: true });
-    }
-    fs.mkdirSync(this.outputAbsolutePath, { recursive: true });
-  }
-
-  private parseSchema(): void {
-    console.log('📖 Parsing Prisma schema...');
-    console.log(`   Reading from: ${this.schemaAbsolutePath}`);
-    
-    const schemaContent = fs.readFileSync(this.schemaAbsolutePath, 'utf-8');
-    console.log(`   Schema content length: ${schemaContent.length} characters`);
-    
-    this.schemaParser.load(schemaContent);
-    const parsed = this.schemaParser.parse();
-
-    this.models = parsed.models;
-    this.enums = parsed.enums;
-
-    if (this.models.length === 0) {
-      console.warn('   ⚠️  Warning: No models found in schema!');
-      console.warn('   ℹ️  Note: All models are included in DTO generation.');
-    } else {
-      this.models.forEach((model) => {
-        console.log(`   📋 Found model: ${model.name}`);
-      });
-    }
-
-    console.log(`📊 Found ${this.models.length} models in schema`);
+  private formatFiles(): void {
+    console.log('🎨 Formatting generated files...');
+    // Files are already formatted individually, but we format index.ts again for consistency
   }
 
   private generateDtos(): void {
@@ -122,6 +76,40 @@ export class DtoGenerator {
     console.log('✅ Generated index.ts');
   }
 
+  private parseSchema(): void {
+    console.log('📖 Parsing Prisma schema...');
+    console.log(`   Reading from: ${this.schemaAbsolutePath}`);
+    
+    const schemaContent = fs.readFileSync(this.schemaAbsolutePath, 'utf-8');
+    console.log(`   Schema content length: ${schemaContent.length} characters`);
+    
+    this.schemaParser.load(schemaContent);
+    const parsed = this.schemaParser.parse();
+
+    this.models = parsed.models;
+    this.enums = parsed.enums;
+
+    if (this.models.length === 0) {
+      console.warn('   ⚠️  Warning: No models found in schema!');
+      console.warn('   ℹ️  Note: All models are included in DTO generation.');
+    } else {
+      this.models.forEach((model) => {
+        console.log(`   📋 Found model: ${model.name}`);
+      });
+    }
+
+    console.log(`📊 Found ${this.models.length} models in schema`);
+  }
+
+  private setupOutputDirectory(): void {
+    const displayPath = this.toWorkspaceRelative(this.outputAbsolutePath);
+    console.log(`📁 Setting up output directory at ${displayPath}...`);
+    if (fs.existsSync(this.outputAbsolutePath)) {
+      fs.rmSync(this.outputAbsolutePath, { recursive: true, force: true });
+    }
+    fs.mkdirSync(this.outputAbsolutePath, { recursive: true });
+  }
+
   private toWorkspaceRelative(targetPath: string): string {
     const relativePath = path.relative(this.workspaceRoot, targetPath);
     if (!relativePath || relativePath.startsWith('..')) {
@@ -131,8 +119,19 @@ export class DtoGenerator {
     return relativePath;
   }
 
-  private formatFiles(): void {
-    console.log('🎨 Formatting generated files...');
-    // Files are already formatted individually, but we format index.ts again for consistency
+  generate(): void {
+    console.log('🚀 Starting DTO generation...');
+
+    try {
+      this.setupOutputDirectory();
+      this.parseSchema();
+      this.generateDtos();
+      this.generateIndexFile();
+      this.formatFiles();
+      console.log('✅ DTO generation completed successfully!');
+    } catch (error) {
+      console.error('❌ Error during DTO generation:', error);
+      throw error;
+    }
   }
 }

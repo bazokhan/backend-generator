@@ -19,36 +19,34 @@ import { NestControllerGenerator } from '../nest-controller-generator/NestContro
 import { NestStaticGenerator } from '../nest-static-generator/NestStaticGenerator';
 
 export class ApiGenerator {
-  private models: PrismaModel[] = [];
-  private enums: Map<string, string[]> = new Map();
+  private appModulePath: string | null;
+  private appModuleUpdater: NestAppModuleUpdater;
   private autoCreatedModules: {
     name: string;
     moduleType: string;
     moduleFilePath: string;
   }[] = [];
-
   private config: Config;
-  private workspaceRoot: string;
-  private schemaAbsolutePath: string;
-  private fieldParser: PrismaFieldParser;
-  private fieldRelationsParser: PrismaRelationsParser;
-  private schemaParser: PrismaSchemaParser;
-  private dtoGenerator: NestDtoGenerator;
-  private moduleFileGenerator: NestModuleFileGenerator;
-  private serviceGenerator: NestServiceGenerator;
   private controllerGenerator: NestControllerGenerator;
-  private modulePathResolver: ModulePathResolver;
-  private projectPathResolver: ProjectPathResolver;
-  private appModuleUpdater: NestAppModuleUpdater;
-  private moduleUpdater: NestModuleUpdater;
   private dataProviderGenerator: DataProviderEndpointGenerator;
-  private appModulePath: string | null;
   private dataProviderPath: string | null;
   private defaultFeatureRoot: string;
-
-  private namingSuffix: string;
+  private dtoGenerator: NestDtoGenerator;
+  private enums: Map<string, string[]> = new Map();
+  private fieldParser: PrismaFieldParser;
+  private fieldRelationsParser: PrismaRelationsParser;
   private fileSuffix: string;
+  private models: PrismaModel[] = [];
+  private moduleFileGenerator: NestModuleFileGenerator;
+  private modulePathResolver: ModulePathResolver;
+  private moduleUpdater: NestModuleUpdater;
+  private namingSuffix: string;
   private readonly nonInteractive: boolean;
+  private projectPathResolver: ProjectPathResolver;
+  private schemaAbsolutePath: string;
+  private schemaParser: PrismaSchemaParser;
+  private serviceGenerator: NestServiceGenerator;
+  private workspaceRoot: string;
   constructor(config: Config) {
     this.config = config;
     this.workspaceRoot = process.cwd();
@@ -84,58 +82,14 @@ export class ApiGenerator {
     this.nonInteractive = config.behavior.nonInteractive;
   }
 
-  async generate(): Promise<void> {
-    console.log('🚀 Starting API generation...');
+  private createModuleFile(model: PrismaModel, modulePath: string): string {
+    const modelNameLower = toCamelCase(model.name);
+    const content = this.moduleFileGenerator.generate(model);
 
-    try {
-      await this.generateNestStaticFiles();
-      this.parseSchema();
-      await this.findModules();
-      await this.generateFullNestModule();
-      this.updateAppModule(this.autoCreatedModules);
-      if (this.config.dashboard.updateDataProvider) {
-        this.updateDataProvider();
-      }
-      console.log('✅ API generation completed successfully!');
-    } catch (error) {
-      console.error('❌ Error during API generation:', error);
-      throw error;
-    }
-  }
-
-  private async generateNestStaticFiles(): Promise<void> {
-    console.log('🔧 Generating Nest Static files...');
-    const nestStaticGenerator = new NestStaticGenerator(this.config);
-    await nestStaticGenerator.generate();
-  }
-
-  private withFileSuffix(baseName: string): string {
-    return this.fileSuffix ? `${baseName}.${this.fileSuffix}` : baseName;
-  }
-
-  private parseSchema(): void {
-    console.log('📖 Parsing Prisma schema...');
-    console.log(`   Reading from: ${this.schemaAbsolutePath}`);
-
-    const schemaContent = fs.readFileSync(this.schemaAbsolutePath, 'utf-8');
-    console.log(`   Schema content length: ${schemaContent.length} characters`);
-    
-    this.schemaParser.load(schemaContent);
-    const { models, enums } = this.schemaParser.parse();
-
-    this.models = models;
-    this.enums = enums;
-    
-    if (this.models.length === 0) {
-      console.warn('   ⚠️  Warning: No models with @tg_form() directive found!');
-      console.warn('   ℹ️  Hint: Add @tg_form() directive to models you want to generate APIs for.');
-    } else {
-      models.forEach((model) => {
-        console.log(`   📋 Found model with @tg_form(): ${model.name}`);
-      });
-    }
-
-    console.log(`📊 Found ${this.models.length} models with @tg_form()`);
+    const filePath = path.join(modulePath, `${modelNameLower}.module.ts`);
+    fs.writeFileSync(filePath, content);
+    console.log(`📄 Created module file: ${filePath}`);
+    return filePath;
   }
 
   private findModulePath(modelName: string): {
@@ -264,14 +218,45 @@ export class ApiGenerator {
     }
   }
 
-  private createModuleFile(model: PrismaModel, modulePath: string): string {
-    const modelNameLower = toCamelCase(model.name);
-    const content = this.moduleFileGenerator.generate(model);
+  private async generateNestStaticFiles(): Promise<void> {
+    console.log('🔧 Generating Nest Static files...');
+    const nestStaticGenerator = new NestStaticGenerator(this.config);
+    await nestStaticGenerator.generate();
+  }
 
-    const filePath = path.join(modulePath, `${modelNameLower}.module.ts`);
-    fs.writeFileSync(filePath, content);
-    console.log(`📄 Created module file: ${filePath}`);
-    return filePath;
+  private parseSchema(): void {
+    console.log('📖 Parsing Prisma schema...');
+    console.log(`   Reading from: ${this.schemaAbsolutePath}`);
+
+    const schemaContent = fs.readFileSync(this.schemaAbsolutePath, 'utf-8');
+    console.log(`   Schema content length: ${schemaContent.length} characters`);
+    
+    this.schemaParser.load(schemaContent);
+    const { models, enums } = this.schemaParser.parse();
+
+    this.models = models;
+    this.enums = enums;
+    
+    if (this.models.length === 0) {
+      console.warn('   ⚠️  Warning: No models with @tg_form() directive found!');
+      console.warn('   ℹ️  Hint: Add @tg_form() directive to models you want to generate APIs for.');
+    } else {
+      models.forEach((model) => {
+        console.log(`   📋 Found model with @tg_form(): ${model.name}`);
+      });
+    }
+
+    console.log(`📊 Found ${this.models.length} models with @tg_form()`);
+  }
+
+  private toModuleImportPath(fromDirectory: string, moduleFilePath: string): string {
+    const relativePath = path.relative(fromDirectory, moduleFilePath);
+    const normalized = relativePath.split(path.sep).join('/');
+    const withoutExtension = normalized.replace(/\.ts$/, '');
+    if (withoutExtension.startsWith('.')) {
+      return withoutExtension;
+    }
+    return `./${withoutExtension}`;
   }
 
   private updateAppModule(
@@ -321,53 +306,6 @@ export class ApiGenerator {
     formatGeneratedFile(resolvedAppModulePath, this.workspaceRoot);
 
     console.log('✅ Updated AppModule with auto-created modules');
-  }
-
-  private updateModule(model: PrismaModel): void {
-    if (!model.modulePath) {
-      console.log(`⚠️ No module path for ${model.name}`);
-      return;
-    }
-
-    const moduleFileName = this.modulePathResolver.getModuleFileName(model.modulePath);
-    if (!moduleFileName) {
-      console.log(`⚠️ Module file not found in: ${model.modulePath}`);
-      console.log(`📄 Creating module file for ${model.name}...`);
-      const moduleFilePath = this.createModuleFile(model, model.modulePath);
-      // Track this as auto-created since we just created it
-      this.autoCreatedModules.push({
-        name: model.name,
-        moduleType: model.moduleType ?? 'features',
-        moduleFilePath,
-      });
-      return;
-    }
-
-    const modulePath = path.join(model.modulePath, moduleFileName);
-    let moduleContent = fs.readFileSync(modulePath, 'utf-8');
-    const modelNameLower = toCamelCase(model.name);
-    const controllerClassName = `${model.name}${this.namingSuffix}Controller`;
-    const serviceClassName = `${model.name}${this.namingSuffix}Service`;
-    const { controllerImport, serviceImport } = this.moduleUpdater.generateModuleImportStatements(
-      model.name,
-      modelNameLower,
-      this.namingSuffix,
-      this.fileSuffix,
-    );
-
-    // Add imports if needed
-    if (!moduleContent.includes(controllerClassName)) {
-      moduleContent = this.moduleUpdater.addImportsToModule(moduleContent, [controllerImport, serviceImport]);
-    }
-
-    // Add to controllers array if not present
-    moduleContent = this.moduleUpdater.addToArrayInModule(moduleContent, 'controllers', [controllerClassName]);
-
-    // Add to providers array if not present
-    moduleContent = this.moduleUpdater.addToArrayInModule(moduleContent, 'providers', [serviceClassName]);
-
-    fs.writeFileSync(modulePath, moduleContent);
-    console.log(`✅ Updated module: ${modulePath}`);
   }
 
   private updateDataProvider(): void {
@@ -420,13 +358,73 @@ export class ApiGenerator {
     console.log('✅ Updated dataProvider endpoint map');
   }
 
-  private toModuleImportPath(fromDirectory: string, moduleFilePath: string): string {
-    const relativePath = path.relative(fromDirectory, moduleFilePath);
-    const normalized = relativePath.split(path.sep).join('/');
-    const withoutExtension = normalized.replace(/\.ts$/, '');
-    if (withoutExtension.startsWith('.')) {
-      return withoutExtension;
+  private updateModule(model: PrismaModel): void {
+    if (!model.modulePath) {
+      console.log(`⚠️ No module path for ${model.name}`);
+      return;
     }
-    return `./${withoutExtension}`;
+
+    const moduleFileName = this.modulePathResolver.getModuleFileName(model.modulePath);
+    if (!moduleFileName) {
+      console.log(`⚠️ Module file not found in: ${model.modulePath}`);
+      console.log(`📄 Creating module file for ${model.name}...`);
+      const moduleFilePath = this.createModuleFile(model, model.modulePath);
+      // Track this as auto-created since we just created it
+      this.autoCreatedModules.push({
+        name: model.name,
+        moduleType: model.moduleType ?? 'features',
+        moduleFilePath,
+      });
+      return;
+    }
+
+    const modulePath = path.join(model.modulePath, moduleFileName);
+    let moduleContent = fs.readFileSync(modulePath, 'utf-8');
+    const modelNameLower = toCamelCase(model.name);
+    const controllerClassName = `${model.name}${this.namingSuffix}Controller`;
+    const serviceClassName = `${model.name}${this.namingSuffix}Service`;
+    const { controllerImport, serviceImport } = this.moduleUpdater.generateModuleImportStatements(
+      model.name,
+      modelNameLower,
+      this.namingSuffix,
+      this.fileSuffix,
+    );
+
+    // Add imports if needed
+    if (!moduleContent.includes(controllerClassName)) {
+      moduleContent = this.moduleUpdater.addImportsToModule(moduleContent, [controllerImport, serviceImport]);
+    }
+
+    // Add to controllers array if not present
+    moduleContent = this.moduleUpdater.addToArrayInModule(moduleContent, 'controllers', [controllerClassName]);
+
+    // Add to providers array if not present
+    moduleContent = this.moduleUpdater.addToArrayInModule(moduleContent, 'providers', [serviceClassName]);
+
+    fs.writeFileSync(modulePath, moduleContent);
+    console.log(`✅ Updated module: ${modulePath}`);
+  }
+
+  private withFileSuffix(baseName: string): string {
+    return this.fileSuffix ? `${baseName}.${this.fileSuffix}` : baseName;
+  }
+
+  async generate(): Promise<void> {
+    console.log('🚀 Starting API generation...');
+
+    try {
+      await this.generateNestStaticFiles();
+      this.parseSchema();
+      await this.findModules();
+      await this.generateFullNestModule();
+      this.updateAppModule(this.autoCreatedModules);
+      if (this.config.dashboard.updateDataProvider) {
+        this.updateDataProvider();
+      }
+      console.log('✅ API generation completed successfully!');
+    } catch (error) {
+      console.error('❌ Error during API generation:', error);
+      throw error;
+    }
   }
 }

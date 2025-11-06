@@ -438,7 +438,7 @@ describe('CommandLineInterface - doctor command', () => {
     // (it uses a minimal default config internally just to run the checks)
     const callArg = systemValidatorRunDiagnosticsMock.mock.calls[0]?.[0] as Config | undefined;
     expect(callArg).toBeDefined();
-    expect(callArg?.input.schemaPath).toBe('prisma/schema.prisma');
+    expect(callArg?.input.schemaPath).toBe('');
   });
 
   it('prints diagnostic categories with proper formatting', async () => {

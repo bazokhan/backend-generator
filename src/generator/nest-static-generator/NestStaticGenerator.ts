@@ -19,10 +19,9 @@ import { GuardResolver } from '../nest-controller-generator/GuardResolver';
 export type StaticGeneratorOverrides = Partial<StaticTemplateOptions>;
 
 export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides, void> {
-  private readonly workspaceRoot: string;
   private readonly renderer: TemplateRenderer;
   private readonly templateOptions: StaticTemplateOptions;
-
+  private readonly workspaceRoot: string;
   constructor(
     private readonly config: Config,
     overrides: StaticGeneratorOverrides = {},
@@ -30,6 +29,49 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
     this.workspaceRoot = process.cwd();
     this.renderer = new TemplateRenderer();
     this.templateOptions = { ...defaultStaticGeneratorOptions, ...overrides };
+  }
+
+  private computeOutputPaths(): {
+    adminGuard: string;
+    isAdminDecorator: string;
+    paginatedSearchQueryDto: string;
+    paginatedSearchResultDto: string;
+    apiResponseDto: string;
+    paginationInterceptor: string;
+    paginatedSearchDecorator: string;
+    paginatedSearchUtil: string;
+  } {
+    const staticFiles = this.config.output.backend.staticFiles;
+    return {
+      adminGuard: this.resolveStaticPath(staticFiles.guards, 'admin.guard.ts'),
+      isAdminDecorator: this.resolveStaticPath(staticFiles.decorators, 'is-admin.decorator.ts'),
+      paginatedSearchQueryDto: this.resolveStaticPath(staticFiles.dtos, 'paginated-search-query.dto.ts'),
+      paginatedSearchResultDto: this.resolveStaticPath(staticFiles.dtos, 'paginated-search-result.dto.ts'),
+      apiResponseDto: this.resolveStaticPath(staticFiles.dtos, 'api-response.dto.ts'),
+      paginationInterceptor: this.resolveStaticPath(staticFiles.interceptors, 'pagination.interceptor.ts'),
+      paginatedSearchDecorator: this.resolveStaticPath(staticFiles.decorators, 'paginated-search.decorator.ts'),
+      paginatedSearchUtil: this.resolveStaticPath(staticFiles.utils, 'paginated-search.ts'),
+    };
+  }
+
+  private createImportPath(fromFile: string, targetFile: string): string {
+    const relative = path.relative(path.dirname(fromFile), targetFile);
+    const normalized = relative.replace(/\\/g, '/');
+    const withoutExtension = normalized.replace(/\.tsx?$|\.jsx?$/i, '');
+    if (withoutExtension.startsWith('.')) {
+      return withoutExtension;
+    }
+    return `./${withoutExtension}`;
+  }
+
+  private async ensureDirectories(pathsToEnsure: string[]): Promise<void> {
+    const uniqueDirs = Array.from(new Set(pathsToEnsure.map((file) => path.dirname(file))));
+    await Promise.all(uniqueDirs.map((dir) => fs.promises.mkdir(dir, { recursive: true })));
+  }
+
+  private resolveStaticPath(basePath: string, fileName: string): string {
+    const absoluteBase = path.isAbsolute(basePath) ? basePath : path.join(this.workspaceRoot, basePath);
+    return path.join(absoluteBase, fileName);
   }
 
   public async generate(overrides: StaticGeneratorOverrides = {}, _options?: Record<string, unknown>): Promise<void> {
@@ -110,48 +152,5 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
       filesToWrite.map(({ target }) => target),
       this.workspaceRoot,
     );
-  }
-
-  private computeOutputPaths(): {
-    adminGuard: string;
-    isAdminDecorator: string;
-    paginatedSearchQueryDto: string;
-    paginatedSearchResultDto: string;
-    apiResponseDto: string;
-    paginationInterceptor: string;
-    paginatedSearchDecorator: string;
-    paginatedSearchUtil: string;
-  } {
-    const staticFiles = this.config.output.backend.staticFiles;
-    return {
-      adminGuard: this.resolveStaticPath(staticFiles.guards, 'admin.guard.ts'),
-      isAdminDecorator: this.resolveStaticPath(staticFiles.decorators, 'is-admin.decorator.ts'),
-      paginatedSearchQueryDto: this.resolveStaticPath(staticFiles.dtos, 'paginated-search-query.dto.ts'),
-      paginatedSearchResultDto: this.resolveStaticPath(staticFiles.dtos, 'paginated-search-result.dto.ts'),
-      apiResponseDto: this.resolveStaticPath(staticFiles.dtos, 'api-response.dto.ts'),
-      paginationInterceptor: this.resolveStaticPath(staticFiles.interceptors, 'pagination.interceptor.ts'),
-      paginatedSearchDecorator: this.resolveStaticPath(staticFiles.decorators, 'paginated-search.decorator.ts'),
-      paginatedSearchUtil: this.resolveStaticPath(staticFiles.utils, 'paginated-search.ts'),
-    };
-  }
-
-  private resolveStaticPath(basePath: string, fileName: string): string {
-    const absoluteBase = path.isAbsolute(basePath) ? basePath : path.join(this.workspaceRoot, basePath);
-    return path.join(absoluteBase, fileName);
-  }
-
-  private async ensureDirectories(pathsToEnsure: string[]): Promise<void> {
-    const uniqueDirs = Array.from(new Set(pathsToEnsure.map((file) => path.dirname(file))));
-    await Promise.all(uniqueDirs.map((dir) => fs.promises.mkdir(dir, { recursive: true })));
-  }
-
-  private createImportPath(fromFile: string, targetFile: string): string {
-    const relative = path.relative(path.dirname(fromFile), targetFile);
-    const normalized = relative.replace(/\\/g, '/');
-    const withoutExtension = normalized.replace(/\.tsx?$|\.jsx?$/i, '');
-    if (withoutExtension.startsWith('.')) {
-      return withoutExtension;
-    }
-    return `./${withoutExtension}`;
   }
 }

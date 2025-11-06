@@ -3,20 +3,19 @@ import { State, STATE_RULES } from './config';
 import type { IPrismaFieldParser, IPrismaRelationsParser, IPrismaSchemaParser } from '@tg-scripts/types';
 
 export class PrismaSchemaParser implements IPrismaSchemaParser<PrismaModel> {
-  private lines: string[] = [];
-  private models: PrismaModel[] = [];
-  private enums = new Map<string, string[]>();
-  private fieldParser: IPrismaFieldParser<PrismaField>;
-  private fieldRelationsParser: IPrismaRelationsParser<PrismaModel>;
-  // Current parsing state
-  private state = State.None;
   private currentEnum: string | null = null;
   private currentModel: {
     name: string;
     fields: PrismaField[];
     tgLabelField?: string | undefined;
   } | null = null;
-
+  private enums = new Map<string, string[]>();
+  private fieldParser: IPrismaFieldParser<PrismaField>;
+  private fieldRelationsParser: IPrismaRelationsParser<PrismaModel>;
+  private lines: string[] = [];
+  private models: PrismaModel[] = [];
+  // Current parsing state
+  private state = State.None;
   // Context tracking
   private hasTgForm = false;
   private pendingTgLabel?: string | undefined;

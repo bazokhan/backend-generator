@@ -11,17 +11,27 @@ interface ModulePathResolverOptions {
 }
 
 export class ModulePathResolver {
+  private readonly defaultRoot: string;
   private readonly fsModule: typeof fs;
   private readonly pathModule: typeof path;
   private readonly searchPaths: string[];
-  private readonly defaultRoot: string;
-
   constructor(private readonly options: ModulePathResolverOptions = {}) {
     this.fsModule = this.options.fsModule ?? fs;
     this.pathModule = this.options.pathModule ?? path;
     // Default search paths if not provided
     this.searchPaths = this.options.searchPaths ?? ['src/features', 'src/modules', 'src'];
     this.defaultRoot = this.options.defaultRoot ?? 'src/features';
+  }
+
+  private inferModuleType(searchPath: string): string {
+    // Extract the folder name from the search path
+    // e.g., 'src/features' -> 'features', 'apps/api/src/modules' -> 'modules'
+    const parts = searchPath.split(this.pathModule.sep);
+    return parts[parts.length - 1] || 'features';
+  }
+
+  private toAbsolute(root: string, baseDir: string): string {
+    return this.pathModule.isAbsolute(root) ? root : this.pathModule.join(baseDir, root);
   }
 
   public findModulePath(modelName: string, baseDir: string): ModulePathInfo | null {
@@ -51,6 +61,10 @@ export class ModulePathResolver {
     return null;
   }
 
+  public getDefaultRoot(): string {
+    return this.defaultRoot;
+  }
+
   public getModuleFileName(modulePath: string): string {
     if (!this.fsModule.existsSync(modulePath)) {
       return '';
@@ -61,22 +75,7 @@ export class ModulePathResolver {
     return moduleFile || '';
   }
 
-  public getDefaultRoot(): string {
-    return this.defaultRoot;
-  }
-
   public getSearchPaths(): string[] {
     return this.searchPaths;
-  }
-
-  private inferModuleType(searchPath: string): string {
-    // Extract the folder name from the search path
-    // e.g., 'src/features' -> 'features', 'apps/api/src/modules' -> 'modules'
-    const parts = searchPath.split(this.pathModule.sep);
-    return parts[parts.length - 1] || 'features';
-  }
-
-  private toAbsolute(root: string, baseDir: string): string {
-    return this.pathModule.isAbsolute(root) ? root : this.pathModule.join(baseDir, root);
   }
 }

@@ -8,14 +8,27 @@ export interface AppModuleRegistration {
 export class NestAppModuleUpdater {
   constructor(private readonly parser: NestAppModuleParser = new NestAppModuleParser()) {}
 
-  public parseImportEntries(block: string): Array<{ name: string; line: string }> {
-    const entries: Array<{ name: string; line: string }> = [];
-    const importRegex = /import\s*\{\s*([A-Za-z0-9_]+)\s*\}\s*from\s*['"][^'"\n]+['"];?/g;
-    let match: RegExpExecArray | null;
-    while ((match = importRegex.exec(block)) !== null) {
-      entries.push({ name: match[1] ?? '', line: match[0]?.trim() ?? '' });
+  public buildImportsArrayContent(filteredTokens: string[], moduleNames: string[]): string {
+    let newImportsArrayContent = '';
+
+    if (filteredTokens.length > 0) {
+      const cleanedTokens = this.cleanArrayTokens(filteredTokens);
+      newImportsArrayContent = cleanedTokens.join('\n');
     }
-    return entries;
+
+    if (moduleNames.length > 0) {
+      const modulesBlock = `    // AUTO-GENERATED MODULES START\n${moduleNames
+        .map((n) => `    ${n},`)
+        .join('\n')}\n    // AUTO-GENERATED MODULES END`;
+
+      if (newImportsArrayContent) {
+        newImportsArrayContent = `${newImportsArrayContent},\n${modulesBlock}`;
+      } else {
+        newImportsArrayContent = modulesBlock;
+      }
+    }
+
+    return newImportsArrayContent;
   }
 
   public buildImportStatement(modelName: string, importPath: string): { name: string; line: string } {
@@ -23,12 +36,12 @@ export class NestAppModuleUpdater {
     return { name: `${modelName}Module`, line };
   }
 
-  public mergeImportEntries(
-    existing: Array<{ name: string; line: string }>,
-    newEntries: Array<{ name: string; line: string }>,
-  ): Array<{ name: string; line: string }> {
-    const seen = new Set(existing.map((e) => e.name));
-    return [...existing, ...newEntries.filter((e) => !seen.has(e.name))];
+  public cleanArrayTokens(tokens: string[]): string[] {
+    return tokens.map((token, index, arr) => {
+      const trimmedToken = token.trim();
+      const cleanedToken = trimmedToken.replace(/,\s*$/, '');
+      return index === arr.length - 1 ? cleanedToken : `${cleanedToken},`;
+    });
   }
 
   public findImportBlock(content: string): {
@@ -68,39 +81,44 @@ export class NestAppModuleUpdater {
     return content.substring(0, lastImportEnd) + '\n' + importsBlock + '\n' + content.substring(lastImportEnd);
   }
 
+  public mergeImportEntries(
+    existing: Array<{ name: string; line: string }>,
+    newEntries: Array<{ name: string; line: string }>,
+  ): Array<{ name: string; line: string }> {
+    const seen = new Set(existing.map((e) => e.name));
+    return [...existing, ...newEntries.filter((e) => !seen.has(e.name))];
+  }
+
   public mergeModuleNames(previous: string[], newModules: string[]): string[] {
     return [...previous, ...newModules].filter((name, idx, arr) => arr.indexOf(name) === idx);
   }
 
-  public cleanArrayTokens(tokens: string[]): string[] {
-    return tokens.map((token, index, arr) => {
-      const trimmedToken = token.trim();
-      const cleanedToken = trimmedToken.replace(/,\s*$/, '');
-      return index === arr.length - 1 ? cleanedToken : `${cleanedToken},`;
-    });
+  public parseImportEntries(block: string): Array<{ name: string; line: string }> {
+    const entries: Array<{ name: string; line: string }> = [];
+    const importRegex = /import\s*\{\s*([A-Za-z0-9_]+)\s*\}\s*from\s*['"][^'"\n]+['"];?/g;
+    let match: RegExpExecArray | null;
+    while ((match = importRegex.exec(block)) !== null) {
+      entries.push({ name: match[1] ?? '', line: match[0]?.trim() ?? '' });
+    }
+    return entries;
   }
 
-  public buildImportsArrayContent(filteredTokens: string[], moduleNames: string[]): string {
-    let newImportsArrayContent = '';
+  public updateImportsArray(content: string, mods: AppModuleRegistration[]): string {
+    const parsedResult = this.parser.parse(content);
 
-    if (filteredTokens.length > 0) {
-      const cleanedTokens = this.cleanArrayTokens(filteredTokens);
-      newImportsArrayContent = cleanedTokens.join('\n');
+    if (!parsedResult.moduleBounds || !parsedResult.importsBounds) {
+      return content;
     }
 
-    if (moduleNames.length > 0) {
-      const modulesBlock = `    // AUTO-GENERATED MODULES START\n${moduleNames
-        .map((n) => `    ${n},`)
-        .join('\n')}\n    // AUTO-GENERATED MODULES END`;
+    const desiredNames = mods.map((m) => `${m.name}Module`);
+    const newImportsArrayContent = this.buildImportsArrayContent(parsedResult.tokens, desiredNames);
 
-      if (newImportsArrayContent) {
-        newImportsArrayContent = `${newImportsArrayContent},\n${modulesBlock}`;
-      } else {
-        newImportsArrayContent = modulesBlock;
-      }
-    }
+    const beforeImports = parsedResult.importsBounds ? content.substring(0, parsedResult.importsBounds.start + 1) : '';
+    const afterImports = parsedResult.importsBounds ? content.substring(parsedResult.importsBounds.end) : '';
 
-    return newImportsArrayContent;
+    return `${beforeImports ? beforeImports + '\n' : ''}${newImportsArrayContent}${
+      afterImports ? '\n  ' + afterImports : ''
+    }`;
   }
 
   public updateImportStatements(content: string, mods: AppModuleRegistration[]): string {
@@ -124,23 +142,5 @@ export class NestAppModuleUpdater {
 
     const lastImport = this.findLastImportStatement(content);
     return this.insertImportBlock(content, importsBlock, lastImport?.index ?? null);
-  }
-
-  public updateImportsArray(content: string, mods: AppModuleRegistration[]): string {
-    const parsedResult = this.parser.parse(content);
-
-    if (!parsedResult.moduleBounds || !parsedResult.importsBounds) {
-      return content;
-    }
-
-    const desiredNames = mods.map((m) => `${m.name}Module`);
-    const newImportsArrayContent = this.buildImportsArrayContent(parsedResult.tokens, desiredNames);
-
-    const beforeImports = parsedResult.importsBounds ? content.substring(0, parsedResult.importsBounds.start + 1) : '';
-    const afterImports = parsedResult.importsBounds ? content.substring(parsedResult.importsBounds.end) : '';
-
-    return `${beforeImports ? beforeImports + '\n' : ''}${newImportsArrayContent}${
-      afterImports ? '\n  ' + afterImports : ''
-    }`;
   }
 }

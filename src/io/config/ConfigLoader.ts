@@ -28,59 +28,15 @@ export class ConfigLoader {
     this.configPath = options.configPath ?? '';
   }
 
-  load(): Config {
-    const fsModule = this.options.fsModule ?? fs;
-    const pathModule = this.options.pathModule ?? path;
-    const cwd = this.options.cwd ?? process.cwd();
+  private loadFromFile(configPath: string): Config {
+    delete require.cache[require.resolve(configPath)];
 
-    console.log('📂 Loading configuration...');
-    console.log(`   Working directory: ${cwd}`);
+    const loadedModule: { config?: Config; default?: Config } | Config = require(configPath);
 
-    // If specific config path is provided, use it
-    if (this.configPath) {
-      const resolvedPath = pathModule.isAbsolute(this.configPath) 
-        ? this.configPath 
-        : pathModule.join(cwd, this.configPath);
-      
-      if (!fsModule.existsSync(resolvedPath)) {
-        throw new ConfigLoaderError(
-          `Configuration file not found at: ${this.configPath}\n` +
-          `Resolved path: ${resolvedPath}`,
-        );
-      }
-
-      console.log(`   ✅ Found config file: ${this.configPath}`);
-      const config = this.loadFromFile(resolvedPath);
-      this.validateConfig(config, resolvedPath);
-      this.logConfig(config);
-      return config;
-    }
-
-    // Otherwise, search for default config files
-    for (const filename of CONFIG_FILENAMES) {
-      const configPath = pathModule.join(cwd, filename);
-      if (!fsModule.existsSync(configPath)) {
-        console.log(`   ⏭️  Skipping ${filename} (not found)`);
-        continue;
-      }
-
-      try {
-        console.log(`   ✅ Found config file: ${filename}`);
-        const config = this.loadFromFile(configPath);
-        this.validateConfig(config, configPath);
-        this.logConfig(config);
-        return config;
-      } catch (error) {
-        throw new ConfigLoaderError(`Failed to load configuration from '${filename}'`, { cause: error });
-      }
-    }
-
-    // No config file found - throw error instead of using default
-    throw new ConfigLoaderError(
-      `Configuration file not found. Expected one of: ${CONFIG_FILENAMES.join(', ')}\n` +
-        `💡 Run 'tgraph init' to create a configuration file.\n` +
-        `💡 Run 'tgraph doctor' to diagnose configuration issues.\n` +
-        `💡 Or specify a config file with: --config <path>`,
+    return (
+      (loadedModule as { config?: Config }).config ||
+      (loadedModule as { default?: Config }).default ||
+      (loadedModule as Config)
     );
   }
 
@@ -107,59 +63,6 @@ export class ConfigLoader {
     if (config.paths?.appComponent) {
       console.log(`   App component override: ${config.paths.appComponent}`);
     }
-  }
-
-  exists(): boolean {
-    const fsModule = this.options.fsModule ?? fs;
-    const pathModule = this.options.pathModule ?? path;
-    const cwd = this.options.cwd ?? process.cwd();
-
-    // If specific config path is provided, check that
-    if (this.configPath) {
-      const resolvedPath = pathModule.isAbsolute(this.configPath) 
-        ? this.configPath 
-        : pathModule.join(cwd, this.configPath);
-      return fsModule.existsSync(resolvedPath);
-    }
-
-    // Otherwise, check for default config files
-    return CONFIG_FILENAMES.some((filename) => fsModule.existsSync(pathModule.join(cwd, filename)));
-  }
-
-  getConfigFilePath(): string | null {
-    const fsModule = this.options.fsModule ?? fs;
-    const pathModule = this.options.pathModule ?? path;
-    const cwd = this.options.cwd ?? process.cwd();
-
-    // If specific config path is provided, return that
-    if (this.configPath) {
-      const resolvedPath = pathModule.isAbsolute(this.configPath) 
-        ? this.configPath 
-        : pathModule.join(cwd, this.configPath);
-      return fsModule.existsSync(resolvedPath) ? resolvedPath : null;
-    }
-
-    // Otherwise, search for default config files
-    for (const filename of CONFIG_FILENAMES) {
-      const configPath = pathModule.join(cwd, filename);
-      if (fsModule.existsSync(configPath)) {
-        return configPath;
-      }
-    }
-
-    return null;
-  }
-
-  private loadFromFile(configPath: string): Config {
-    delete require.cache[require.resolve(configPath)];
-
-    const loadedModule: { config?: Config; default?: Config } | Config = require(configPath);
-
-    return (
-      (loadedModule as { config?: Config }).config ||
-      (loadedModule as { default?: Config }).default ||
-      (loadedModule as Config)
-    );
   }
 
   private validateConfig(config: Config | undefined, configPath: string): void {
@@ -307,13 +210,6 @@ export class ConfigLoader {
     }
   }
 
-  private warnIfPathMissing(label: string, targetPath: string, cwd: string): void {
-    const resolved = path.isAbsolute(targetPath) ? targetPath : path.join(cwd, targetPath);
-    if (!fs.existsSync(resolved)) {
-      console.warn(`   ⚠️  Warning: ${label} not found at ${resolved}`);
-    }
-  }
-
   private warnIfDirectoryMissing(label: string, targetPath: string, cwd: string): void {
     const resolved = path.isAbsolute(targetPath) ? targetPath : path.join(cwd, targetPath);
     if (!fs.existsSync(resolved)) {
@@ -324,5 +220,109 @@ export class ConfigLoader {
     if (!stats.isDirectory()) {
       console.warn(`   ⚠️  Warning: ${label} at ${resolved} is not a directory`);
     }
+  }
+
+  private warnIfPathMissing(label: string, targetPath: string, cwd: string): void {
+    const resolved = path.isAbsolute(targetPath) ? targetPath : path.join(cwd, targetPath);
+    if (!fs.existsSync(resolved)) {
+      console.warn(`   ⚠️  Warning: ${label} not found at ${resolved}`);
+    }
+  }
+
+  exists(): boolean {
+    const fsModule = this.options.fsModule ?? fs;
+    const pathModule = this.options.pathModule ?? path;
+    const cwd = this.options.cwd ?? process.cwd();
+
+    // If specific config path is provided, check that
+    if (this.configPath) {
+      const resolvedPath = pathModule.isAbsolute(this.configPath) 
+        ? this.configPath 
+        : pathModule.join(cwd, this.configPath);
+      return fsModule.existsSync(resolvedPath);
+    }
+
+    // Otherwise, check for default config files
+    return CONFIG_FILENAMES.some((filename) => fsModule.existsSync(pathModule.join(cwd, filename)));
+  }
+
+  getConfigFilePath(): string | null {
+    const fsModule = this.options.fsModule ?? fs;
+    const pathModule = this.options.pathModule ?? path;
+    const cwd = this.options.cwd ?? process.cwd();
+
+    // If specific config path is provided, return that
+    if (this.configPath) {
+      const resolvedPath = pathModule.isAbsolute(this.configPath) 
+        ? this.configPath 
+        : pathModule.join(cwd, this.configPath);
+      return fsModule.existsSync(resolvedPath) ? resolvedPath : null;
+    }
+
+    // Otherwise, search for default config files
+    for (const filename of CONFIG_FILENAMES) {
+      const configPath = pathModule.join(cwd, filename);
+      if (fsModule.existsSync(configPath)) {
+        return configPath;
+      }
+    }
+
+    return null;
+  }
+
+  load(): Config {
+    const fsModule = this.options.fsModule ?? fs;
+    const pathModule = this.options.pathModule ?? path;
+    const cwd = this.options.cwd ?? process.cwd();
+
+    console.log('📂 Loading configuration...');
+    console.log(`   Working directory: ${cwd}`);
+
+    // If specific config path is provided, use it
+    if (this.configPath) {
+      const resolvedPath = pathModule.isAbsolute(this.configPath) 
+        ? this.configPath 
+        : pathModule.join(cwd, this.configPath);
+      
+      if (!fsModule.existsSync(resolvedPath)) {
+        throw new ConfigLoaderError(
+          `Configuration file not found at: ${this.configPath}\n` +
+          `Resolved path: ${resolvedPath}`,
+        );
+      }
+
+      console.log(`   ✅ Found config file: ${this.configPath}`);
+      const config = this.loadFromFile(resolvedPath);
+      this.validateConfig(config, resolvedPath);
+      this.logConfig(config);
+      return config;
+    }
+
+    // Otherwise, search for default config files
+    for (const filename of CONFIG_FILENAMES) {
+      const configPath = pathModule.join(cwd, filename);
+      if (!fsModule.existsSync(configPath)) {
+        console.log(`   ⏭️  Skipping ${filename} (not found)`);
+        continue;
+      }
+
+      try {
+        console.log(`   ✅ Found config file: ${filename}`);
+        const config = this.loadFromFile(configPath);
+        this.validateConfig(config, configPath);
+        this.logConfig(config);
+        return config;
+      } catch (error) {
+        throw new ConfigLoaderError(`Failed to load configuration from '${filename}'`, { cause: error });
+      }
+    }
+
+    // No config file found - throw error instead of using default
+    throw new ConfigLoaderError(
+      `Configuration file not found. Expected one of: ${CONFIG_FILENAMES.join(', ')}\n` +
+        `💡 Run 'tgraph init' to create a configuration file.\n` +
+        `💡 Run 'tgraph doctor' to diagnose configuration issues.\n` +
+        `💡 Or specify a config file with: --config <path>`,
+    );
   }
 }

@@ -36,166 +36,6 @@ export class CommandLineInterface {
     this.pathModule = options.pathModule ?? path;
   }
 
-  /**
-   * Execute the CLI with the provided arguments.
-   * Returns the exit code that should be used by the caller.
-   */
-  async run(argv: string[]): Promise<number> {
-    const parsed = this.parseArguments(argv);
-
-    if (parsed.helpRequested) {
-      this.printHelp();
-      return parsed.errors.length > 0 ? 1 : 0;
-    }
-
-    if (!parsed.command) {
-      parsed.errors.forEach((error) => console.error(error));
-      this.printHelp();
-      return 1;
-    }
-
-    if (parsed.errors.length > 0) {
-      parsed.errors.forEach((error) => console.error(error));
-      this.printHelp();
-      return 1;
-    }
-
-    if (parsed.command === 'init') {
-      return this.initializeConfig();
-    }
-
-    if (parsed.command === 'doctor') {
-      return await this.executeDoctorCommand(parsed.configPath, parsed.options);
-    }
-
-    // Check if config file exists (or was specified)
-    const configLoader = parsed.configPath 
-      ? new ConfigLoader({ configPath: parsed.configPath })
-      : this.configLoader;
-
-    if (!configLoader.exists()) {
-      if (parsed.configPath) {
-        console.error(`❌ Error: Configuration file not found at: ${parsed.configPath}`);
-      } else {
-        console.error(`❌ Error: No configuration file found.`);
-        console.error(`   Run 'tgraph init' to create a configuration file.`);
-        console.error(`   Expected file: tgraph.config.ts or tgraph.config.js in project root.`);
-        console.error(`   Or specify a config file with: --config <path>`);
-      }
-      return 1;
-    }
-
-    try {
-      const runtimeConfig = configLoader.load();
-      const mergedConfig = this.applyCliOverrides(runtimeConfig, parsed.options);
-      await this.executeCommand(parsed.command, mergedConfig);
-      return 0;
-    } catch (error) {
-      this.handleExecutionError(error);
-      return 1;
-    }
-  }
-
-  private parseArguments(args: string[]): ParsedArguments {
-    const parsed: ParsedArguments = {
-      options: {},
-      helpRequested: false,
-      errors: [],
-    };
-
-    let index = 0;
-    while (index < args.length) {
-      const arg = args[index];
-
-      switch (arg) {
-        case '-h':
-        case '--help':
-          parsed.helpRequested = true;
-          index += 1;
-          continue;
-        case '--config':
-        case '--file':
-        case '-c':
-          index = this.readNextValue(args, index, (value) => (parsed.configPath = value), parsed);
-          continue;
-        case '--yes':
-        case '-y':
-        case '--non-interactive':
-          parsed.options.nonInteractive = true;
-          index += 1;
-          continue;
-        case '--interactive':
-          parsed.options.nonInteractive = false;
-          index += 1;
-          continue;
-        default:
-          if (arg?.startsWith('--')) {
-            parsed.errors.push(`Unknown option: ${arg}`);
-            index += 1;
-            continue;
-          }
-
-          if (!parsed.command && arg !== undefined) {
-            const normalizedCommand = arg === 'dry-run' ? 'preflight' : arg;
-            if (['api', 'dashboard', 'dtos', 'all', 'init', 'doctor', 'preflight'].includes(normalizedCommand)) {
-              parsed.command = normalizedCommand as CliCommand;
-              index += 1;
-              continue;
-            }
-          }
-
-          parsed.errors.push(`Unknown argument: ${arg ?? '<undefined>'}`);
-          index += 1;
-      }
-    }
-
-    return parsed;
-  }
-
-  private readNextValue(
-    args: string[],
-    index: number,
-    assign: (value: string) => void,
-    parsed: ParsedArguments,
-  ): number {
-    if (index + 1 >= args.length) {
-      parsed.errors.push(`Missing value for ${args[index]} option.`);
-      return args.length;
-    }
-
-    const value = args[index + 1];
-    if (value !== undefined) {
-      assign(value);
-    }
-
-    return index + 2;
-  }
-
-
-  private async executeCommand(command: CliCommand, config: Config): Promise<void> {
-    switch (command) {
-      case 'api':
-        await new ApiGenerator(config).generate();
-        return;
-      case 'dashboard':
-        await new DashboardGenerator(config).generate();
-        return;
-      case 'dtos':
-        new DtoGenerator(config).generate();
-        return;
-      case 'all':
-        await new ApiGenerator(config).generate();
-        await new DashboardGenerator(config).generate();
-        new DtoGenerator(config).generate();
-        return;
-      case 'preflight':
-        await this.runPreflight(config);
-        return;
-      default:
-        throw new Error(`Unsupported command: ${command}`);
-    }
-  }
-
   private applyCliOverrides(config: Config, options: CliOptions): Config {
     if (options.nonInteractive === undefined) {
       return config;
@@ -208,30 +48,6 @@ export class CommandLineInterface {
         nonInteractive: options.nonInteractive,
       },
     };
-  }
-
-  private initializeConfig(): number {
-    const configPath = this.pathModule.join(process.cwd(), 'tgraph.config.ts');
-
-    if (this.configLoader.exists()) {
-      const existingPath = this.configLoader.getConfigFilePath();
-      console.error(`❌ Error: Configuration file already exists at '${existingPath}'`);
-      console.error(`   Remove it first if you want to reinitialize.`);
-      return 1;
-    }
-
-    const template = this.buildConfigTemplate();
-
-    try {
-      this.fsModule.writeFileSync(configPath, template, 'utf-8');
-      console.log(`✅ Created configuration file: ${configPath}`);
-      console.log(`   You can now customize it for your project.`);
-      console.log(`   Run 'tgraph all' to generate code.`);
-      return 0;
-    } catch (error) {
-      console.error(`❌ Error creating configuration file:`, error);
-      return 1;
-    }
   }
 
   private buildConfigTemplate(): string {
@@ -377,33 +193,52 @@ export const config: Config = {
 `;
   }
 
-  private printHelp(): void {
-    const helpText = `
-tgraph <command> [options]
+  private countWarnings(report: DiagnosticReport): number {
+    let count = 0;
+    for (const category of report.categories) {
+      for (const result of category.results) {
+        if (result.severity === 'warning') {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
 
-Commands:
-  init        Initialize configuration file (tgraph.config.ts)
-  doctor      Run diagnostics to check environment and configuration
-  preflight   Analyze pending changes without modifying files
-  api         Generate NestJS modules, services, controllers, and update data provider
-  dashboard   Generate React Admin dashboard resources and field directive config
-  dtos        Generate NestJS DTO files
-  all         Run api, dashboard, and dtos generators sequentially
+  private describeModuleStatus(module: PreflightReport['modules'][number]): string {
+    switch (module.status) {
+      case 'ready':
+        return `  ✓ ${module.name}: ready at ${this.toWorkspaceRelative(module.existingModuleFile ?? module.existingDirectory)}`;
+      case 'missing-module-file':
+        return `  ⚙️ ${module.name}: module file will be generated at ${this.toWorkspaceRelative(module.pendingModuleFile)}`;
+      case 'missing-directory':
+      default:
+        return `  🆕 ${module.name}: module directory will be created at ${this.toWorkspaceRelative(module.pendingDirectory)}`;
+    }
+  }
 
-Options:
-  -c, --config, --file <path>  Path to configuration file (default: tgraph.config.ts)
-  -y, --yes, --non-interactive Automatically confirm interactive prompts
-  --interactive                Force interactive prompts
-  -h, --help                   Display this help message
-
-Examples:
-  tgraph init                                    Create default config file
-  tgraph all                                     Generate using default config
-  tgraph api --config tgraph.admin.config.ts    Generate admin API
-  tgraph api --config tgraph.public.config.ts   Generate public API
-  tgraph doctor --config custom.config.ts       Run diagnostics with custom config
-`;
-    console.log(helpText.trim());
+  private async executeCommand(command: CliCommand, config: Config): Promise<void> {
+    switch (command) {
+      case 'api':
+        await new ApiGenerator(config).generate();
+        return;
+      case 'dashboard':
+        await new DashboardGenerator(config).generate();
+        return;
+      case 'dtos':
+        new DtoGenerator(config).generate();
+        return;
+      case 'all':
+        await new ApiGenerator(config).generate();
+        await new DashboardGenerator(config).generate();
+        new DtoGenerator(config).generate();
+        return;
+      case 'preflight':
+        await this.runPreflight(config);
+        return;
+      default:
+        throw new Error(`Unsupported command: ${command}`);
+    }
   }
 
   private async executeDoctorCommand(configPath: string | undefined, cliOptions: CliOptions): Promise<number> {
@@ -498,10 +333,96 @@ Examples:
     }
   }
 
-  private printDiagnosticReport(report: DiagnosticReport): void {
-    for (const category of report.categories) {
-      this.printDiagnosticCategory(category);
+  private handleExecutionError(error: unknown): void {
+    if (error instanceof ConfigLoaderError) {
+      console.error(`❌ ${error.message}`);
+      if (error.cause) {
+        console.error(`   Cause:`, error.cause);
+      }
+      return;
     }
+
+    console.error('❌ CLI execution failed:', error);
+  }
+
+  private initializeConfig(): number {
+    const configPath = this.pathModule.join(process.cwd(), 'tgraph.config.ts');
+
+    if (this.configLoader.exists()) {
+      const existingPath = this.configLoader.getConfigFilePath();
+      console.error(`❌ Error: Configuration file already exists at '${existingPath}'`);
+      console.error(`   Remove it first if you want to reinitialize.`);
+      return 1;
+    }
+
+    const template = this.buildConfigTemplate();
+
+    try {
+      this.fsModule.writeFileSync(configPath, template, 'utf-8');
+      console.log(`✅ Created configuration file: ${configPath}`);
+      console.log(`   You can now customize it for your project.`);
+      console.log(`   Run 'tgraph all' to generate code.`);
+      return 0;
+    } catch (error) {
+      console.error(`❌ Error creating configuration file:`, error);
+      return 1;
+    }
+  }
+
+  private parseArguments(args: string[]): ParsedArguments {
+    const parsed: ParsedArguments = {
+      options: {},
+      helpRequested: false,
+      errors: [],
+    };
+
+    let index = 0;
+    while (index < args.length) {
+      const arg = args[index];
+
+      switch (arg) {
+        case '-h':
+        case '--help':
+          parsed.helpRequested = true;
+          index += 1;
+          continue;
+        case '--config':
+        case '--file':
+        case '-c':
+          index = this.readNextValue(args, index, (value) => (parsed.configPath = value), parsed);
+          continue;
+        case '--yes':
+        case '-y':
+        case '--non-interactive':
+          parsed.options.nonInteractive = true;
+          index += 1;
+          continue;
+        case '--interactive':
+          parsed.options.nonInteractive = false;
+          index += 1;
+          continue;
+        default:
+          if (arg?.startsWith('--')) {
+            parsed.errors.push(`Unknown option: ${arg}`);
+            index += 1;
+            continue;
+          }
+
+          if (!parsed.command && arg !== undefined) {
+            const normalizedCommand = arg === 'dry-run' ? 'preflight' : arg;
+            if (['api', 'dashboard', 'dtos', 'all', 'init', 'doctor', 'preflight'].includes(normalizedCommand)) {
+              parsed.command = normalizedCommand as CliCommand;
+              index += 1;
+              continue;
+            }
+          }
+
+          parsed.errors.push(`Unknown argument: ${arg ?? '<undefined>'}`);
+          index += 1;
+      }
+    }
+
+    return parsed;
   }
 
   private printDiagnosticCategory(category: DiagnosticCategory): void {
@@ -531,27 +452,50 @@ Examples:
     console.log(''); // Empty line between categories
   }
 
-  private countWarnings(report: DiagnosticReport): number {
-    let count = 0;
+  private printDiagnosticReport(report: DiagnosticReport): void {
     for (const category of report.categories) {
-      for (const result of category.results) {
-        if (result.severity === 'warning') {
-          count++;
-        }
-      }
+      this.printDiagnosticCategory(category);
     }
-    return count;
   }
 
-  private async runPreflight(config: Config): Promise<void> {
-    console.log('🧪 Running preflight analysis...\n');
-    const checker = new PreflightChecker(config);
-    const report = checker.run();
-    this.printPreflightReport(report, config);
-    if (report.hasWarnings) {
-      console.log('\n⚠️ Preflight completed with warnings. Review the manual steps above.');
+  private printHelp(): void {
+    const helpText = `
+tgraph <command> [options]
+
+Commands:
+  init        Initialize configuration file (tgraph.config.ts)
+  doctor      Run diagnostics to check environment and configuration
+  preflight   Analyze pending changes without modifying files
+  api         Generate NestJS modules, services, controllers, and update data provider
+  dashboard   Generate React Admin dashboard resources and field directive config
+  dtos        Generate NestJS DTO files
+  all         Run api, dashboard, and dtos generators sequentially
+
+Options:
+  -c, --config, --file <path>  Path to configuration file (default: tgraph.config.ts)
+  -y, --yes, --non-interactive Automatically confirm interactive prompts
+  --interactive                Force interactive prompts
+  -h, --help                   Display this help message
+
+Examples:
+  tgraph init                                    Create default config file
+  tgraph all                                     Generate using default config
+  tgraph api --config tgraph.admin.config.ts    Generate admin API
+  tgraph api --config tgraph.public.config.ts   Generate public API
+  tgraph doctor --config custom.config.ts       Run diagnostics with custom config
+`;
+    console.log(helpText.trim());
+  }
+
+  private printPathStatus(report: PreflightReport['appModule'], optional: boolean): void {
+    const location = report.resolvedPath ?? report.configuredPath;
+    const displayPath = this.toWorkspaceRelative(location ?? undefined);
+    if (report.exists) {
+      console.log(`  ✓ ${report.label}: ${displayPath}`);
+    } else if (optional) {
+      console.log(`  ℹ️ ${report.label}: not required${displayPath !== '(not detected)' ? ` (${displayPath})` : ''}`);
     } else {
-      console.log('\n✅ Preflight completed with no pending actions.');
+      console.log(`  ⚠️ ${report.label}: not found${displayPath !== '(not detected)' ? ` (${displayPath})` : ''}`);
     }
   }
 
@@ -597,27 +541,34 @@ Examples:
     }
   }
 
-  private printPathStatus(report: PreflightReport['appModule'], optional: boolean): void {
-    const location = report.resolvedPath ?? report.configuredPath;
-    const displayPath = this.toWorkspaceRelative(location ?? undefined);
-    if (report.exists) {
-      console.log(`  ✓ ${report.label}: ${displayPath}`);
-    } else if (optional) {
-      console.log(`  ℹ️ ${report.label}: not required${displayPath !== '(not detected)' ? ` (${displayPath})` : ''}`);
-    } else {
-      console.log(`  ⚠️ ${report.label}: not found${displayPath !== '(not detected)' ? ` (${displayPath})` : ''}`);
+  private readNextValue(
+    args: string[],
+    index: number,
+    assign: (value: string) => void,
+    parsed: ParsedArguments,
+  ): number {
+    if (index + 1 >= args.length) {
+      parsed.errors.push(`Missing value for ${args[index]} option.`);
+      return args.length;
     }
+
+    const value = args[index + 1];
+    if (value !== undefined) {
+      assign(value);
+    }
+
+    return index + 2;
   }
 
-  private describeModuleStatus(module: PreflightReport['modules'][number]): string {
-    switch (module.status) {
-      case 'ready':
-        return `  ✓ ${module.name}: ready at ${this.toWorkspaceRelative(module.existingModuleFile ?? module.existingDirectory)}`;
-      case 'missing-module-file':
-        return `  ⚙️ ${module.name}: module file will be generated at ${this.toWorkspaceRelative(module.pendingModuleFile)}`;
-      case 'missing-directory':
-      default:
-        return `  🆕 ${module.name}: module directory will be created at ${this.toWorkspaceRelative(module.pendingDirectory)}`;
+  private async runPreflight(config: Config): Promise<void> {
+    console.log('🧪 Running preflight analysis...\n');
+    const checker = new PreflightChecker(config);
+    const report = checker.run();
+    this.printPreflightReport(report, config);
+    if (report.hasWarnings) {
+      console.log('\n⚠️ Preflight completed with warnings. Review the manual steps above.');
+    } else {
+      console.log('\n✅ Preflight completed with no pending actions.');
     }
   }
 
@@ -635,15 +586,63 @@ Examples:
     return relative || '.';
   }
 
-  private handleExecutionError(error: unknown): void {
-    if (error instanceof ConfigLoaderError) {
-      console.error(`❌ ${error.message}`);
-      if (error.cause) {
-        console.error(`   Cause:`, error.cause);
-      }
-      return;
+  /**
+   * Execute the CLI with the provided arguments.
+   * Returns the exit code that should be used by the caller.
+   */
+  async run(argv: string[]): Promise<number> {
+    const parsed = this.parseArguments(argv);
+
+    if (parsed.helpRequested) {
+      this.printHelp();
+      return parsed.errors.length > 0 ? 1 : 0;
     }
 
-    console.error('❌ CLI execution failed:', error);
+    if (!parsed.command) {
+      parsed.errors.forEach((error) => console.error(error));
+      this.printHelp();
+      return 1;
+    }
+
+    if (parsed.errors.length > 0) {
+      parsed.errors.forEach((error) => console.error(error));
+      this.printHelp();
+      return 1;
+    }
+
+    if (parsed.command === 'init') {
+      return this.initializeConfig();
+    }
+
+    if (parsed.command === 'doctor') {
+      return await this.executeDoctorCommand(parsed.configPath, parsed.options);
+    }
+
+    // Check if config file exists (or was specified)
+    const configLoader = parsed.configPath 
+      ? new ConfigLoader({ configPath: parsed.configPath })
+      : this.configLoader;
+
+    if (!configLoader.exists()) {
+      if (parsed.configPath) {
+        console.error(`❌ Error: Configuration file not found at: ${parsed.configPath}`);
+      } else {
+        console.error(`❌ Error: No configuration file found.`);
+        console.error(`   Run 'tgraph init' to create a configuration file.`);
+        console.error(`   Expected file: tgraph.config.ts or tgraph.config.js in project root.`);
+        console.error(`   Or specify a config file with: --config <path>`);
+      }
+      return 1;
+    }
+
+    try {
+      const runtimeConfig = configLoader.load();
+      const mergedConfig = this.applyCliOverrides(runtimeConfig, parsed.options);
+      await this.executeCommand(parsed.command, mergedConfig);
+      return 0;
+    } catch (error) {
+      this.handleExecutionError(error);
+      return 1;
+    }
   }
 }

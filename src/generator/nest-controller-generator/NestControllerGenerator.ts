@@ -29,10 +29,9 @@ export type NestControllerGeneratorInput = {
 export class NestControllerGenerator implements IGenerator<NestControllerGeneratorInput, string> {
   private baseRoute: string;
   private fileSuffix: string;
-  private namingSuffix: string;
-  private isAdmin: boolean;
   private guardResolver: GuardResolver;
-  
+  private isAdmin: boolean;
+  private namingSuffix: string;
   constructor(options: NestControllerGeneratorOptions) {
     this.baseRoute = options.suffix ? `${options.suffix.toLowerCase()}-api` : 'tg-api';
     this.fileSuffix = options.suffix ? options.suffix.toLowerCase() : '';

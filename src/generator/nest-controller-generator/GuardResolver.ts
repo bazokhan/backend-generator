@@ -5,12 +5,27 @@ import type { Guard } from '@tg-scripts/types';
  * for NestJS controller generation
  */
 export class GuardResolver {
-  private readonly guards: Guard[];
   private readonly enabled: boolean;
-
+  private readonly guards: Guard[];
   constructor(guards: Guard[] = [], enabled: boolean = true) {
     this.guards = guards;
     this.enabled = enabled;
+  }
+
+  /**
+   * Get guard names as comma-separated string
+   * @returns Guard names joined by comma
+   */
+  private getGuardNames(): string {
+    return this.guards.map((guard) => guard.name).join(', ');
+  }
+
+  /**
+   * Get all guards
+   * @returns Array of guards
+   */
+  private getGuards(): Guard[] {
+    return this.guards;
   }
 
   /**
@@ -39,38 +54,6 @@ export class GuardResolver {
   }
 
   /**
-   * Get guard names as comma-separated string
-   * @returns Guard names joined by comma
-   */
-  getGuardNames(): string {
-    return this.guards.map((guard) => guard.name).join(', ');
-  }
-
-  /**
-   * Get all guards
-   * @returns Array of guards
-   */
-  getGuards(): Guard[] {
-    return this.guards;
-  }
-
-  /**
-   * Check if guards are enabled
-   * @returns True if guards should be applied
-   */
-  isEnabled(): boolean {
-    return this.enabled;
-  }
-
-  /**
-   * Check if any guards are configured
-   * @returns True if at least one guard is configured
-   */
-  hasGuards(): boolean {
-    return this.guards.length > 0;
-  }
-
-  /**
    * Generate guard imports for template variables
    * @returns Object with guardImports and guardNames for template rendering
    */
@@ -82,6 +65,22 @@ export class GuardResolver {
       guardImports: imports,
       guardNames: names,
     };
+  }
+
+  /**
+   * Check if any guards are configured
+   * @returns True if at least one guard is configured
+   */
+  hasGuards(): boolean {
+    return this.guards.length > 0;
+  }
+
+  /**
+   * Check if guards are enabled
+   * @returns True if guards should be applied
+   */
+  isEnabled(): boolean {
+    return this.enabled;
   }
 }
 

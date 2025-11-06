@@ -14,22 +14,6 @@ interface ParseResult {
 }
 
 export class NestAppModuleParser implements IParser {
-  public parse(input: string): ParseResult {
-    const moduleBounds = this.findBounds(input, /@Module\s*\(\s*\{/, ['{', '}']);
-    if (!moduleBounds) {
-      return { tokens: [], moduleBounds: null, importsBounds: null };
-    }
-
-    const importsBounds = this.findBounds(input, /imports:\s*\[/, ['[', ']']);
-    if (!importsBounds) {
-      return { tokens: [], moduleBounds: null, importsBounds: null };
-    }
-
-    const existingTokens = parseStringToArray(importsBounds.content);
-    const filteredTokens = existingTokens.filter((token) => !token.startsWith('//'));
-    return { tokens: filteredTokens, moduleBounds, importsBounds };
-  }
-
   /**
    * Find @Module decorator opening and closing brace positions
    */
@@ -49,5 +33,21 @@ export class NestAppModuleParser implements IParser {
     const content = text.substring(start + 1, end);
 
     return { start, end, content };
+  }
+
+  public parse(input: string): ParseResult {
+    const moduleBounds = this.findBounds(input, /@Module\s*\(\s*\{/, ['{', '}']);
+    if (!moduleBounds) {
+      return { tokens: [], moduleBounds: null, importsBounds: null };
+    }
+
+    const importsBounds = this.findBounds(input, /imports:\s*\[/, ['[', ']']);
+    if (!importsBounds) {
+      return { tokens: [], moduleBounds: null, importsBounds: null };
+    }
+
+    const existingTokens = parseStringToArray(importsBounds.content);
+    const filteredTokens = existingTokens.filter((token) => !token.startsWith('//'));
+    return { tokens: filteredTokens, moduleBounds, importsBounds };
   }
 }

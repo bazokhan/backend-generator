@@ -4,6 +4,25 @@
  */
 export class TemplateRenderer {
   /**
+   * Render multiple templates with the same variables
+   * @param templates Record of template name to template string
+   * @param variables Object containing variable values
+   * @returns Record of template name to rendered content
+   */
+  private renderAll(
+    templates: Record<string, string>,
+    variables: Record<string, string>,
+  ): Record<string, string> {
+    const results: Record<string, string> = {};
+    
+    for (const [name, template] of Object.entries(templates)) {
+      results[name] = this.render(template, variables);
+    }
+    
+    return results;
+  }
+
+  /**
    * Render a template with variable substitution
    * @param template Template string with {{variable}} placeholders
    * @param variables Object containing variable values
@@ -25,25 +44,6 @@ export class TemplateRenderer {
     }
     
     return result;
-  }
-
-  /**
-   * Render multiple templates with the same variables
-   * @param templates Record of template name to template string
-   * @param variables Object containing variable values
-   * @returns Record of template name to rendered content
-   */
-  renderAll(
-    templates: Record<string, string>,
-    variables: Record<string, string>,
-  ): Record<string, string> {
-    const results: Record<string, string> = {};
-    
-    for (const [name, template] of Object.entries(templates)) {
-      results[name] = this.render(template, variables);
-    }
-    
-    return results;
   }
 }
 

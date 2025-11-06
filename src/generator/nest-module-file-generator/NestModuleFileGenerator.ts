@@ -3,8 +3,8 @@ import type { GeneratorOptions, IGenerator } from '@tg-scripts/types';
 import { toCamelCase } from '../utils';
 
 export class NestModuleFileGenerator implements IGenerator<PrismaModel, string> {
-  private namingSuffix: string;
   private fileSuffix: string;
+  private namingSuffix: string;
   constructor(options: GeneratorOptions) {
     this.fileSuffix = options.suffix ? options.suffix.toLowerCase() : '';
     this.namingSuffix = options.suffix

@@ -12,22 +12,21 @@ import { ReactComponentsGenerator } from '../react-components-generator/ReactCom
 import { getResourceName } from '../utils/naming';
 
 export class DashboardGenerator {
+  private appComponentPath: string | null;
   private readonly config: Config;
+  private readonly dashboardAbsolutePath: string;
+  private readonly dashboardPath: string;
+  private enums: Map<string, string[]> = new Map();
   private readonly fieldParser: PrismaFieldParser;
   private readonly fieldRelationsParser: PrismaRelationsParser;
-  private readonly schemaParser: PrismaSchemaParser;
-  private readonly reactComponentsGenerator: ReactComponentsGenerator;
-  private readonly workspaceRoot: string;
-  private readonly schemaPath: string;
-  private readonly schemaAbsolutePath: string;
-  private readonly dashboardPath: string;
-  private readonly dashboardAbsolutePath: string;
   private models: PrismaModel[] = [];
-  private enums: Map<string, string[]> = new Map();
   private readonly nonInteractive: boolean;
   private readonly projectPathResolver: ProjectPathResolver;
-  private appComponentPath: string | null;
-
+  private readonly reactComponentsGenerator: ReactComponentsGenerator;
+  private readonly schemaAbsolutePath: string;
+  private readonly schemaParser: PrismaSchemaParser;
+  private readonly schemaPath: string;
+  private readonly workspaceRoot: string;
   constructor(config: Config) {
     this.config = config;
     this.fieldParser = new PrismaFieldParser();
@@ -44,70 +43,6 @@ export class DashboardGenerator {
     this.dashboardAbsolutePath = this.projectPathResolver.getDashboardRoot();
     this.nonInteractive = config.behavior.nonInteractive;
     this.appComponentPath = this.projectPathResolver.resolveDashboardAppComponentPath();
-  }
-
-  async generate(): Promise<void> {
-    console.log('🚀 Starting dashboard page generation...');
-
-    try {
-      this.parseSchema();
-      this.generateTypes();
-      await this.generateCRUDPages();
-      this.generateFieldDirectiveConfig();
-      this.updateAppComponent();
-      console.log('✅ Dashboard generation completed successfully!');
-    } catch (error) {
-      console.error('❌ Error during generation:', error);
-      throw error;
-    }
-  }
-
-  private parseSchema(): void {
-    console.log('📖 Parsing Prisma schema...');
-
-    const schemaContent = fs.readFileSync(this.schemaAbsolutePath, 'utf-8');
-    this.schemaParser.load(schemaContent);
-    const { models, enums } = this.schemaParser.parse();
-
-    this.models = models;
-    this.enums = enums;
-    models.forEach((model) => {
-      console.log(`📋 Found model with @tg_form(): ${model.name}`);
-    });
-
-    console.log(`📊 Found ${this.models.length} models with @tg_form()`);
-  }
-
-  private generateTypes(): void {
-    console.log('🔧 Generating TypeScript types from Swagger...');
-
-    const swaggerJsonPath = path.join(this.dashboardAbsolutePath, 'types', 'swagger.json');
-
-    if (!fs.existsSync(swaggerJsonPath)) {
-      console.warn('⚠️ Swagger JSON file not found. Please run "npm run generate:swagger" first.');
-      return;
-    }
-
-    try {
-      // Generate types from static Swagger JSON file
-      const outputDir = path.join(this.dashboardAbsolutePath, 'types');
-      const command = `npx swagger-typescript-api generate -p "${swaggerJsonPath}" -o "${outputDir}" -n api.ts`;
-      execSync(command, {
-        stdio: 'inherit',
-        cwd: this.workspaceRoot,
-      });
-      console.log('✅ Types generated successfully');
-
-      // Format the generated api.ts file
-      const apiTsPath = path.join(outputDir, 'api.ts');
-      if (fs.existsSync(apiTsPath)) {
-        formatGeneratedFiles([apiTsPath], this.workspaceRoot);
-        console.log('✅ api.ts formatted');
-      }
-    } catch (error) {
-      console.warn('⚠️ Could not generate types from Swagger JSON file');
-      console.warn('❌ Error during type generation:', error);
-    }
   }
 
   private async generateCRUDPages(): Promise<void> {
@@ -189,6 +124,54 @@ export class DashboardGenerator {
     const content = buildFieldDirectiveFile(this.models);
     fs.writeFileSync(directivesPath, content);
     formatGeneratedFiles([directivesPath], this.workspaceRoot);
+  }
+
+  private generateTypes(): void {
+    console.log('🔧 Generating TypeScript types from Swagger...');
+
+    const swaggerJsonPath = path.join(this.dashboardAbsolutePath, 'types', 'swagger.json');
+
+    if (!fs.existsSync(swaggerJsonPath)) {
+      console.warn('⚠️ Swagger JSON file not found. Please run "npm run generate:swagger" first.');
+      return;
+    }
+
+    try {
+      // Generate types from static Swagger JSON file
+      const outputDir = path.join(this.dashboardAbsolutePath, 'types');
+      const command = `npx swagger-typescript-api generate -p "${swaggerJsonPath}" -o "${outputDir}" -n api.ts`;
+      execSync(command, {
+        stdio: 'inherit',
+        cwd: this.workspaceRoot,
+      });
+      console.log('✅ Types generated successfully');
+
+      // Format the generated api.ts file
+      const apiTsPath = path.join(outputDir, 'api.ts');
+      if (fs.existsSync(apiTsPath)) {
+        formatGeneratedFiles([apiTsPath], this.workspaceRoot);
+        console.log('✅ api.ts formatted');
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not generate types from Swagger JSON file');
+      console.warn('❌ Error during type generation:', error);
+    }
+  }
+
+  private parseSchema(): void {
+    console.log('📖 Parsing Prisma schema...');
+
+    const schemaContent = fs.readFileSync(this.schemaAbsolutePath, 'utf-8');
+    this.schemaParser.load(schemaContent);
+    const { models, enums } = this.schemaParser.parse();
+
+    this.models = models;
+    this.enums = enums;
+    models.forEach((model) => {
+      console.log(`📋 Found model with @tg_form(): ${model.name}`);
+    });
+
+    console.log(`📊 Found ${this.models.length} models with @tg_form()`);
   }
 
   private toWorkspaceRelative(targetPath: string): string {
@@ -298,5 +281,21 @@ export class DashboardGenerator {
     formatGeneratedFiles([resolvedAppPath], this.workspaceRoot);
 
     console.log('✅ App component updated with new resources');
+  }
+
+  async generate(): Promise<void> {
+    console.log('🚀 Starting dashboard page generation...');
+
+    try {
+      this.parseSchema();
+      this.generateTypes();
+      await this.generateCRUDPages();
+      this.generateFieldDirectiveConfig();
+      this.updateAppComponent();
+      console.log('✅ Dashboard generation completed successfully!');
+    } catch (error) {
+      console.error('❌ Error during generation:', error);
+      throw error;
+    }
   }
 }

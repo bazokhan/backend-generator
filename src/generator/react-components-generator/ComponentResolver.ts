@@ -54,67 +54,23 @@ export class ComponentResolver {
   }
 
   /**
-   * Resolve a form component (input)
-   * @param componentType The type of form component
-   * @returns Component name and import path
+   * Deduplicate component imports by name and path
+   * @param components Array of component imports
+   * @returns Deduplicated array
    */
-  resolveFormComponent(componentType: FormComponentType): ComponentImport {
-    const override = this.overrides.form?.[componentType];
-    
-    if (override) {
-      return {
-        name: override.name,
-        importPath: override.importPath,
-      };
+  private deduplicateImports(components: ComponentImport[]): ComponentImport[] {
+    const seen = new Set<string>();
+    const result: ComponentImport[] = [];
+
+    for (const component of components) {
+      const key = `${component.name}:${component.importPath}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(component);
+      }
     }
 
-    // Return default
-    return {
-      name: componentType,
-      importPath: DEFAULT_IMPORT_PATH,
-    };
-  }
-
-  /**
-   * Resolve a display component (field)
-   * @param componentType The type of display component
-   * @returns Component name and import path
-   */
-  resolveDisplayComponent(componentType: DisplayComponentType): ComponentImport {
-    const override = this.overrides.display?.[componentType];
-    
-    if (override) {
-      return {
-        name: override.name,
-        importPath: override.importPath,
-      };
-    }
-
-    // Return default
-    return {
-      name: componentType,
-      importPath: DEFAULT_IMPORT_PATH,
-    };
-  }
-
-  /**
-   * Resolve multiple form components and return unique imports
-   * @param componentTypes Array of component types
-   * @returns Array of unique component imports
-   */
-  resolveFormComponents(componentTypes: FormComponentType[]): ComponentImport[] {
-    const components = componentTypes.map((type) => this.resolveFormComponent(type));
-    return this.deduplicateImports(components);
-  }
-
-  /**
-   * Resolve multiple display components and return unique imports
-   * @param componentTypes Array of component types
-   * @returns Array of unique component imports
-   */
-  resolveDisplayComponents(componentTypes: DisplayComponentType[]): ComponentImport[] {
-    const components = componentTypes.map((type) => this.resolveDisplayComponent(type));
-    return this.deduplicateImports(components);
+    return result;
   }
 
   /**
@@ -123,7 +79,7 @@ export class ComponentResolver {
    * @param components Array of resolved components
    * @returns Import statements as string
    */
-  generateImports(components: ComponentImport[]): string {
+  private generateImports(components: ComponentImport[]): string {
     // Group components by import path
     const grouped = new Map<string, Set<string>>();
     
@@ -145,37 +101,81 @@ export class ComponentResolver {
   }
 
   /**
-   * Deduplicate component imports by name and path
-   * @param components Array of component imports
-   * @returns Deduplicated array
-   */
-  private deduplicateImports(components: ComponentImport[]): ComponentImport[] {
-    const seen = new Set<string>();
-    const result: ComponentImport[] = [];
-
-    for (const component of components) {
-      const key = `${component.name}:${component.importPath}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        result.push(component);
-      }
-    }
-
-    return result;
-  }
-
-  /**
    * Check if a component type has an override
    * @param category Component category (form or display)
    * @param componentType Component type name
    * @returns True if component has a custom override
    */
-  hasOverride(category: ComponentCategory, componentType: string): boolean {
+  private hasOverride(category: ComponentCategory, componentType: string): boolean {
     if (category === 'form') {
       return this.overrides.form?.[componentType as FormComponentType] !== undefined;
     } else {
       return this.overrides.display?.[componentType as DisplayComponentType] !== undefined;
     }
+  }
+
+  /**
+   * Resolve a display component (field)
+   * @param componentType The type of display component
+   * @returns Component name and import path
+   */
+  private resolveDisplayComponent(componentType: DisplayComponentType): ComponentImport {
+    const override = this.overrides.display?.[componentType];
+    
+    if (override) {
+      return {
+        name: override.name,
+        importPath: override.importPath,
+      };
+    }
+
+    // Return default
+    return {
+      name: componentType,
+      importPath: DEFAULT_IMPORT_PATH,
+    };
+  }
+
+  /**
+   * Resolve multiple display components and return unique imports
+   * @param componentTypes Array of component types
+   * @returns Array of unique component imports
+   */
+  private resolveDisplayComponents(componentTypes: DisplayComponentType[]): ComponentImport[] {
+    const components = componentTypes.map((type) => this.resolveDisplayComponent(type));
+    return this.deduplicateImports(components);
+  }
+
+  /**
+   * Resolve a form component (input)
+   * @param componentType The type of form component
+   * @returns Component name and import path
+   */
+  private resolveFormComponent(componentType: FormComponentType): ComponentImport {
+    const override = this.overrides.form?.[componentType];
+    
+    if (override) {
+      return {
+        name: override.name,
+        importPath: override.importPath,
+      };
+    }
+
+    // Return default
+    return {
+      name: componentType,
+      importPath: DEFAULT_IMPORT_PATH,
+    };
+  }
+
+  /**
+   * Resolve multiple form components and return unique imports
+   * @param componentTypes Array of component types
+   * @returns Array of unique component imports
+   */
+  private resolveFormComponents(componentTypes: FormComponentType[]): ComponentImport[] {
+    const components = componentTypes.map((type) => this.resolveFormComponent(type));
+    return this.deduplicateImports(components);
   }
 }
 
