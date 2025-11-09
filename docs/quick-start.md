@@ -59,7 +59,26 @@ Key features:
 - `/// @tg_format(url)` – Validates URL fields
 - `/// @tg_upload(image)` – Enables image upload
 
-## Step 2: Generate Everything
+## Step 2: Initialize Configuration
+
+First, create your configuration file with the interactive wizard:
+
+```bash
+tgraph init
+```
+
+The wizard will ask about:
+- Prisma schema path
+- API configuration (suffix, prefix, authentication)
+- Output directories for generated files
+
+Or use defaults:
+
+```bash
+tgraph init --yes
+```
+
+## Step 3: Generate Everything
 
 Run the generator:
 
@@ -67,17 +86,20 @@ Run the generator:
 tgraph all
 ```
 
+When prompted, confirm generation of static files (guards, interceptors, DTOs).
+
 This creates:
 
 - 4 controllers (User, Post with full CRUD)
-- 4 services with Prisma integration
+- 4 services with Prisma integration and unique field getters
 - 8 DTOs (Create + Update for each model)
 - 8 React Admin pages (List, Edit, Create, Show for each)
 - 2 Studio pages for bulk editing
+- Static infrastructure files (guards, decorators, interceptors)
 
-## Step 3: Review Generated API
+## Step 4: Review Generated API
 
-The generator created two complete REST APIs:
+The generator created two complete REST APIs with enhanced features:
 
 ### User API (`/tg-api/users`)
 
@@ -111,13 +133,31 @@ export class UserTgController {
     // Delete user
   }
 }
+
+// Generated service includes unique field getters
+// src/features/user/user.tg.service.ts
+export class UserTgService {
+  // ... standard CRUD methods ...
+  
+  // Auto-generated from @unique email field
+  async getOneByEmail(email: string) {
+    const item = await this.prisma.user.findUnique({
+      where: { email },
+      select: this.getSelectFields(),
+    });
+    if (!item) {
+      throw new NotFoundException('User not found');
+    }
+    return item;
+  }
+}
 ```
 
 ### Post API (`/tg-api/posts`)
 
-Same structure with relation support – filtering by `authorId`.
+Same structure with relation support – filtering by `authorId` and optional relation includes.
 
-## Step 4: Review Generated DTOs
+## Step 5: Review Generated DTOs
 
 DTOs include validation from your schema:
 
@@ -149,7 +189,29 @@ Notice:
 - `@IsEnum()` for enum fields
 - `@IsOptional()` for nullable fields
 
-## Step 5: Review Dashboard Pages
+## Step 6: Generate Dashboard Types
+
+Generate TypeScript types for your dashboard API client:
+
+```bash
+# Generate swagger.json and types/api.ts
+tgraph types
+```
+
+This creates type-safe API clients for your React Admin dashboard:
+
+```typescript
+// src/dashboard/src/types/api.ts (generated)
+import { Api } from '../types/api';
+
+const api = new Api({ baseUrl: 'http://localhost:3000' });
+
+// Fully typed API calls
+const users = await api.users.usersControllerFindAll();
+const user = await api.users.usersControllerFindOne('123');
+```
+
+## Step 7: Review Dashboard Pages
 
 Check the generated React Admin resources:
 
@@ -195,7 +257,7 @@ Notice:
 - File upload for `coverImage` (from `@tg_upload(image)`)
 - Type-appropriate inputs (Boolean, DateTime, etc.)
 
-## Step 6: Test the API
+## Step 8: Test the API
 
 Start your server:
 
@@ -223,7 +285,7 @@ curl http://localhost:3000/tg-api/users?page=1&limit=10 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-## Step 7: Test the Dashboard
+## Step 9: Test the Dashboard
 
 Start the dashboard:
 
@@ -241,7 +303,7 @@ Open http://localhost:5173 and:
 5. Select an author from the dropdown – Search-enabled autocomplete
 6. Navigate to `/users/studio` – Bulk edit users in spreadsheet mode
 
-## Step 8: Customize
+## Step 10: Customize
 
 Extend the generated code with your custom logic:
 
@@ -273,7 +335,7 @@ export class PostService extends PostTgService {
 
 The generated `.tg.` files remain unchanged and can be regenerated safely.
 
-## Step 9: Add Custom Endpoint
+## Step 11: Add Custom Endpoint
 
 Create a custom controller alongside the generated one:
 
@@ -304,14 +366,21 @@ export class PostController {
 In 5 minutes, you created:
 
 - **2 complete REST APIs** with pagination, search, and filtering
+- **Unique field getters** for direct lookups by email or other unique fields
 - **8 validated DTOs** with email, URL, and enum validation
 - **8 admin pages** with relation support and file uploads
 - **2 studio pages** for bulk editing
-- **Type safety** from database to frontend
+- **Type-safe API client** generated from Swagger
+- **Static infrastructure** (guards, interceptors, decorators)
+- **Complete type safety** from database to frontend
 
 ## Next Steps
 
+- **[CLI Reference](./cli-reference.md)** – Complete command documentation
+- **[Static Files Guide](./guides/static-files.md)** – Understand infrastructure generation
+- **[Dashboard Types Guide](./guides/dashboard-types.md)** – Type-safe API client setup
 - **[Field Directives](./guides/field-directives.md)** – Learn all available directives
+- **[Authentication Guards](./guides/authentication-guards.md)** – Configure authentication
 - **[Custom Validation](./recipes/custom-validation.md)** – Add complex validation rules
 - **[Extending Generated Code](./recipes/extending-generated-code.md)** – Advanced patterns
 - **[File Uploads](./recipes/file-uploads.md)** – Configure upload handling
@@ -327,6 +396,31 @@ tgraph all
 # Or selectively
 tgraph api        # Backend only
 tgraph dashboard  # Frontend only
+
+# Regenerate static files
+tgraph static --include admin.guard,pagination.interceptor
+
+# Update dashboard types
+tgraph types
 ```
 
 Generated files (`.tg.*`) are overwritten, but your custom code remains untouched.
+
+## Additional Commands
+
+```bash
+# Check system health
+tgraph doctor
+
+# Preview changes without writing files
+tgraph preflight
+
+# List available static modules
+tgraph static --list
+
+# Generate specific static modules
+tgraph static --include admin.guard,is-admin.decorator
+
+# Regenerate swagger.json only
+tgraph swagger
+```

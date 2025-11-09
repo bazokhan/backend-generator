@@ -43,6 +43,32 @@ description: "Milestone-based roadmap for the TGraph Backend Generator"
 
 ---
 
+## Recently Addressed Feedback (Unreleased)
+
+- CLI
+  - [x] `tgraph init --help` shows command-specific options (`--output`, `--requireAdmin`).
+  - [x] Interactive `init` wizard asks for key paths and defaults.
+  - [x] New `tgraph static` command to list and generate specific static modules.
+  - [x] New `tgraph types` command to generate `api.ts` from an existing `swagger.json`.
+- API Generation
+  - [x] Prompt before generating static files; interactive selection of which to generate.
+  - [x] Controller routes now use `config.api.prefix` (no hardcoded `tg-api`).
+  - [x] Can generate public controller (no guards) by disabling `authentication.enabled` or omitting guards.
+- Static Files
+  - [x] Added `feature-flag` guard and `audit` interceptor to static templates and CLI selection.
+- DTOs
+  - [x] Create/Update DTOs now include scalar arrays (e.g., `string[]`) with correct validators.
+- Dashboard
+  - [x] Types generation decoupled from `dashboard` command; use `tgraph types` after updating `swagger.json`.
+
+Open items moved to backlog:
+- [ ] Static module commands: richer help per template with usage notes.
+- [ ] Services: support relation `include` in responses.
+- [ ] Service methods: add `getOneBy<UniqueField>` for all unique fields.
+- [ ] Export return types from generated client; improve `api.ts` typings/intellisense.
+- [ ] Avoid unused imports in dashboard components (e.g., `AutocompleteArrayInput`).
+- [ ] Revisit enum imports for frontend friendliness.
+
 ## Core Philosophy & Goals
 
 ### Design Principles

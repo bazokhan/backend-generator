@@ -154,6 +154,21 @@ export function generateFieldDefinition(field: PrismaField, dtoType: DtoType, en
       }
     }
 
+    // Add array validators when applicable
+    if (field.isArray) {
+      decorators.push('@IsArray()');
+      const baseType = field.baseType;
+      if (field.isEnum) {
+        decorators.push(`@IsEnum(${baseType}, { each: true })`);
+      } else if (baseType === 'String') {
+        decorators.push('@IsString({ each: true })');
+      } else if (baseType === 'Int' || baseType === 'Float') {
+        decorators.push('@IsNumber({}, { each: true })');
+      } else if (baseType === 'Boolean') {
+        decorators.push('@IsBoolean({ each: true })');
+      }
+    }
+
     if (field.tgFormat) {
       const formatDecorator = formatDecoratorMap[field.tgFormat];
       if (formatDecorator && !decorators.includes(formatDecorator)) {

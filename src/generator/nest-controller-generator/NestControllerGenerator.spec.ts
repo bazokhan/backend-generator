@@ -156,5 +156,11 @@ describe('Nest Admin Controller Generator', () => {
       expect(generator.getApiEndpoint('DataField')).toBe('tg-api/data-fields');
       expect(generator.getApiEndpoint('UserRole')).toBe('tg-api/user-roles');
     });
+
+    it('should prefer config.api.prefix when provided', () => {
+      const generator = new NestControllerGenerator({ suffix: 'Admin', prefix: 'public-api' });
+      expect(generator.getApiEndpoint('User')).toBe('public-api/users');
+      expect(generator.getApiEndpoint('CustomFieldType')).toBe('public-api/custom-field-types');
+    });
   });
 });

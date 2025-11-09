@@ -55,6 +55,20 @@ export function generateDtoImports(model: PrismaModel, fields: PrismaField[], dt
         transformImports.add('Transform');
       }
 
+      // Array validators
+      if (field.isArray) {
+        validatorImports.add('IsArray');
+        if (baseType === 'String') {
+          validatorImports.add('IsString');
+        } else if (baseType === 'Int' || baseType === 'Float') {
+          validatorImports.add('IsNumber');
+        } else if (baseType === 'Boolean') {
+          validatorImports.add('IsBoolean');
+        } else if (field.isEnum) {
+          validatorImports.add('IsEnum');
+        }
+      }
+
       // Always add IsOptional for update DTOs or if any field is optional
       if (dtoType === 'update' || field.isOptional) {
         validatorImports.add('IsOptional');
@@ -139,11 +153,10 @@ export function filterDtoFields(fields: PrismaField[], dtoType: DtoType): Prisma
   return fields.filter((f) => {
     const isTimestamp = f.name === 'createdAt' || f.name === 'updatedAt';
     const isRelation = f.isRelation;
-    const isArray = f.isArray;
     const baseType = f.baseType;
     const isPrimitive = ['String', 'Int', 'Float', 'Boolean', 'DateTime', 'Json'].includes(baseType);
     const isEnum = f.isEnum;
-    // Keep: non-id, non-timestamp, non-array, non-relation, and either primitive or enum
-    return !f.isId && !isTimestamp && !isArray && !isRelation && (isPrimitive || isEnum);
+    // Keep: non-id, non-timestamp, non-relation, and either primitive or enum (including arrays)
+    return !f.isId && !isTimestamp && !isRelation && (isPrimitive || isEnum);
   });
 }

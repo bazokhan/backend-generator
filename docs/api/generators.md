@@ -76,6 +76,243 @@ main().catch((error) => {
 
 ---
 
+## NestServiceGenerator
+
+Generates NestJS service files with CRUD operations, Prisma integration, and optional relation selects and unique field getters.
+
+### Constructor
+
+```typescript
+import { NestServiceGenerator } from '@tgraph/backend-generator';
+
+const generator = new NestServiceGenerator({
+  suffix: 'Admin',
+  models: allPrismaModels,
+  relationsInclude: 'all', // or ['author', 'comments']
+});
+```
+
+### Options
+
+```typescript
+interface NestServiceGeneratorOptions {
+  suffix?: string;                // Class name suffix (e.g., 'Admin')
+  utilsPath?: string;             // Path to utility modules
+  workspaceRoot?: string;         // Project root directory
+  prismaServicePath?: string;     // Path to Prisma service
+  models?: PrismaModel[];         // All parsed models (for relation lookups)
+  relationsInclude?: 'all' | string[]; // Relations to include in selects
+}
+```
+
+### Generated Service Features
+
+#### Standard CRUD Methods
+
+Every generated service includes:
+
+- `getAll(query)` - Paginated search with filtering and sorting
+- `getOne(id)` - Find by primary key
+- `create(dto)` - Create new record
+- `update(id, dto)` - Update existing record
+- `updateMany(ids, dto)` - Bulk update
+- `deleteOne(id)` - Delete single record
+- `deleteMany(ids)` - Bulk delete
+- `getSelectFields()` - Returns Prisma select object
+
+#### Unique Field Getters (New)
+
+For each field marked with `@unique` in your Prisma schema, the generator creates a dedicated getter method:
+
+```typescript
+// Prisma schema
+model User {
+  id    String @id @default(uuid())
+  email String @unique
+  phone String @unique
+}
+
+// Generated service methods
+async getOneByEmail(email: string): Promise<User> {
+  const item = await this.prisma.user.findUnique({
+    where: { email },
+    select: this.getSelectFields(),
+  });
+  if (!item) {
+    throw new NotFoundException('User not found');
+  }
+  return item;
+}
+
+async getOneByPhone(phone: string): Promise<User> {
+  const item = await this.prisma.user.findUnique({
+    where: { phone },
+    select: this.getSelectFields(),
+  });
+  if (!item) {
+    throw new NotFoundException('User not found');
+  }
+  return item;
+}
+```
+
+**Usage in controllers:**
+
+```typescript
+@Get('by-email/:email')
+async findByEmail(@Param('email') email: string) {
+  return this.userService.getOneByEmail(email);
+}
+```
+
+#### Relation Selects (New)
+
+When `relationsInclude` is configured, the `getSelectFields()` method includes relation data with their display fields:
+
+**Configuration:**
+
+```typescript
+// tgraph.config.ts
+api: {
+  relations: {
+    include: ['author', 'comments'], // or 'all'
+  },
+}
+```
+
+**Generated select object:**
+
+```typescript
+// Without relations
+getSelectFields() {
+  return {
+    id: true,
+    title: true,
+    content: true,
+    createdAt: true,
+  };
+}
+
+// With relations: ['author', 'comments']
+getSelectFields() {
+  return {
+    id: true,
+    title: true,
+    content: true,
+    createdAt: true,
+    author: { select: { id: true, name: true } },
+    comments: { select: { id: true, text: true } },
+  };
+}
+```
+
+The generator automatically determines the display field for each relation:
+
+1. Field marked with `@tg.display` directive
+2. Field marked with `@tg.label` directive  
+3. Falls back to `id`
+
+**Performance considerations:**
+
+- Using `'all'` includes every relation, which may impact query performance
+- Specify only needed relations: `['author', 'tags']`
+- Relations are excluded from `excludeFields` to prevent duplication
+
+### Example Generated Service
+
+```typescript
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '@/infrastructure/database/prisma.service';
+import { CreateUserAdminDto, UpdateUserAdminDto } from '../dtos';
+
+@Injectable()
+export class UserAdminService {
+  constructor(private prisma: PrismaService) {}
+
+  async getAll(query: PaginatedSearchQueryDto) {
+    const { skip, take, where, orderBy } = buildPaginatedQuery(
+      query,
+      ['email', 'name'],
+    );
+    
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take,
+        where,
+        orderBy,
+        select: this.getSelectFields(),
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+    
+    return { data, total, page: query.page, limit: query.limit };
+  }
+
+  async getOne(id: string) {
+    const item = await this.prisma.user.findUnique({
+      where: { id },
+      select: this.getSelectFields(),
+    });
+    if (!item) {
+      throw new NotFoundException('User not found');
+    }
+    return item;
+  }
+
+  async getOneByEmail(email: string) {
+    const item = await this.prisma.user.findUnique({
+      where: { email },
+      select: this.getSelectFields(),
+    });
+    if (!item) {
+      throw new NotFoundException('User not found');
+    }
+    return item;
+  }
+
+  async create(dto: CreateUserAdminDto) {
+    return this.prisma.user.create({
+      data: dto,
+      select: this.getSelectFields(),
+    });
+  }
+
+  async update(id: string, dto: UpdateUserAdminDto) {
+    return this.prisma.user.update({
+      where: { id },
+      data: dto,
+      select: this.getSelectFields(),
+    });
+  }
+
+  async deleteOne(id: string) {
+    return this.prisma.user.delete({ where: { id } });
+  }
+
+  private getSelectFields() {
+    return {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      createdAt: true,
+      // Relations included based on config
+      profile: { select: { id: true, bio: true } },
+    };
+  }
+}
+```
+
+### Configuration Impact
+
+- `config.api.suffix` - Appended to class names
+- `config.api.relations.include` - Controls relation selects
+- `config.input.prismaService` - Used for import paths
+- Unique fields in Prisma schema - Generate dedicated getter methods
+
+---
+
 ## DashboardGenerator
 
 Creates a React Admin resource (List/Edit/Create/Show/Studio) for every generated model, updates the dashboard entrypoint, writes directive metadata, and optionally regenerates client-side API types from Swagger.

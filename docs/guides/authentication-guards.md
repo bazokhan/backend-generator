@@ -36,15 +36,21 @@ export const config: Config = {
       // Whether endpoints require admin role
       requireAdmin: true,
       
-      // List of guards to apply
+      // Base guards (always applied when enabled)
       guards: [
         { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+      ],
+      
+      // Admin guards (only applied when requireAdmin is true)
+      adminGuards: [
         { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
       ],
     },
   },
 };
 ```
+
+**New in v2:** The `adminGuards` array allows you to separate base authentication guards from admin-only authorization guards. When `requireAdmin` is `true`, guards from both arrays are combined and applied to controllers.
 
 ## Guard Interface
 
@@ -61,7 +67,7 @@ interface Guard {
 
 ### Mode 1: Admin Only (Default)
 
-Requires JWT authentication AND admin role:
+Requires JWT authentication AND admin role. Uses both `guards` and `adminGuards` arrays:
 
 ```typescript
 api: {
@@ -70,6 +76,8 @@ api: {
     requireAdmin: true,
     guards: [
       { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+    ],
+    adminGuards: [
       { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
     ],
   },
@@ -82,13 +90,13 @@ Generated controller:
 @Controller('tg-api/users')
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class UserAdminController {
-  // ...
+  // Both base guards and admin guards are applied
 }
 ```
 
 ### Mode 2: Authenticated Users
 
-Requires JWT authentication only (any authenticated user):
+Requires JWT authentication only (any authenticated user). Only `guards` are applied:
 
 ```typescript
 api: {
@@ -97,6 +105,9 @@ api: {
     requireAdmin: false,
     guards: [
       { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+    ],
+    adminGuards: [
+      { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
     ],
   },
 }
@@ -108,7 +119,7 @@ Generated controller:
 @Controller('api/users')
 @UseGuards(JwtAuthGuard)
 export class UserPublicController {
-  // ...
+  // Only base guards are applied; adminGuards are ignored
 }
 ```
 
@@ -135,11 +146,25 @@ export class UserPublicController {
 }
 ```
 
+### Mode 4: Temporary Public Override
+
+Use the `--public` flag to override authentication settings for a single generation run:
+
+```bash
+tgraph api --public
+```
+
+This temporarily sets:
+- `authentication.enabled = false`
+- `authentication.requireAdmin = false`
+
+Useful for generating public endpoints without editing your config file.
+
 ## Common Guard Configurations
 
 ### JWT + Admin Role
 
-Standard setup for admin APIs:
+Standard setup for admin APIs using separated guard configuration:
 
 ```typescript
 authentication: {
@@ -147,14 +172,18 @@ authentication: {
   requireAdmin: true,
   guards: [
     { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+  ],
+  adminGuards: [
     { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
   ],
 }
 ```
 
+**Result:** Both JwtAuthGuard and AdminGuard are applied to generated controllers.
+
 ### JWT Only
 
-For authenticated user APIs:
+For authenticated user APIs (no admin requirement):
 
 ```typescript
 authentication: {
@@ -165,6 +194,8 @@ authentication: {
   ],
 }
 ```
+
+**Result:** Only JwtAuthGuard is applied; adminGuards are ignored.
 
 ### API Key Authentication
 
@@ -182,7 +213,7 @@ authentication: {
 
 ### Multiple Guards
 
-Combine multiple authentication methods:
+Combine multiple authentication and authorization guards:
 
 ```typescript
 authentication: {
@@ -190,11 +221,34 @@ authentication: {
   requireAdmin: true,
   guards: [
     { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+    { name: 'TenantGuard', importPath: '@/guards/tenant.guard' },
+  ],
+  adminGuards: [
+    { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
     { name: 'RoleGuard', importPath: '@/guards/role.guard' },
+  ],
+}
+```
+
+**Result:** When `requireAdmin` is true, all four guards are applied. When false, only the two base guards are applied.
+
+### Legacy Format (Still Supported)
+
+You can still put all guards in a single array (backwards compatible):
+
+```typescript
+authentication: {
+  enabled: true,
+  requireAdmin: true,
+  guards: [
+    { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+    { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
     { name: 'TenantGuard', importPath: '@/guards/tenant.guard' },
   ],
 }
 ```
+
+**Note:** The separated `adminGuards` approach is recommended for better flexibility when generating both admin and user APIs from the same schema.
 
 ## Implementing Guards
 
@@ -331,6 +385,8 @@ export const config: Config = {
       requireAdmin: true,
       guards: [
         { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+      ],
+      adminGuards: [
         { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
       ],
     },
@@ -355,21 +411,45 @@ export const config: Config = {
       guards: [
         { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
       ],
+      adminGuards: [
+        // Defined but not used when requireAdmin is false
+        { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
+      ],
     },
   },
   // ... other config
 };
 ```
 
+**Alternative: Use --public flag**
+
+Instead of creating a separate config file, you can use the `--public` flag:
+
+```bash
+# Generate admin API with authentication
+tgraph api --config tgraph.config.ts --suffix Admin
+
+# Generate public API without authentication
+tgraph api --config tgraph.config.ts --suffix Public --public
+```
+
 Generate both APIs:
 
 ```bash
-# Generate admin API
+# Method 1: Using separate config files
 tgraph api --config tgraph.admin.config.ts
-
-# Generate public API
 tgraph api --config tgraph.public.config.ts
+
+# Method 2: Using --public flag with single config
+tgraph api --suffix Admin  # Uses config authentication settings
+tgraph api --suffix Public --public  # Overrides to disable authentication
 ```
+
+**Benefits of adminGuards separation:**
+
+1. **Reusability:** Same config file can generate both admin and public APIs by changing `requireAdmin`
+2. **Clarity:** Explicitly shows which guards are for authentication vs authorization
+3. **Flexibility:** Easy to toggle admin mode without redefining the entire guard list
 
 ## Advanced Patterns
 

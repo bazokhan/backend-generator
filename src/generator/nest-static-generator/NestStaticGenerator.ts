@@ -16,7 +16,7 @@ import {
 import { defaultStaticGeneratorOptions, StaticTemplateOptions } from './config';
 import { GuardResolver } from '../nest-controller-generator/GuardResolver';
 
-export type StaticGeneratorOverrides = Partial<StaticTemplateOptions>;
+export type StaticGeneratorOverrides = Partial<StaticTemplateOptions> & { include?: string[] };
 
 export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides, void> {
   private readonly renderer: TemplateRenderer;
@@ -33,22 +33,26 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
 
   private computeOutputPaths(): {
     adminGuard: string;
+    featureFlagGuard: string;
     isAdminDecorator: string;
     paginatedSearchQueryDto: string;
     paginatedSearchResultDto: string;
     apiResponseDto: string;
     paginationInterceptor: string;
+    auditInterceptor: string;
     paginatedSearchDecorator: string;
     paginatedSearchUtil: string;
   } {
     const staticFiles = this.config.output.backend.staticFiles;
     return {
       adminGuard: this.resolveStaticPath(staticFiles.guards, 'admin.guard.ts'),
+      featureFlagGuard: this.resolveStaticPath(staticFiles.guards, 'feature-flag.guard.ts'),
       isAdminDecorator: this.resolveStaticPath(staticFiles.decorators, 'is-admin.decorator.ts'),
       paginatedSearchQueryDto: this.resolveStaticPath(staticFiles.dtos, 'paginated-search-query.dto.ts'),
       paginatedSearchResultDto: this.resolveStaticPath(staticFiles.dtos, 'paginated-search-result.dto.ts'),
       apiResponseDto: this.resolveStaticPath(staticFiles.dtos, 'api-response.dto.ts'),
       paginationInterceptor: this.resolveStaticPath(staticFiles.interceptors, 'pagination.interceptor.ts'),
+      auditInterceptor: this.resolveStaticPath(staticFiles.interceptors, 'audit.interceptor.ts'),
       paginatedSearchDecorator: this.resolveStaticPath(staticFiles.decorators, 'paginated-search.decorator.ts'),
       paginatedSearchUtil: this.resolveStaticPath(staticFiles.utils, 'paginated-search.ts'),
     };
@@ -103,8 +107,9 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
       interceptorPath: this.createImportPath(outputs.paginatedSearchDecorator, outputs.paginationInterceptor),
     };
 
-    const filesToWrite: Array<{ target: string; content: string }> = [
+    const filesToWrite: Array<{ name: string; target: string; content: string }> = [
       {
+        name: 'admin.guard',
         target: outputs.adminGuard,
         content: this.renderer.render(adminGuardTemplate, {
           rolesEnumName: this.templateOptions.rolesEnumName,
@@ -113,30 +118,70 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
         }),
       },
       {
+        name: 'feature-flag.guard',
+        target: outputs.featureFlagGuard,
+        content: `import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+@Injectable()
+export class FeatureFlagGuard implements CanActivate {
+  canActivate(_context: ExecutionContext): boolean {
+    // TODO: wire to your feature-flag service
+    return true;
+  }
+}
+`,
+      },
+      {
+        name: 'is-admin.decorator',
         target: outputs.isAdminDecorator,
         content: this.renderer.render(isAdminDecoratorTemplate, guardTemplateVars),
       },
       {
+        name: 'paginated-search-query.dto',
         target: outputs.paginatedSearchQueryDto,
         content: paginatedSearchQueryDtoTemplate,
       },
       {
+        name: 'paginated-search-result.dto',
         target: outputs.paginatedSearchResultDto,
         content: paginatedSearchResultDtoTemplate,
       },
       {
+        name: 'api-response.dto',
         target: outputs.apiResponseDto,
         content: apiResponseDtoTemplate,
       },
       {
+        name: 'pagination.interceptor',
         target: outputs.paginationInterceptor,
         content: this.renderer.render(paginationInterceptorTemplate, paginationImports),
       },
       {
+        name: 'audit.interceptor',
+        target: outputs.auditInterceptor,
+        content: `import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { Observable, tap } from 'rxjs';
+
+@Injectable()
+export class AuditInterceptor implements NestInterceptor {
+  intercept(_context: ExecutionContext, next: CallHandler): Observable<any> {
+    const started = Date.now();
+    return next.handle().pipe(
+      tap(() => {
+        // TODO: replace with your audit log sink
+        // console.log('Audit:', { duration: Date.now() - started });
+      }),
+    );
+  }
+}
+`,
+      },
+      {
+        name: 'paginated-search.decorator',
         target: outputs.paginatedSearchDecorator,
         content: this.renderer.render(paginatedSearchDecoratorTemplate, paginatedDecoratorImports),
       },
       {
+        name: 'paginated-search.util',
         target: outputs.paginatedSearchUtil,
         content: this.renderer.render(paginatedSearchUtilTemplate, {
           prismaGeneratedPath: this.templateOptions.prismaGeneratedPath,
@@ -146,11 +191,11 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
       },
     ];
 
-    await Promise.all(filesToWrite.map(({ target, content }) => fs.promises.writeFile(target, content, 'utf-8')));
+    const include = overrides?.include;
+    const filtered = include && include.length > 0 ? filesToWrite.filter((f) => include.includes(f.name)) : filesToWrite;
 
-    formatGeneratedFiles(
-      filesToWrite.map(({ target }) => target),
-      this.workspaceRoot,
-    );
+    await Promise.all(filtered.map(({ target, content }) => fs.promises.writeFile(target, content, 'utf-8')));
+
+    formatGeneratedFiles(filtered.map(({ target }) => target), this.workspaceRoot);
   }
 }

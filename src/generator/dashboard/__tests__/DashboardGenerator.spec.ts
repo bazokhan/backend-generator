@@ -340,72 +340,28 @@ model User {
     });
   });
 
-  describe('generateTypes', () => {
-    it('should check for swagger.json file', async () => {
+  // Note: Type generation has been moved to a separate command (tgraph types)
+  // and is no longer part of DashboardGenerator.generate()
+  
+  describe('generateTypes (deprecated - moved to separate command)', () => {
+    it('should not generate types during dashboard generation', async () => {
       await generator.generate();
 
-      const swaggerPath = path.join('/mock/project/root', 'src', 'dashboard', 'src', 'types', 'swagger.json');
-
-      expect(mockFs.existsSync).toHaveBeenCalledWith(swaggerPath);
-    });
-
-    it('should generate types when swagger.json exists', async () => {
-      mockFs.existsSync.mockReturnValue(true);
-
-      await generator.generate();
-
-      expect(mockExecSync).toHaveBeenCalled();
-      expect(mockExecSync.mock.calls[0][0]).toContain('swagger-typescript-api');
-      expect(console.log).toHaveBeenCalledWith('✅ Types generated successfully');
-    });
-
-    it('should warn when swagger.json does not exist', async () => {
-      mockFs.existsSync.mockReturnValue(false);
-      // Mock existsSync to return true for generated files/directories
-      mockFs.existsSync.mockImplementation((path) => {
-        const pathStr = path.toString();
-        if (pathStr.includes('swagger.json')) {
-          return false;
-        }
-        // Return true for other paths (generated files, directories, etc.)
-        return true;
-      });
-
-      await generator.generate();
-
-      expect(console.warn).toHaveBeenCalledWith(
-        '⚠️ Swagger JSON file not found. Please run "npm run generate:swagger" first.',
-      );
-      // execSync should not be called for type generation, but may be called for formatting files
+      // Verify that type generation is NOT called during dashboard generation
       const execCalls = mockExecSync.mock.calls.map((call) => call[0].toString());
       const typeGenCalls = execCalls.filter((call) => call.includes('swagger-typescript-api'));
       expect(typeGenCalls.length).toBe(0);
     });
 
-    it('should handle errors during type generation', async () => {
+    it('should still format generated dashboard files', async () => {
       mockFs.existsSync.mockReturnValue(true);
-      const error = new Error('Type generation failed');
-      mockExecSync.mockImplementation(() => {
-        throw error;
-      });
-
+      
       await generator.generate();
 
-      expect(console.warn).toHaveBeenCalledWith('⚠️ Could not generate types from Swagger JSON file');
-      expect(console.warn).toHaveBeenCalledWith('❌ Error during type generation:', error);
-    });
-
-    it('should call execSync with correct command and options', async () => {
-      mockFs.existsSync.mockReturnValue(true);
-
-      await generator.generate();
-
-      const execCall = mockExecSync.mock.calls.find((call) => call[0].toString().includes('swagger-typescript-api'));
-      expect(execCall).toBeDefined();
-      expect(execCall?.[1]).toEqual({
-        stdio: 'inherit',
-        cwd: '/mock/project/root',
-      });
+      // Verify formatting is still called for dashboard files
+      const execCalls = mockExecSync.mock.calls.map((call) => call[0].toString());
+      const prettierCalls = execCalls.filter((call) => call.includes('prettier'));
+      expect(prettierCalls.length).toBeGreaterThan(0);
     });
   });
 

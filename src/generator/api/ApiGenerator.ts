@@ -58,12 +58,20 @@ export class ApiGenerator {
     this.schemaParser = new PrismaSchemaParser(this.fieldParser, this.fieldRelationsParser);
     this.dtoGenerator = new NestDtoGenerator({ suffix: config.api.suffix });
     this.moduleFileGenerator = new NestModuleFileGenerator({ suffix: config.api.suffix });
+    const baseGuards = config.api.authentication.guards ?? [];
+    const adminOnlyGuards = config.api.authentication.adminGuards ?? [];
+    const appliedGuards = config.api.authentication.requireAdmin
+      ? [...baseGuards, ...adminOnlyGuards]
+      : baseGuards;
     this.serviceGenerator = new NestServiceGenerator({ suffix: config.api.suffix });
     this.controllerGenerator = new NestControllerGenerator({
       suffix: config.api.suffix,
       isAdmin: config.api.authentication.requireAdmin,
-      guards: config.api.authentication.guards,
+      guards: appliedGuards,
       guardsEnabled: config.api.authentication.enabled,
+      prefix: config.api.prefix,
+      dtosPath: config.output.backend.dtos,
+      workspaceRoot: this.workspaceRoot,
     });
     this.projectPathResolver = new ProjectPathResolver(config, { workspaceRoot: this.workspaceRoot });
     this.modulePathResolver = new ModulePathResolver({
@@ -196,6 +204,8 @@ export class ApiGenerator {
         utilsPath: this.config.output.backend.staticFiles.utils,
         workspaceRoot: this.workspaceRoot,
         prismaServicePath: this.config.input.prismaService,
+        models: this.models,
+        relationsInclude: this.config.api.relations?.include || [],
       });
 
       const controllerContent = this.controllerGenerator.generate({ model });
@@ -220,8 +230,39 @@ export class ApiGenerator {
 
   private async generateNestStaticFiles(): Promise<void> {
     console.log('🔧 Generating Nest Static files...');
+    const proceed = await promptUser('Generate required static files (guards, dtos, utils)? (y/n): ', {
+      autoConfirm: this.nonInteractive,
+      defaultValue: true,
+    });
+    if (!proceed) {
+      console.log('⏭️ Skipping static files generation.');
+      return;
+    }
+
+    const available = [
+      'admin.guard',
+      'is-admin.decorator',
+      'paginated-search-query.dto',
+      'paginated-search-result.dto',
+      'api-response.dto',
+      'pagination.interceptor',
+      'paginated-search.decorator',
+      'paginated-search.util',
+      'feature-flag.guard',
+      'audit.interceptor',
+    ];
+
+    let include: string[] = [];
+    if (!this.nonInteractive) {
+      for (const name of available) {
+        const yes = await promptUser(`Generate ${name}? (y/n): `, { defaultValue: true });
+        if (yes) include.push(name);
+      }
+    }
+    if (include.length === 0) include = available;
+
     const nestStaticGenerator = new NestStaticGenerator(this.config);
-    await nestStaticGenerator.generate();
+    await nestStaticGenerator.generate({ include });
   }
 
   private parseSchema(): void {

@@ -175,6 +175,35 @@ describe('Nest Service Generator', () => {
     });
   });
 
+  describe('unique getters generation', () => {
+    it('should generate getOneBy<Unique> methods for unique fields', () => {
+      const generator = new NestServiceGenerator({ suffix: 'Tg' });
+      const model: PrismaModel = {
+        name: 'User',
+        fields: [
+          { name: 'id', type: 'String', baseType: 'String', isOptional: false, isArray: false, isId: true, isUnique: false, hasDefaultValue: true, customValidations: [] },
+          { name: 'email', type: 'String', baseType: 'String', isOptional: false, isArray: false, isId: false, isUnique: true, hasDefaultValue: false, customValidations: [] },
+          { name: 'username', type: 'String', baseType: 'String', isOptional: false, isArray: false, isId: false, isUnique: true, hasDefaultValue: false, customValidations: [] },
+        ],
+        enums: [],
+        moduleType: 'features',
+      } as any;
+
+      const result = generator.generate(model, {
+        serviceFilePath: 'src/features/user/user.tg.service.ts',
+        dtosPath: 'src/dtos',
+        utilsPath: 'src/utils',
+        workspaceRoot: '/mock/workspace',
+        prismaServicePath: 'src/infrastructure/database/prisma.service.ts',
+      });
+
+      expect(result).toContain('async getOneByEmail(');
+      expect(result).toContain("where: { email: value }");
+      expect(result).toContain('async getOneByUsername(');
+      expect(result).toContain("where: { username: value }");
+    });
+  });
+
   describe('searchType usage', () => {
     it('should generate searchable fields with correct types from searchType property', () => {
       const generator = new NestServiceGenerator({ suffix: 'Tg' });

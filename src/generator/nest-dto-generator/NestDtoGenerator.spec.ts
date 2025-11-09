@@ -386,7 +386,7 @@ describe('Nest DTO Generator', () => {
       expect(result).not.toContain('author');
     });
 
-    it('should filter out array fields', () => {
+    it('should include array fields with proper validators', () => {
       const model: PrismaModel = {
         name: 'Post',
         fields: [
@@ -417,7 +417,9 @@ describe('Nest DTO Generator', () => {
 
       const result = dtoGenerator.generate({ model, dtoType: 'create', enums });
       expect(result).toContain('title');
-      expect(result).not.toContain('tags');
+      expect(result).toContain('tags');
+      expect(result).toContain('@IsArray()');
+      expect(result).toContain('@IsString({ each: true })');
     });
   });
 
@@ -679,21 +681,21 @@ describe('Nest DTO Generator', () => {
       const createResult = dtoGenerator.generate({ model, dtoType: 'create', enums });
       const updateResult = dtoGenerator.generate({ model, dtoType: 'update', enums });
 
-      // Both should include only: name, price, status
+      // Both should include: name, price, status, tags (array fields now supported)
       expect(createResult).toContain('name');
       expect(createResult).toContain('price');
       expect(createResult).toContain('status');
+      expect(createResult).toContain('tags'); // Array fields are now included
       expect(createResult).not.toMatch(/\bid\b/); // Use word boundary to avoid matching "id" in "description"
       expect(createResult).not.toContain('createdAt');
-      expect(createResult).not.toContain('tags');
       expect(createResult).not.toContain('category');
 
       expect(updateResult).toContain('name');
       expect(updateResult).toContain('price');
       expect(updateResult).toContain('status');
+      expect(updateResult).toContain('tags'); // Array fields are now included
       expect(updateResult).not.toMatch(/\bid\b/); // Use word boundary to avoid matching "id" in "description"
       expect(updateResult).not.toContain('createdAt');
-      expect(updateResult).not.toContain('tags');
       expect(updateResult).not.toContain('category');
     });
 

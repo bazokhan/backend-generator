@@ -4,6 +4,16 @@ import type { Config } from '@tg-scripts/types';
 import type { PreflightReport } from '@tg-scripts/io/preflight/PreflightChecker';
 import { ConfigLoader, ConfigLoaderError } from '../config/ConfigLoader';
 import { CommandLineInterface } from './CommandLineInterface';
+jest.mock('child_process', () => ({
+  execSync: jest.fn(),
+}));
+import { execSync } from 'child_process';
+
+// Mock user prompts to avoid interactive input in tests
+jest.mock('@tg-scripts/io/utils/user-prompt', () => ({
+  promptUser: jest.fn().mockResolvedValue(true),
+  promptText: jest.fn().mockImplementation((_q: string, opts?: { defaultValue?: string }) => Promise.resolve(opts?.defaultValue ?? '')),
+}));
 import { ApiGenerator } from '@tg-scripts/generator/api/ApiGenerator';
 import { DashboardGenerator } from '@tg-scripts/generator/dashboard/DashboardGenerator';
 import { DtoGenerator } from '@tg-scripts/generator/dto/DtoGenerator';
@@ -58,6 +68,10 @@ const SAMPLE_CONFIG: Config = {
     dashboard: {
       root: 'dashboard',
       resources: 'dashboard/resources',
+      swagger: {
+        command: 'npm run generate:swagger',
+        jsonPath: 'dashboard/types/swagger.json',
+      },
     },
   },
   api: {
@@ -97,6 +111,7 @@ const ApiGeneratorMock = jest.mocked(ApiGenerator);
 const DashboardGeneratorMock = jest.mocked(DashboardGenerator);
 const DtoGeneratorMock = jest.mocked(DtoGenerator);
 const SystemValidatorMock = jest.mocked(SystemValidator);
+const execSyncMock = execSync as jest.MockedFunction<typeof execSync>;
 
 describe('CommandLineInterface', () => {
   let consoleLogSpy: jest.SpyInstance;
@@ -115,6 +130,7 @@ describe('CommandLineInterface', () => {
     preflightRunMock.mockReturnValue(SAMPLE_PREFLIGHT_REPORT);
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    execSyncMock.mockReset();
   });
 
   afterEach(() => {
@@ -141,6 +157,14 @@ describe('CommandLineInterface', () => {
 
     expect(exitCode).toBe(0);
     expect(consoleLogSpy).toHaveBeenCalled();
+  });
+
+  it('prints init subcommand help when tgraph init --help is provided', async () => {
+    const cli = new CommandLineInterface({ configLoader: createLoaderMock() });
+    const exitCode = await cli.run(['init', '--help']);
+    expect(exitCode).toBe(0);
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('tgraph init'));
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('--requireAdmin'));
   });
 
   it('returns exit code 1 when command is missing', async () => {
@@ -271,6 +295,72 @@ describe('CommandLineInterface', () => {
     expect(exitCode).toBe(0);
     const mergedConfig = DashboardGeneratorMock.mock.calls[0]?.[0] as Config;
     expect(mergedConfig.behavior.nonInteractive).toBe(true);
+  });
+
+  it('lists static modules with tgraph static --list', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({ configLoader: loader });
+    const exitCode = await cli.run(['static', '--list']);
+    expect(exitCode).toBe(0);
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Available static modules'));
+  });
+
+  it('runs swagger command before generating types', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({
+      configLoader: loader,
+      fsModule: {
+        ...fs,
+        existsSync: jest.fn().mockReturnValue(true),
+      } as typeof fs,
+    });
+    execSyncMock.mockReturnValue(undefined as any);
+
+    const exitCode = await cli.run(['types']);
+
+    expect(exitCode).toBe(0);
+    expect(execSyncMock).toHaveBeenCalledWith('npm run generate:swagger', expect.objectContaining({ cwd: expect.any(String), stdio: 'inherit' }));
+    expect(execSyncMock).toHaveBeenCalledWith(expect.stringContaining('swagger-typescript-api'), expect.objectContaining({ cwd: expect.any(String), stdio: 'inherit' }));
+  });
+
+  it('skips swagger command when --skip-swagger is provided', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({
+      configLoader: loader,
+      fsModule: {
+        ...fs,
+        existsSync: jest.fn().mockReturnValue(true),
+      } as typeof fs,
+    });
+    execSyncMock.mockReturnValue(undefined as any);
+
+    const exitCode = await cli.run(['types', '--skip-swagger']);
+
+    expect(exitCode).toBe(0);
+    const commands = execSyncMock.mock.calls.map((call) => call[0]);
+    expect(commands).toHaveLength(1);
+    expect(commands[0]).toContain('swagger-typescript-api');
+  });
+
+  it('runs configured swagger command when tgraph swagger is executed', async () => {
+    const loader = createLoaderMock();
+    execSyncMock.mockReturnValue(undefined as any);
+    const cli = new CommandLineInterface({ configLoader: loader });
+
+    const exitCode = await cli.run(['swagger']);
+
+    expect(exitCode).toBe(0);
+    expect(execSyncMock).toHaveBeenCalledWith('npm run generate:swagger', expect.any(Object));
+  });
+
+  it('forces public mode when --public is provided', async () => {
+    const loader = createLoaderMock();
+    const cli = new CommandLineInterface({ configLoader: loader });
+    await cli.run(['api', '--public']);
+
+    const runtimeConfig = ApiGeneratorMock.mock.calls[0]?.[0] as Config;
+    expect(runtimeConfig.api.authentication.enabled).toBe(false);
+    expect(runtimeConfig.api.authentication.requireAdmin).toBe(false);
   });
 
   it('forces interactive prompts when --interactive overrides config', async () => {

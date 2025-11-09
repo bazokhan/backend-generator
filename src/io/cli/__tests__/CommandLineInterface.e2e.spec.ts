@@ -233,7 +233,7 @@ describe('CommandLineInterface (end-to-end)', () => {
       expect(appModuleContent).toContain("// AUTO-GENERATED IMPORTS START");
 
       const dataProviderContent = workspace.read('src/dashboard/providers/dataProvider.ts');
-      expect(dataProviderContent).toContain("'posts': 'tg-api/posts'");
+      expect(dataProviderContent).toContain("'posts': 'api/posts'"); // Uses prefix from test config
       expect(dataProviderContent).toContain("'custom': '/custom'");
 
       expect(consoleErrorSpy).not.toHaveBeenCalled();
@@ -302,7 +302,7 @@ describe('CommandLineInterface (end-to-end)', () => {
       expect(appModuleContent).toContain('PostModule');
 
       const dataProviderContent = workspace.read('src/dashboard/providers/dataProvider.ts');
-      expect(dataProviderContent).toContain("'posts': 'tg-api/posts'");
+      expect(dataProviderContent).toContain("'posts': 'api/posts'"); // Uses prefix from test config
 
       const dtoIndexContent = workspace.read('src/dtos/generated/index.ts');
       expect(dtoIndexContent).toContain('AUTO-GENERATED FILE');

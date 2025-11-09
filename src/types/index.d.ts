@@ -92,11 +92,15 @@ export interface Config {
         utils: string;               // e.g., 'src/utils'
       };
     };
-    dashboard: {
-      root: string;                  // e.g., 'src/dashboard/src'
-      resources: string;             // e.g., 'src/dashboard/src/resources'
+  dashboard: {
+    root: string;                  // e.g., 'src/dashboard/src'
+    resources: string;             // e.g., 'src/dashboard/src/resources'
+    swagger?: {
+      command?: string;            // Optional command to regenerate swagger.json (default: npm run generate:swagger)
+      jsonPath?: string;           // Optional override for swagger.json path
     };
   };
+};
   
   // API generation settings
   api: {
@@ -106,6 +110,10 @@ export interface Config {
       enabled: boolean;              // Add auth guards?
       requireAdmin: boolean;         // Admin-only endpoints?
       guards: Guard[];               // Configurable guard list
+      adminGuards?: Guard[];         // Guards applied only when requireAdmin is true
+    };
+    relations?: {
+      include?: 'all' | string[];    // Relation names to include in Prisma selects (or 'all')
     };
   };
   

@@ -20,6 +20,9 @@ export type NestControllerGeneratorOptions = {
   isAdmin?: boolean;
   guards?: Guard[];
   guardsEnabled?: boolean;
+  prefix?: string | undefined;
+  dtosPath?: string | undefined;
+  workspaceRoot?: string | undefined;
 };
 
 export type NestControllerGeneratorInput = {
@@ -33,7 +36,11 @@ export class NestControllerGenerator implements IGenerator<NestControllerGenerat
   private isAdmin: boolean;
   private namingSuffix: string;
   constructor(options: NestControllerGeneratorOptions) {
-    this.baseRoute = options.suffix ? `${options.suffix.toLowerCase()}-api` : 'tg-api';
+    this.baseRoute = options.prefix?.trim()
+      ? options.prefix.trim()
+      : options.suffix
+        ? `${options.suffix.toLowerCase()}-api`
+        : 'tg-api';
     this.fileSuffix = options.suffix ? options.suffix.toLowerCase() : '';
     this.namingSuffix = options.suffix
       ? options.suffix.charAt(0).toUpperCase() + options.suffix.slice(1).toLowerCase()

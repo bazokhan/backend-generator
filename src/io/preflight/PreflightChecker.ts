@@ -61,6 +61,7 @@ export class PreflightChecker {
   private readonly projectPaths: ProjectPathResolver;
   private readonly schemaParser: PrismaSchemaParser;
   private readonly workspaceRoot: string;
+  private readonly swaggerCommand: string;
   constructor(private readonly config: Config, options: PreflightCheckerOptions = {}) {
     this.workspaceRoot = options.workspaceRoot ?? process.cwd();
     this.fsModule = options.fsModule ?? fs;
@@ -80,6 +81,7 @@ export class PreflightChecker {
     const relationsParser = new PrismaRelationsParser();
     this.schemaParser = new PrismaSchemaParser(fieldParser, relationsParser);
     this.dashboardRoot = this.projectPaths.getDashboardRoot();
+    this.swaggerCommand = this.config.output.dashboard.swagger?.command ?? 'npm run generate:swagger';
   }
 
   private collectManualSteps(context: {
@@ -119,7 +121,7 @@ export class PreflightChecker {
     if (context.swagger.required && !context.swagger.exists) {
       steps.push({
         severity: 'info',
-        message: 'Swagger JSON missing. Run "npm run generate:swagger" before generating dashboard types.',
+        message: `Swagger JSON missing. Run "${this.swaggerCommand}" before generating dashboard types.`,
       });
     }
 
@@ -272,7 +274,7 @@ export class PreflightChecker {
   }
 
   private evaluateSwagger(): PreflightPathReport & { required: boolean } {
-    const swaggerPath = this.pathModule.join(this.dashboardRoot, 'types', 'swagger.json');
+    const swaggerPath = this.resolveSwaggerPath();
     const exists = this.fsModule.existsSync(swaggerPath);
     return {
       label: 'Swagger JSON',
@@ -280,6 +282,16 @@ export class PreflightChecker {
       exists,
       required: true,
     };
+  }
+
+  private resolveSwaggerPath(): string {
+    const configured = this.config.output.dashboard.swagger?.jsonPath;
+    if (configured) {
+      return this.pathModule.isAbsolute(configured)
+        ? configured
+        : this.pathModule.join(this.workspaceRoot, configured);
+    }
+    return this.pathModule.join(this.dashboardRoot, 'types', 'swagger.json');
   }
 
   private parseSchema(): PrismaModel[] {

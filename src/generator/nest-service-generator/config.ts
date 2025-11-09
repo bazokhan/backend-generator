@@ -130,13 +130,18 @@ export const deleteMany = () => `
   }
 `;
 
-export const getSelectFields = (fields: string[]) => `
+export const getSelectFields = (fields: string[], relationSelects: string[] = []) => {
+  const fieldSelects = fields.map((field) => `${field}: true`).join(',\n      ');
+  const relations = relationSelects.length > 0 ? `,\n      ${relationSelects.join(',\n      ')}` : '';
+  
+  return `
   private getSelectFields() {
     return {
-      ${fields.map((field) => `${field}: true`).join(',\n      ')},
+      ${fieldSelects}${relations},
     };
   }
 `;
+};
 
 export const generateUniqueChecks = (
   pascalCaseName: string,

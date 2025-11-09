@@ -48,6 +48,10 @@ export const config: Config = {
     dashboard: {
       root: 'src/dashboard/src',
       resources: 'src/dashboard/src/resources',
+      swagger: {
+        command: 'npm run generate:swagger',
+        jsonPath: 'src/dashboard/src/types/swagger.json',
+      },
     },
   },
   api: {
@@ -58,8 +62,13 @@ export const config: Config = {
       requireAdmin: true,
       guards: [
         { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+      ],
+      adminGuards: [
         { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
       ],
+    },
+    relations: {
+      include: [], // or 'all' or ['author', 'comments']
     },
   },
   dashboard: {
@@ -124,8 +133,41 @@ staticFiles: {
 
 | Property | Type | Default | Description |
 | -------- | ---- | ------- | ----------- |
-| `root` | `string` | `src/dashboard/src` | Absolute or relative path to your React Admin app’s `src` directory. |
+| `root` | `string` | `src/dashboard/src` | Absolute or relative path to your React Admin app's `src` directory. |
 | `resources` | `string` | `src/dashboard/src/resources` | Folder where the generator creates `<resource>/<page>.tsx` files. |
+
+### `output.dashboard.swagger` (Optional)
+
+Configures swagger.json generation for dashboard API type generation.
+
+```typescript
+swagger?: {
+  command?: string;    // Command to regenerate swagger.json (default: 'npm run generate:swagger')
+  jsonPath?: string;   // Path to swagger.json (default: '<dashboardRoot>/types/swagger.json')
+}
+```
+
+**Example:**
+
+```typescript
+output: {
+  dashboard: {
+    root: 'src/dashboard/src',
+    resources: 'src/dashboard/src/resources',
+    swagger: {
+      command: 'npm run docs:swagger',
+      jsonPath: 'src/dashboard/types/swagger.json',
+    },
+  },
+}
+```
+
+When you run `tgraph types`:
+1. The command specified in `swagger.command` is executed to regenerate the swagger JSON
+2. The generated `swagger.json` is read from `jsonPath`
+3. TypeScript types are generated at `<dashboardRoot>/types/api.ts` using `swagger-typescript-api`
+
+Use `tgraph types --skip-swagger` to bypass the swagger generation step if your swagger.json is already up to date.
 
 ---
 
@@ -149,14 +191,118 @@ interface Guard {
 
 authentication: {
   enabled: boolean;       // Wrap controllers with @UseGuards(...)
-  requireAdmin: boolean;  // Whether admin-only guards (2nd element) are applied
-  guards: Guard[];        // Ordered list of guard imports
+  requireAdmin: boolean;  // Whether admin-only guards are applied
+  guards: Guard[];        // Base guards (always applied when enabled)
+  adminGuards?: Guard[];  // Additional guards applied only when requireAdmin is true
 }
 ```
 
-- When `enabled` is `false`, no guards are imported or applied.
-- When `requireAdmin` is `false`, only the first guard (usually `JwtAuthGuard`) is attached.
-- Provide as many guards as needed; the CLI ensures they are imported once.
+**Behavior:**
+
+- When `enabled` is `false`, no guards are imported or applied to controllers.
+- When `enabled` is `true` but `requireAdmin` is `false`, only guards from the `guards` array are applied.
+- When both `enabled` and `requireAdmin` are `true`, guards from both `guards` and `adminGuards` arrays are applied.
+- The CLI ensures all guards are imported once, regardless of how many times they appear.
+
+**Example configurations:**
+
+```typescript
+// Public API - no authentication
+authentication: {
+  enabled: false,
+  requireAdmin: false,
+  guards: [],
+}
+
+// User API - authentication but not admin-only
+authentication: {
+  enabled: true,
+  requireAdmin: false,
+  guards: [
+    { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+  ],
+}
+
+// Admin API - authentication with admin requirement
+authentication: {
+  enabled: true,
+  requireAdmin: true,
+  guards: [
+    { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+  ],
+  adminGuards: [
+    { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
+  ],
+}
+```
+
+Use the `--public` CLI flag to temporarily override authentication settings without editing the config file:
+
+```bash
+tgraph api --public  # Generates controllers without any guards
+```
+
+### `api.relations` (Optional)
+
+Controls whether and which Prisma relation fields are included in service query selects.
+
+```typescript
+relations?: {
+  include?: 'all' | string[];  // Relation field names to include, or 'all' for all relations
+}
+```
+
+**Default:** No relations are included (empty array).
+
+**Examples:**
+
+```typescript
+// Include all relations in service selects
+api: {
+  relations: {
+    include: 'all',
+  },
+}
+
+// Include specific relations only
+api: {
+  relations: {
+    include: ['author', 'comments', 'tags'],
+  },
+}
+```
+
+**Behavior:**
+
+When relations are included, the generated service `getSelectFields()` method will return a Prisma select object that includes the specified relations with their `id` and display field:
+
+```typescript
+// Without relations
+getSelectFields() {
+  return {
+    id: true,
+    title: true,
+    content: true,
+  };
+}
+
+// With relations: ['author']
+getSelectFields() {
+  return {
+    id: true,
+    title: true,
+    content: true,
+    author: { select: { id: true, name: true } },
+  };
+}
+```
+
+The generator automatically determines the display field for each relation based on:
+1. `@tg.display` directive on the related model
+2. `@tg.label` directive on the related model
+3. Falls back to `id`
+
+**Note:** Including relations affects all service methods (getAll, getOne, create, update). Consider performance implications when using `'all'` with deeply nested relations.
 
 ---
 

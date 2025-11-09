@@ -28,23 +28,54 @@ tgraph <command> [options]
 
 ### `tgraph init`
 
-Initialize a configuration file in your project root.
+Initialize a configuration file in your project root with an interactive wizard or default values.
 
 ```bash
-tgraph init
+tgraph init [options]
 ```
+
+**Options:**
+
+- `--output <file>` - Output file name (default: `tgraph.config.ts`)
+- `--requireAdmin <true|false>` - Default requireAdmin in generated config (default: `true`)
+- `-y, --yes` - Non-interactive mode, uses all defaults
 
 **What it does:**
 
-- Creates `tgraph.config.ts` in your project root
+- Runs an interactive wizard to customize your configuration (unless `-y` is used)
+- Creates `tgraph.config.ts` (or custom path via `--output`) in your project root
 - Includes comprehensive inline comments explaining each option
-- Uses default values suitable for most projects
+- Prompts for common paths and preferences
 - Fails if a config file already exists
 
-**Example:**
+**Interactive wizard prompts:**
+
+When running without `-y`, the wizard will ask:
+- Path to Prisma schema
+- Path to PrismaService
+- API class suffix (e.g., "Admin", "Public")
+- API route prefix (e.g., "tg-api", "api")
+- Enable authentication guards?
+- Require admin for this API?
+- Default feature root directory
+- Generated DTOs directory
+- Guards, decorators, interceptors, utils directories
+- Dashboard root and resources directories
+
+**Examples:**
 
 ```bash
+# Interactive wizard (recommended for first-time setup)
 tgraph init
+
+# Non-interactive with defaults
+tgraph init --yes
+
+# Custom output path
+tgraph init --output my-config.ts
+
+# Configure for public API
+tgraph init --requireAdmin false
 ```
 
 **Output:**
@@ -373,6 +404,131 @@ tgraph all --schema apps/api/prisma/schema.prisma --dashboard apps/admin/src
 
 ---
 
+---
+
+### `tgraph static`
+
+Generate selectable static backend files including guards, decorators, DTOs, interceptors, and utilities.
+
+```bash
+tgraph static [options]
+```
+
+**Options:**
+
+- `--list` - List available static modules and exit
+- `--include <names>` - Comma-separated list of modules to include (e.g., `admin.guard,pagination.interceptor`)
+- `-y, --yes` - Generate all modules without prompts
+- `-c, --config <path>` - Path to configuration file
+
+**Available static modules:**
+
+- `admin.guard` - Admin role guard implementation
+- `feature-flag.guard` - Feature flag guard stub
+- `is-admin.decorator` - IsAdmin decorator for endpoints
+- `paginated-search-query.dto` - Pagination query DTO
+- `paginated-search-result.dto` - Pagination result DTO
+- `api-response.dto` - Standard API response wrapper
+- `pagination.interceptor` - Pagination response interceptor
+- `audit.interceptor` - Audit logging interceptor stub
+- `paginated-search.decorator` - Paginated search endpoint decorator
+- `paginated-search.util` - Pagination utility functions
+
+**What it generates:**
+
+Static backend files are generated based on paths configured in `config.output.backend.staticFiles`:
+- Guards → `src/guards/`
+- Decorators → `src/decorators/`
+- DTOs → `src/dtos/`
+- Interceptors → `src/interceptors/`
+- Utils → `src/utils/`
+
+**Behavior:**
+
+- **Interactive mode** (default): Prompts for each module individually
+- **List mode** (`--list`): Shows available modules without generating
+- **Selective mode** (`--include`): Generates only specified modules
+- **Non-interactive mode** (`-y`): Generates all modules
+
+**Examples:**
+
+```bash
+# List available modules
+tgraph static --list
+
+# Interactive selection (prompts for each module)
+tgraph static
+
+# Generate specific modules
+tgraph static --include admin.guard,pagination.interceptor
+
+# Generate all modules without prompts
+tgraph static --yes
+
+# Generate with custom config
+tgraph static --config custom-config.ts --include admin.guard
+```
+
+**When to use:**
+
+- During `tgraph api` generation, you'll be prompted to generate required static files
+- Run standalone to regenerate or selectively add static files
+- Use `--include` to add new modules without regenerating everything
+
+---
+
+### `tgraph types`
+
+Regenerate the dashboard API client (`types/api.ts`). Runs the configured swagger command first, then feeds the resulting `swagger.json` into `swagger-typescript-api`.
+
+```bash
+tgraph types [options]
+```
+
+**Options:**
+
+- `-c, --config <path>` – Path to configuration file (defaults to `tgraph.config.ts`)
+- `--skip-swagger` – Skip running the swagger command (expects `swagger.json` already updated)
+
+**Behavior:**
+
+- Command to regenerate swagger is read from `dashboard.swagger.command` (defaults to `npm run generate:swagger`).
+- Path to `swagger.json` is resolved from `dashboard.swagger.jsonPath` (defaults to `<dashboardRoot>/types/swagger.json`).
+- If the swagger command fails or the JSON file is still missing, the command exits with an error.
+- Generates `types/api.ts` using `swagger-typescript-api`.
+
+**Examples:**
+
+```bash
+# Run swagger -> types end-to-end
+tgraph types
+
+# Skip running swagger command when swagger.json is already up to date
+tgraph types --skip-swagger
+```
+
+---
+
+### `tgraph swagger`
+
+Runs the configured swagger generation command (default `npm run generate:swagger`). Useful for regenerating the swagger file without producing TypeScript types.
+
+```bash
+tgraph swagger [options]
+```
+
+**Options:**
+
+- `-c, --config <path>` – Path to configuration file (defaults to `tgraph.config.ts`)
+
+**Example:**
+
+```bash
+tgraph swagger
+```
+
+---
+
 ## Options
 
 ### `--schema <path>`
@@ -437,6 +593,40 @@ tgraph api --suffix Admin
 - Files: `user.{suffix}.service.ts`, `user.{suffix}.controller.ts`
 
 ---
+
+### `--public`
+
+Forces a single run to generate public (unauthenticated) controllers without editing the config file. Internally it disables admin guards and authentication for the command invocation.
+
+```bash
+tgraph api --public
+```
+
+**Impact:**
+
+- Sets `api.authentication.enabled = false`
+- Sets `api.authentication.requireAdmin = false`
+- Controllers generated without `@UseGuards` decorators
+- Useful for creating separate public APIs alongside admin APIs
+
+**Use cases:**
+
+- Generate public endpoints while keeping config set for admin endpoints
+- Testing without authentication guards
+- Creating dual API configurations (admin + public)
+
+**Example workflow:**
+
+```bash
+# Generate admin API (uses config defaults)
+tgraph api --suffix Admin
+
+# Generate public API (overrides authentication)
+tgraph api --suffix Public --public
+```
+
+---
+
 
 ### `--admin`
 
@@ -546,20 +736,20 @@ tgraph --help
 tgraph <command> [options]
 
 Commands:
+  init        Initialize a new tgraph.config.ts file
   api         Generate NestJS modules, services, controllers, and update data provider
   dashboard   Generate React Admin dashboard resources and field directive config
   dtos        Generate NestJS DTO files
   all         Run api, dashboard, and dtos generators sequentially
+  static      Generate selectable static backend files (guards, dtos, utils)
+  types       Generate dashboard API client types from swagger.json
+  swagger     Run the configured swagger generation command
+  doctor      Run system diagnostics
+  preflight   Simulate generation without touching filesystem
 
 Options:
-  --schema <path>              Override Prisma schema path
-  --dashboard <path>           Override dashboard source directory
-  --dtos <path>                Override DTO output directory
-  --suffix <name>              Override suffix used for generated artifacts
-  --admin                      Force admin mode (isAdmin = true)
-  --no-admin                   Disable admin mode (isAdmin = false)
-  --update-data-provider       Enable data provider updates
-  --no-update-data-provider    Disable data provider updates
+  -c, --config <path>          Path to configuration file (default: tgraph.config.ts)
+  --public                     Override config to generate controllers without authentication guards
   -y, --yes, --non-interactive Automatically confirm interactive prompts
   --interactive                Force interactive prompts even if config sets nonInteractive
   -h, --help                   Display this help message
@@ -606,14 +796,23 @@ CLI options override config file values.
 ### First Time Setup
 
 ```bash
-# Initialize config file
+# Initialize config file with interactive wizard
 tgraph init
 
 # Check environment (recommended)
 tgraph doctor
 
+# Preview what will be generated
+tgraph preflight
+
 # Generate everything
 tgraph all
+
+# Generate static files if needed
+tgraph static
+
+# Generate dashboard API types
+tgraph types
 ```
 
 ### Standard Generation
@@ -621,6 +820,12 @@ tgraph all
 ```bash
 # Generate everything with defaults
 tgraph all
+
+# Generate static files interactively
+tgraph static
+
+# Update dashboard types from swagger
+tgraph types
 ```
 
 ### Backend Only
@@ -654,14 +859,43 @@ tgraph all \
 tgraph api --no-admin --suffix Public
 ```
 
-### Multiple Generations
+### Multiple API Generations
 
 ```bash
-# Admin API
+# Admin API with authentication
 tgraph api --suffix Admin
 
-# Public API
-tgraph api --no-admin --suffix Public --dtos src/public-dtos
+# Public API without authentication
+tgraph api --suffix Public --public
+
+# Generate static files for admin API
+tgraph static --include admin.guard,pagination.interceptor
+```
+
+### Static Files Only
+
+```bash
+# List what's available
+tgraph static --list
+
+# Generate specific modules
+tgraph static --include admin.guard,is-admin.decorator
+
+# Generate all modules non-interactively
+tgraph static --yes
+```
+
+### Dashboard Types Generation
+
+```bash
+# Generate swagger.json and types/api.ts
+tgraph types
+
+# Only generate types (skip swagger regeneration)
+tgraph types --skip-swagger
+
+# Only regenerate swagger.json
+tgraph swagger
 ```
 
 ---

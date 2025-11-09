@@ -27,6 +27,10 @@ const baseConfig: Config = {
     dashboard: {
       root: 'dashboard/src',
       resources: 'dashboard/src/resources',
+      swagger: {
+        command: 'npm run generate:swagger',
+        jsonPath: 'dashboard/src/types/swagger.json',
+      },
     },
   },
   api: {

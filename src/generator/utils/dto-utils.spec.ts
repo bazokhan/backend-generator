@@ -335,7 +335,7 @@ describe('DTO Utilities', () => {
       expect(result).toHaveLength(0);
     });
 
-    it('should exclude array fields', () => {
+    it('should include array fields with proper validation', () => {
       const fields: PrismaField[] = [
         {
           name: 'tags',
@@ -352,7 +352,9 @@ describe('DTO Utilities', () => {
       ];
 
       const result = filterDtoFields(fields, 'create');
-      expect(result).toHaveLength(0);
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('tags');
+      expect(result[0].isArray).toBe(true);
     });
 
     it('should exclude relation fields', () => {

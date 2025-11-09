@@ -27,6 +27,8 @@ export class DashboardGenerator {
   private readonly schemaParser: PrismaSchemaParser;
   private readonly schemaPath: string;
   private readonly workspaceRoot: string;
+  private readonly swaggerJsonPath: string;
+  private readonly swaggerCommand: string;
   constructor(config: Config) {
     this.config = config;
     this.fieldParser = new PrismaFieldParser();
@@ -43,6 +45,14 @@ export class DashboardGenerator {
     this.dashboardAbsolutePath = this.projectPathResolver.getDashboardRoot();
     this.nonInteractive = config.behavior.nonInteractive;
     this.appComponentPath = this.projectPathResolver.resolveDashboardAppComponentPath();
+    this.swaggerCommand = this.config.output.dashboard.swagger?.command ?? 'npm run generate:swagger';
+    const configuredSwaggerPath = this.config.output.dashboard.swagger?.jsonPath;
+    const resolvedSwaggerPath = configuredSwaggerPath
+      ? path.isAbsolute(configuredSwaggerPath)
+        ? configuredSwaggerPath
+        : path.join(this.workspaceRoot, configuredSwaggerPath)
+      : path.join(this.dashboardAbsolutePath, 'types', 'swagger.json');
+    this.swaggerJsonPath = resolvedSwaggerPath;
   }
 
   private async generateCRUDPages(): Promise<void> {
@@ -129,10 +139,12 @@ export class DashboardGenerator {
   private generateTypes(): void {
     console.log('🔧 Generating TypeScript types from Swagger...');
 
-    const swaggerJsonPath = path.join(this.dashboardAbsolutePath, 'types', 'swagger.json');
+    const swaggerJsonPath = this.swaggerJsonPath;
 
     if (!fs.existsSync(swaggerJsonPath)) {
-      console.warn('⚠️ Swagger JSON file not found. Please run "npm run generate:swagger" first.');
+      console.warn(
+        `⚠️ Swagger JSON file not found. Please run "${this.swaggerCommand}" first or configure dashboard.swagger`,
+      );
       return;
     }
 
@@ -288,7 +300,6 @@ export class DashboardGenerator {
 
     try {
       this.parseSchema();
-      this.generateTypes();
       await this.generateCRUDPages();
       this.generateFieldDirectiveConfig();
       this.updateAppComponent();
