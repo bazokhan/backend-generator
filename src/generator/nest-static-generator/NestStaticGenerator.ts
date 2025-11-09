@@ -12,6 +12,10 @@ import {
   paginatedSearchResultDtoTemplate,
   paginatedSearchUtilTemplate,
   paginationInterceptorTemplate,
+  adapterRuntimeTemplate,
+  adapterTypesTemplate,
+  adapterHelpersTemplate,
+  adapterContextTemplate,
 } from './templates';
 import { defaultStaticGeneratorOptions, StaticTemplateOptions } from './config';
 import { GuardResolver } from '../nest-controller-generator/GuardResolver';
@@ -42,8 +46,15 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
     auditInterceptor: string;
     paginatedSearchDecorator: string;
     paginatedSearchUtil: string;
+    adapterRuntime: string;
+    adapterTypes: string;
+    adapterHelpers: string;
+    adapterContext: string;
   } {
     const staticFiles = this.config.output.backend.staticFiles;
+    // Adapter files go in a dedicated directory
+    const adaptersPath = path.join(this.workspaceRoot, 'src', 'adapters');
+    
     return {
       adminGuard: this.resolveStaticPath(staticFiles.guards, 'admin.guard.ts'),
       featureFlagGuard: this.resolveStaticPath(staticFiles.guards, 'feature-flag.guard.ts'),
@@ -55,6 +66,10 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
       auditInterceptor: this.resolveStaticPath(staticFiles.interceptors, 'audit.interceptor.ts'),
       paginatedSearchDecorator: this.resolveStaticPath(staticFiles.decorators, 'paginated-search.decorator.ts'),
       paginatedSearchUtil: this.resolveStaticPath(staticFiles.utils, 'paginated-search.ts'),
+      adapterRuntime: path.join(adaptersPath, 'runtime.ts'),
+      adapterTypes: path.join(adaptersPath, 'types.ts'),
+      adapterHelpers: path.join(adaptersPath, 'helpers.ts'),
+      adapterContext: path.join(adaptersPath, 'context.ts'),
     };
   }
 
@@ -188,6 +203,26 @@ export class AuditInterceptor implements NestInterceptor {
           queryDtoPath: this.createImportPath(outputs.paginatedSearchUtil, outputs.paginatedSearchQueryDto),
           resultDtoPath: this.createImportPath(outputs.paginatedSearchUtil, outputs.paginatedSearchResultDto),
         }),
+      },
+      {
+        name: 'adapter.runtime',
+        target: outputs.adapterRuntime,
+        content: adapterRuntimeTemplate,
+      },
+      {
+        name: 'adapter.types',
+        target: outputs.adapterTypes,
+        content: adapterTypesTemplate,
+      },
+      {
+        name: 'adapter.helpers',
+        target: outputs.adapterHelpers,
+        content: adapterHelpersTemplate,
+      },
+      {
+        name: 'adapter.context',
+        target: outputs.adapterContext,
+        content: adapterContextTemplate,
       },
     ];
 

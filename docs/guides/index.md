@@ -16,4 +16,6 @@ In-depth guides for working with TGraph Backend Generator.
 - **[Field Directives](./field-directives)** - Control generation behavior with field-level directives
 - **[Naming Conventions](./naming-conventions)** - Understand naming patterns across the system
 - **[Customization](./customization)** - Extend and customize generated code
+- **[Custom Adapters](./custom-adapters)** - Create custom endpoints without editing generated files
+- **[Authentication Guards](./authentication-guards)** - Configure authentication and authorization
 

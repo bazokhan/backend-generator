@@ -195,6 +195,7 @@ export const getControllerImportStatements = ({
     `import { Create${pascalCaseName}${namingSuffix}Dto } from './create-${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.dto';`,
     `import { Update${pascalCaseName}${namingSuffix}Dto } from './update-${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.dto';`,
     `import { ${pascalCaseName} } from '@/generated/prisma';`,
+    `import { PrismaService } from '@/infrastructure/database/prisma.service';`,
   );
 
   return `\n${importLines.join('\n')}\n`;

@@ -6,4 +6,8 @@ export { paginatedSearchDecoratorTemplate } from './paginated-search.decorator.t
 export { paginationInterceptorTemplate } from './pagination.interceptor.template';
 export { paginatedSearchUtilTemplate } from './paginated-search.util.template';
 export { apiResponseDtoTemplate } from './api-response.dto.template';
+export { adapterRuntimeTemplate } from './adapter-runtime.template';
+export { adapterTypesTemplate } from './adapter-types.template';
+export { adapterHelpersTemplate } from './adapter-helpers.template';
+export { adapterContextTemplate } from './adapter-context.template';
 

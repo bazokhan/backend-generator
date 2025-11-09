@@ -24,6 +24,17 @@ export function toCamelCase(str: string): string {
 }
 
 /**
+ * Convert string to PascalCase
+ * Example: hello-world -> HelloWorld
+ */
+export function toPascalCase(str: string): string {
+  return str
+    .split(/[-_\s]+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join('');
+}
+
+/**
  * Simple pluralization
  * Example: type -> types, field -> fields
  */

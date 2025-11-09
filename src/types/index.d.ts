@@ -192,7 +192,7 @@ export interface ProjectPathsConfig {
   };
 }
 
-interface IParser {
+export interface IParser {
   parse(input?: any): any;
 }
 
@@ -265,3 +265,20 @@ export interface FieldDirective {
   apply(field: PrismaField, sourceText: string): void;
   serialize?(field: PrismaField): Record<string, unknown> | undefined;
 }
+
+// Re-export adapter types
+export type {
+  HttpMethod,
+  AdapterType,
+  AdapterConfig,
+  AdapterHelpers,
+  AdapterDI,
+  AdapterContext,
+  AdapterServiceCallResult,
+  AdapterDirectResponse,
+  AdapterResult,
+  AdapterHandler,
+  AdapterDefinition,
+  AdapterFactoryOptions,
+  AdapterFactoryResult,
+} from './adapter';

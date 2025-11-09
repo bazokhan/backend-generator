@@ -15,4 +15,5 @@ Everything exported by `@tgraph/backend-generator` is documented here. Use these
 - **[Parsers](./parsers.md)** – Prisma and Nest parsers plus their data structures
 - **[Utilities](./utilities.md)** – Config loading, path resolution, module updaters, prompts, and formatters
 - **[Configuration](./configuration.md)** – Exhaustive description of the `Config` contract used across the toolkit
+- **[Adapters](./adapters.md)** – Complete API reference for custom adapter endpoints
 
