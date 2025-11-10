@@ -454,7 +454,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## GitHub Releases
 
-Create GitHub releases to match npm versions:
+Create GitHub releases to match npm versions. For detailed instructions, see **[GitHub Releases Guide](./github-releases.md)**.
+
+**Quick method:**
+
+```bash
+# Manual
+gh release create v1.1.0 --title "v1.1.0" --notes-file CHANGELOG.md --latest
+
+# Automated (recommended)
+npm run release:minor  # Bumps version, publishes, creates release
+```
+
+**Web interface:**
 
 1. Go to GitHub repository
 2. Click "Releases" → "Draft a new release"
