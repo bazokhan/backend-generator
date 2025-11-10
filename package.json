@@ -1,6 +1,6 @@
 {
   "name": "@tgraph/backend-generator",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "CLI toolkit for generating NestJS APIs, DTOs, and React Admin dashboards from Prisma schemas.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,12 +11,16 @@
     "dist"
   ],
   "scripts": {
-    "build": "rimraf dist && tsc -p tsconfig.json",
+    "build": "rimraf dist && tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
     "package": "npm run build && rimraf package && npm pack && node -e \"const fs=require('fs'); const f=fs.readdirSync('.').find(x=>x.endsWith('.tgz')); fs.mkdirSync('package',{recursive:true}); require('child_process').execSync(`tar -xzf ${f} -C package`)\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm test",
     "test": "jest",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "release": "npm run build && npm test && node -e \"const v = require('./package.json').version; require('child_process').execSync(`git tag -a v${v} -m 'Release v${v}'`, {stdio: 'inherit'}); require('child_process').execSync(`git push origin v${v}`, {stdio: 'inherit'}); require('child_process').execSync(`gh release create v${v} --title 'v${v}' --notes-file CHANGELOG.md --latest`, {stdio: 'inherit'});\"",
+    "release:patch": "npm version patch && npm run release",
+    "release:minor": "npm version minor && npm run release",
+    "release:major": "npm version major && npm run release"
   },
   "author": "Mohamed Elbaz",
   "license": "ISC",
@@ -51,6 +55,7 @@
     "jest": "^30.2.0",
     "prettier": "^3.6.2",
     "rimraf": "^6.1.0",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3"
   }
 }
