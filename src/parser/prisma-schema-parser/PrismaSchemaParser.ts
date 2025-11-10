@@ -62,7 +62,7 @@ export class PrismaSchemaParser implements IPrismaSchemaParser<PrismaModel> {
     if (line.startsWith('///')) {
       // Check for @tg_form() and @tg_label() in triple-slash comments
       this.handleComment(line);
-      
+
       if (this.state === State.InModel) {
         const content = line.replace(/^\/\/\//, '').trim();
         this.pendingFieldDocComment = this.pendingFieldDocComment

@@ -29,35 +29,35 @@ Components are organized into two categories:
 
 ### Form Components (Inputs)
 
-| Component | Used For | Default Import |
-|-----------|----------|----------------|
-| `TextInput` | String fields | `@/components/admin` |
-| `NumberInput` | Numeric fields | `@/components/admin` |
-| `BooleanInput` | Boolean fields | `@/components/admin` |
-| `DateTimeInput` | DateTime fields | `@/components/admin` |
-| `SelectInput` | Enum fields | `@/components/admin` |
-| `ReferenceInput` | Relation fields (single) | `@/components/admin` |
-| `ReferenceArrayInput` | Relation fields (array) | `@/components/admin` |
-| `AutocompleteInput` | Autocomplete (single) | `@/components/admin` |
-| `AutocompleteArrayInput` | Autocomplete (array) | `@/components/admin` |
-| `JsonInput` | JSON fields | `@/components/admin` |
-| `FileInput` | File uploads | `@/components/admin` |
-| `UrlInput` | URL fields | `@/components/admin` |
+| Component                | Used For                 | Default Import       |
+| ------------------------ | ------------------------ | -------------------- |
+| `TextInput`              | String fields            | `@/components/admin` |
+| `NumberInput`            | Numeric fields           | `@/components/admin` |
+| `BooleanInput`           | Boolean fields           | `@/components/admin` |
+| `DateTimeInput`          | DateTime fields          | `@/components/admin` |
+| `SelectInput`            | Enum fields              | `@/components/admin` |
+| `ReferenceInput`         | Relation fields (single) | `@/components/admin` |
+| `ReferenceArrayInput`    | Relation fields (array)  | `@/components/admin` |
+| `AutocompleteInput`      | Autocomplete (single)    | `@/components/admin` |
+| `AutocompleteArrayInput` | Autocomplete (array)     | `@/components/admin` |
+| `JsonInput`              | JSON fields              | `@/components/admin` |
+| `FileInput`              | File uploads             | `@/components/admin` |
+| `UrlInput`               | URL fields               | `@/components/admin` |
 
 ### Display Components (Fields)
 
-| Component | Used For | Default Import |
-|-----------|----------|----------------|
-| `TextField` | String fields | `@/components/admin` |
-| `NumberField` | Numeric fields | `@/components/admin` |
-| `BooleanField` | Boolean fields | `@/components/admin` |
-| `DateField` | Date fields | `@/components/admin` |
-| `DateTimeField` | DateTime fields | `@/components/admin` |
-| `SelectField` | Enum fields | `@/components/admin` |
+| Component        | Used For        | Default Import       |
+| ---------------- | --------------- | -------------------- |
+| `TextField`      | String fields   | `@/components/admin` |
+| `NumberField`    | Numeric fields  | `@/components/admin` |
+| `BooleanField`   | Boolean fields  | `@/components/admin` |
+| `DateField`      | Date fields     | `@/components/admin` |
+| `DateTimeField`  | DateTime fields | `@/components/admin` |
+| `SelectField`    | Enum fields     | `@/components/admin` |
 | `ReferenceField` | Relation fields | `@/components/admin` |
-| `JsonField` | JSON fields | `@/components/admin` |
-| `FileField` | File fields | `@/components/admin` |
-| `UrlField` | URL fields | `@/components/admin` |
+| `JsonField`      | JSON fields     | `@/components/admin` |
+| `FileField`      | File fields     | `@/components/admin` |
+| `UrlField`       | URL fields      | `@/components/admin` |
 
 ## Configuration
 
@@ -75,19 +75,19 @@ export const config: Config = {
       form: {
         TextInput: {
           name: 'CustomTextInput',
-          importPath: '@/components/inputs/TextInput'
+          importPath: '@/components/inputs/TextInput',
         },
         NumberInput: {
           name: 'CustomNumberInput',
-          importPath: '@/components/inputs/NumberInput'
+          importPath: '@/components/inputs/NumberInput',
         },
       },
-      
+
       // Display components (used in List/Show pages)
       display: {
         TextField: {
           name: 'CustomTextField',
-          importPath: '@/components/fields/TextField'
+          importPath: '@/components/fields/TextField',
         },
       },
     },
@@ -108,7 +108,7 @@ import { useInput, InputProps } from 'react-admin';
 
 export const CustomTextInput: React.FC<InputProps> = (props) => {
   const { field, fieldState } = useInput(props);
-  
+
   return (
     <div className="mb-4">
       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -155,7 +155,7 @@ import { TextField } from '@mui/material';
 
 export const MuiNumberInput: React.FC<InputProps> = (props) => {
   const { field, fieldState } = useInput(props);
-  
+
   return (
     <TextField
       {...field}
@@ -210,7 +210,7 @@ export const EmailInput: React.FC<InputProps> = (props) => {
       return undefined;
     },
   });
-  
+
   return (
     <div className="mb-4">
       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -257,16 +257,16 @@ import { useRecordContext, FieldProps } from 'react-admin';
 export const CurrencyField: React.FC<FieldProps> = (props) => {
   const record = useRecordContext();
   const value = record?.[props.source];
-  
+
   if (value === null || value === undefined) {
     return <span className="text-gray-400">—</span>;
   }
-  
+
   const formatted = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
   }).format(value);
-  
+
   return <span className="font-medium text-green-600">{formatted}</span>;
 };
 ```
@@ -305,7 +305,7 @@ interface CustomInputProps extends InputProps {
 export const CustomInput: React.FC<CustomInputProps> = (props) => {
   // Must use useInput hook
   const { field, fieldState } = useInput(props);
-  
+
   // Return JSX with field spread
   return <input {...field} />;
 };
@@ -325,7 +325,7 @@ export const CustomField: React.FC<CustomFieldProps> = (props) => {
   // Must use useRecordContext hook
   const record = useRecordContext();
   const value = record?.[props.source];
-  
+
   // Return JSX with value
   return <span>{value}</span>;
 };
@@ -357,7 +357,7 @@ Support all field states (error, touched, dirty):
 ```typescript
 export const CustomInput: React.FC<InputProps> = (props) => {
   const { field, fieldState } = useInput(props);
-  
+
   return (
     <div>
       <input
@@ -380,7 +380,7 @@ Respect the disabled and readOnly props:
 ```typescript
 export const CustomInput: React.FC<InputProps> = (props) => {
   const { field } = useInput(props);
-  
+
   return (
     <input
       {...field}
@@ -406,13 +406,13 @@ const inputStyles = {
 
 export const CustomInput: React.FC<InputProps> = (props) => {
   const { field, fieldState } = useInput(props);
-  
+
   const className = [
     inputStyles.base,
     fieldState.error ? inputStyles.error : inputStyles.normal,
     props.disabled ? inputStyles.disabled : '',
   ].join(' ');
-  
+
   return <input {...field} className={className} />;
 };
 ```
@@ -480,12 +480,12 @@ If the component renders but doesn't work:
 export const ConditionalInput: React.FC<InputProps> = (props) => {
   const { field, fieldState } = useInput(props);
   const record = useRecordContext();
-  
+
   // Show different input based on another field
   if (record?.type === 'email') {
     return <input {...field} type="email" />;
   }
-  
+
   return <input {...field} type="text" />;
 };
 ```
@@ -509,4 +509,3 @@ export const AddressInput: React.FC<InputProps> = (props) => {
 - [Configuration Reference](../api/configuration.md) - Full config options
 - [Authentication Guards](./authentication-guards.md) - Configure guards
 - [Field Directives](./field-directives.md) - Control field generation
-

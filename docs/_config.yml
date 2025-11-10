@@ -6,17 +6,17 @@ theme: just-the-docs
 title: TGraph Backend Generator
 description: Generate NestJS APIs and React Admin dashboards from Prisma schemas
 # baseurl: "" # Not needed for local development
-url: "http://localhost:4000" # Local development
+url: 'http://localhost:4000' # Local development
 
 # Logo
-logo: "/logo.png"
+logo: '/logo.png'
 
 # Color Scheme
 color_scheme: light # Use built-in light theme
 
 # Custom CSS (purple accents)
 custom_css:
-  - "/assets/css/custom.css"
+  - '/assets/css/custom.css'
 
 # Search
 search_enabled: true
@@ -31,17 +31,17 @@ search:
 
 # Aux Links (top right)
 aux_links:
-  "TGraph on GitHub":
-    - "https://github.com/trugraph/backend-generator"
-  "npm Package":
-    - "https://www.npmjs.com/package/@tgraph/backend-generator"
+  'TGraph on GitHub':
+    - 'https://github.com/trugraph/backend-generator'
+  'npm Package':
+    - 'https://www.npmjs.com/package/@tgraph/backend-generator'
 
 # Footer
 footer_content: 'Copyright &copy; 2025 TGraph. Distributed under the <a href="https://github.com/trugraph/backend-generator/blob/main/LICENSE">ISC License</a>.'
 
 # Back to top link
 back_to_top: true
-back_to_top_text: "Back to top"
+back_to_top_text: 'Back to top'
 
 # External navigation links
 nav_external_links:
@@ -52,13 +52,13 @@ nav_external_links:
 # Collections for organizing content (optional)
 collections:
   guides:
-    permalink: "/:collection/:path/"
+    permalink: '/:collection/:path/'
     output: true
   recipes:
-    permalink: "/:collection/:path/"
+    permalink: '/:collection/:path/'
     output: true
   api:
-    permalink: "/:collection/:path/"
+    permalink: '/:collection/:path/'
     output: true
 
 # Callouts (for notes, warnings, etc)

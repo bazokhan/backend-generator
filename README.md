@@ -165,7 +165,7 @@ export const config: Config = {
   input: {
     schemaPath: 'prisma/schema.prisma',
   },
-  
+
   output: {
     backend: {
       dtos: 'src/dtos/generated',
@@ -189,34 +189,30 @@ export const config: Config = {
       },
     },
   },
-  
+
   api: {
     suffix: 'Admin',
     prefix: 'tg-api',
     authentication: {
       enabled: true,
       requireAdmin: true,
-      guards: [
-        { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-      ],
-      adminGuards: [
-        { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
-      ],
+      guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
+      adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
     },
     relations: {
       include: [], // or 'all' or ['author', 'comments']
     },
   },
-  
+
   dashboard: {
     enabled: true,
     updateDataProvider: true,
     components: {
-      form: {},     // Override React Admin form components
-      display: {},  // Override React Admin display components
+      form: {}, // Override React Admin form components
+      display: {}, // Override React Admin display components
     },
   },
-  
+
   behavior: {
     nonInteractive: false,
   },
@@ -224,6 +220,7 @@ export const config: Config = {
 ```
 
 The new structured configuration makes it easy to:
+
 - Generate multiple APIs with different configs (`--config tgraph.admin.config.ts`)
 - Customize component imports for consistent UI
 - Configure authentication guards per API

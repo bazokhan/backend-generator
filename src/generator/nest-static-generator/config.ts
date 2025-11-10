@@ -4,7 +4,7 @@ export interface StaticTemplateOptions {
   adminRole: string;
   defaultLimit: number;
   defaultPage: number;
-};
+}
 
 export const defaultStaticGeneratorOptions: StaticTemplateOptions = {
   rolesEnumName: 'Role',

@@ -1,4 +1,5 @@
 export const adapterTypesTemplate = `import type { Request, Response } from 'express';
+import type * as Multer from 'multer';
 import type { PrismaService } from '@/infrastructure/database/prisma.service';
 
 /**
@@ -65,10 +66,10 @@ export interface AdapterHelpers {
   /** Upload utilities (user-implemented) */
   upload: {
     /** Upload file to MinIO or S3 */
-    minio?(file: Express.Multer.File, bucket?: string): Promise<string>;
+    minio?(file: Multer.File, bucket?: string): Promise<string>;
     
     /** Upload file to local storage */
-    local?(file: Express.Multer.File, directory?: string): Promise<string>;
+    local?(file: Multer.File, directory?: string): Promise<string>;
     
     [key: string]: any;
   };
@@ -105,7 +106,7 @@ export interface AdapterContext<TBody = any, TQuery = any, TParams = any> {
   body: TBody;
   
   /** Uploaded file(s) for multipart requests */
-  files?: Express.Multer.File | Express.Multer.File[];
+  files?: Multer.File | Multer.File[];
   
   /** Authenticated user (from guard/strategy) */
   user?: any;
@@ -155,10 +156,11 @@ export type AdapterResult = AdapterServiceCallResult | AdapterDirectResponse;
 
 /**
  * Adapter handler function signature
+ * Supports both synchronous and asynchronous handlers
  */
 export type AdapterHandler<TBody = any, TQuery = any, TParams = any> = (
   context: AdapterContext<TBody, TQuery, TParams>
-) => Promise<AdapterResult>;
+) => Promise<AdapterResult> | AdapterResult;
 
 /**
  * Options for the adapter runtime factory functions
@@ -177,4 +179,3 @@ export interface AdapterFactoryResult {
   type: AdapterType;
 }
 `;
-

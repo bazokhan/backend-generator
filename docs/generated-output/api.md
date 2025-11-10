@@ -39,8 +39,8 @@ For every model with `@tg_form()`:
    Searches all configured paths in `output.backend.modules.searchPaths` using camelCase, kebab-case, and plural variants.
 2. **Optional creation**  
    If nothing is found, the CLI prompts:  
-   `Do you want to create the module directory for <Model>? (y/n)`  
-   - `y`: creates `<defaultRoot>/<kebab-name>/` (based on `output.backend.modules.defaultRoot`) and seeds a module file.  
+   `Do you want to create the module directory for <Model>? (y/n)`
+   - `y`: creates `<defaultRoot>/<kebab-name>/` (based on `output.backend.modules.defaultRoot`) and seeds a module file.
    - `n`: skips this model entirely.
 
 Once a module path exists, the following files are written (overwriting any existing versions):

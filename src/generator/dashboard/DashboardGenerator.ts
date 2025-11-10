@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
-import type { Config, PrismaModel } from '@tg-scripts/types';
+import type { ComponentOverrides, Config, PrismaModel } from '@tg-scripts/types';
 import { formatGeneratedFiles, promptUser } from '../../io/utils';
 import { ProjectPathResolver } from '../../io/project-paths/ProjectPathResolver';
 import { buildFieldDirectiveFile } from '../../directives/field/field-directive-writer';
@@ -34,19 +34,21 @@ export class DashboardGenerator {
     this.fieldParser = new PrismaFieldParser();
     this.fieldRelationsParser = new PrismaRelationsParser();
     this.schemaParser = new PrismaSchemaParser(this.fieldParser, this.fieldRelationsParser);
-    this.reactComponentsGenerator = new ReactComponentsGenerator(config.dashboard.components);
+    this.reactComponentsGenerator = new ReactComponentsGenerator(
+      config.input.dashboard.components as ComponentOverrides,
+    );
     this.workspaceRoot = process.cwd();
     this.projectPathResolver = new ProjectPathResolver(config, { workspaceRoot: this.workspaceRoot });
-    this.schemaPath = this.config.input.schemaPath;
+    this.schemaPath = this.config.input.prisma.schemaPath as string;
     this.schemaAbsolutePath = path.isAbsolute(this.schemaPath)
       ? this.schemaPath
       : path.join(this.workspaceRoot, this.schemaPath);
-    this.dashboardPath = this.config.output.dashboard.root;
+    this.dashboardPath = this.config.output.dashboard.root as string;
     this.dashboardAbsolutePath = this.projectPathResolver.getDashboardRoot();
-    this.nonInteractive = config.behavior.nonInteractive;
+    this.nonInteractive = config.behavior.nonInteractive as boolean;
     this.appComponentPath = this.projectPathResolver.resolveDashboardAppComponentPath();
-    this.swaggerCommand = this.config.output.dashboard.swagger?.command ?? 'npm run generate:swagger';
-    const configuredSwaggerPath = this.config.output.dashboard.swagger?.jsonPath;
+    this.swaggerCommand = 'npm run generate:swagger';
+    const configuredSwaggerPath = this.config.output.dashboard.swaggerJsonPath as string;
     const resolvedSwaggerPath = configuredSwaggerPath
       ? path.isAbsolute(configuredSwaggerPath)
         ? configuredSwaggerPath
@@ -86,7 +88,7 @@ export class DashboardGenerator {
           console.log(`🗑️ Deleting existing folder for ${model.name}...`);
           fs.rmSync(resourcePath, { recursive: true, force: true });
         } else {
-        console.log(`⏭️ Skipping ${model.name}...`);
+          console.log(`⏭️ Skipping ${model.name}...`);
           continue;
         }
       }

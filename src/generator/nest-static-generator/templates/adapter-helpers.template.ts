@@ -90,8 +90,11 @@ function assert(condition: any, message?: string): asserts condition {
 /**
  * Helper utilities object exported to adapter context
  * Note: upload utilities are placeholders and should be implemented by the user
+ * 
+ * Important: This object preserves the assertion signature for assert()
+ * Type it explicitly to avoid losing the 'asserts' type guard
  */
-export const helpers: AdapterHelpers = {
+export const helpers = {
   uuid,
   slugify,
   ext,
@@ -100,13 +103,12 @@ export const helpers: AdapterHelpers = {
   upload: {
     // Placeholder - users should implement their own upload logic
     // Example implementation:
-    // async minio(file: Express.Multer.File, bucket: string = 'default'): Promise<string> {
+    // async minio(file: Multer.File, bucket: string = 'default'): Promise<string> {
     //   const minioClient = new Minio.Client({ ... });
     //   const filename = \`\${uuid()}-\${file.originalname}\`;
     //   await minioClient.putObject(bucket, filename, file.buffer);
     //   return \`https://minio.example.com/\${bucket}/\${filename}\`;
     // }
   },
-};
+} as const;
 `;
-

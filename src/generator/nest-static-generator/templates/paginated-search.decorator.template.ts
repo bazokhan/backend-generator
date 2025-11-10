@@ -7,4 +7,3 @@ export function PaginatedSearch<T = any>() {
   );
 }
 `;
-

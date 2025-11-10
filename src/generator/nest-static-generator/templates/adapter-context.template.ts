@@ -1,4 +1,5 @@
 export const adapterContextTemplate = `import type { Request, Response } from 'express';
+import type * as Multer from 'multer';
 import type { PrismaService } from '@/infrastructure/database/prisma.service';
 import type { AdapterContext, AdapterDI } from './types';
 import { helpers } from './helpers';
@@ -24,7 +25,7 @@ export class AdapterContextBuilder {
   build(
     req: Request,
     res: Response,
-    files?: Express.Multer.File | Express.Multer.File[]
+    files?: Multer.File | Multer.File[]
   ): AdapterContext {
     const di: AdapterDI = {
       prisma: this.prisma,
@@ -47,4 +48,3 @@ export class AdapterContextBuilder {
   }
 }
 `;
-

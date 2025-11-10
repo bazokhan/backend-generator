@@ -212,7 +212,7 @@ if (moduleInfo) {
 ```typescript
 interface ModulePathInfo {
   path: string; // e.g., 'src/features/user'
-  type: string;  // Folder name where module is found (e.g., 'features', 'modules', 'domains', etc.)
+  type: string; // Folder name where module is found (e.g., 'features', 'modules', 'domains', etc.)
   folderName: string; // e.g., 'user'
 }
 ```
@@ -691,7 +691,7 @@ interface Config {
 ```typescript
 interface ModulePathInfo {
   path: string;
-  type: string;  // Folder name where module is found
+  type: string; // Folder name where module is found
   folderName: string;
 }
 ```

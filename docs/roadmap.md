@@ -2,7 +2,7 @@
 layout: default
 title: Roadmap
 nav_order: 80
-description: "Milestone-based roadmap for the TGraph Backend Generator"
+description: 'Milestone-based roadmap for the TGraph Backend Generator'
 ---
 
 # TGraph Backend Generator - Project Roadmap
@@ -28,6 +28,7 @@ description: "Milestone-based roadmap for the TGraph Backend Generator"
 ## Current State (v0.0.2)
 
 ### ✅ What Works Today
+
 - CLI commands (`api`, `dashboard`, `dtos`, `all`, `init`) that generate NestJS + React Admin artifacts from Prisma schemas.
 - Prisma schema parsing with directive support for `@tg_form`, `@tg_format`, `@tg_upload`, and `@tg_readonly`.
 - Automated generation of Nest DTOs, services, controllers, module updates, and React Admin resources (List/Edit/Create/Show/Studio).
@@ -35,6 +36,7 @@ description: "Milestone-based roadmap for the TGraph Backend Generator"
 - Documentation covering getting started, field directives, architecture, SDK usage, and troubleshooting.
 
 ### ⚠️ Gaps Observed
+
 - Hard-coded file path assumptions (`src/app.module.ts`, `src/dashboard/src/...`) make adoption brittle for non-standard project layouts.
 - CLI prompts block CI/non-interactive workflows; there is no `--yes`, dry-run, or diff preview.
 - Missing environment preflight: absent schema files, Swagger JSON, or formatting tools cause late failures.
@@ -62,6 +64,7 @@ description: "Milestone-based roadmap for the TGraph Backend Generator"
   - [x] Types generation decoupled from `dashboard` command; use `tgraph types` after updating `swagger.json`.
 
 Open items moved to backlog:
+
 - [ ] Static module commands: richer help per template with usage notes.
 - [ ] Services: support relation `include` in responses.
 - [ ] Service methods: add `getOneBy<UniqueField>` for all unique fields.
@@ -72,6 +75,7 @@ Open items moved to backlog:
 ## Core Philosophy & Goals
 
 ### Design Principles
+
 1. **Convention Over Configuration** – Ship sensible defaults, reveal complexity only when needed.
 2. **Generate, Don't Replace** – Live alongside handcrafted code with clear boundaries and sentinel comments.
 3. **Progressive Disclosure** – Let teams scale from basic CRUD to advanced customization at their own pace.
@@ -79,6 +83,7 @@ Open items moved to backlog:
 5. **Production Ready** – Generated code must meet NestJS and React Admin best practices out of the box.
 
 ### Strategic Goals
+
 - Deliver a delightful developer experience that feels native to the NestJS + Prisma ecosystem.
 - Earn trust for production deployments through reliability, documentation, and observability.
 - Enable deep customization without forks via directives, templates, and SDK hooks.
@@ -92,6 +97,7 @@ Open items moved to backlog:
 We will iterate through small, outcome-driven milestones. Each milestone is independently shippable and focuses on widening real-world usability before adding breadth.
 
 Guiding heuristics:
+
 - Prioritize stability and automation so the generator is predictable in CI and team workflows.
 - Add capability only when we can cover it with tests, examples, and clear docs.
 - Expose extension points early to avoid forking and keep customizations first-class.
@@ -101,6 +107,7 @@ Guiding heuristics:
 ## Roadmap by Milestone
 
 ### Superseded Plan Items
+
 - ~~Phase 1: Foundation & Stability (v0.1.x - v0.5.x)~~ — Replaced with a lean milestone plan to ship a stable v0.1 faster.
 - ~~Phase 2: Enterprise Features (v0.6.x - v1.0.0)~~ — Folded into a focused production-readiness milestone once stability is proven.
 - ~~Phase 3: Multi-Framework Expansion (v1.1+)~~ — Deferred until the NestJS + React Admin experience is undeniably best-in-class.
@@ -109,11 +116,13 @@ Guiding heuristics:
 ### Milestone A – v0.1.0 Launch Readiness (target: 4–6 weeks)
 
 #### Goals
+
 - Make generation reliable on real-world NestJS + React Admin projects.
 - Support scripted/CI usage without manual intervention.
 - Detect misconfiguration early with actionable guidance.
 
 #### Deliverables
+
 - [x] **TOP PRIORITY** Add non-interactive mode (`--yes` flag + config option) covering module creation, overwrites, and dashboard regeneration so CI pipelines can run `tgraph` safely.
 - [x] **TOP PRIORITY** Validate configuration before execution (schema validation, friendly errors) and ship `tgraph doctor` to surface missing files, Prisma issues, or incompatible Node versions upfront.
 - [x] **TOP PRIORITY** Make key project paths configurable (Nest AppModule location, feature/infrastructure roots, dashboard provider & App entry) with intelligent discovery and clear docs.
@@ -124,11 +133,13 @@ Guiding heuristics:
 ### Milestone B – v0.2.0 Developer Experience (target: 6–8 weeks after v0.1)
 
 #### Goals
+
 - Shorten the iteration loop when evolving Prisma schemas.
 - Give developers confidence before committing generated code.
 - Extend directives based on actual user feedback instead of speculative breadth.
 
 #### Deliverables
+
 - [ ] Implement `--watch` / `tgraph dev` mode that reruns relevant generators on Prisma schema changes with clear status output.
 - [ ] Add `--diff` and `--output-dir` options to preview generated changes or emit to a sandbox directory before applying.
 - [ ] Allow overriding templates via project-local hooks (e.g., `templates/nest/service.ts.ejs`) with merge-safe defaults.
@@ -138,10 +149,12 @@ Guiding heuristics:
 ### Milestone C – v0.3.0 Production Readiness (target: 8–10 weeks after v0.2)
 
 #### Goals
+
 - Ship the first production deployments with minimal manual stitching.
 - Bake in enterprise requirements without overwhelming first-time users.
 
 #### Deliverables
+
 - [ ] Generate optional RBAC scaffolding (policy classes, decorators, dashboard access control) that plugs into existing Nest guards.
 - [ ] Support relation-heavy workflows: nested create/update for many-to-many, configurable cascade behaviour, and safer handling of self-relations.
 - [ ] Enhance REST endpoints with richer query options (range filters, nested sorting, soft-delete awareness) and align the React Admin data provider to consume them.
@@ -151,10 +164,12 @@ Guiding heuristics:
 ### Milestone D – v0.4.0 Extensibility & Integrations (target: after v0.3)
 
 #### Goals
+
 - Let teams extend behaviour without forking the core.
 - Validate the architecture against an additional frontend integration once the core is stable.
 
 #### Deliverables
+
 - [ ] Introduce a stable plugin API (Node hooks) for custom directives, templates, and post-processing steps.
 - [ ] Add a proof-of-concept alternate frontend integration (e.g., React Admin + TanStack Router or a lightweight Next.js admin) to demonstrate extensibility.
 - [ ] Expose granular SDK commands for selective regeneration (single model, dashboard only) with automation recipes.
@@ -203,11 +218,13 @@ Guiding heuristics:
 ## Long-Term Outlook
 
 ### 12–24 Month Horizon
+
 - Reach v1.0 with multiple documented production deployments and a stable API surface.
 - Evaluate adding GraphQL and alternative admin UI targets only after NestJS + React Admin parity is rock-solid.
 - Introduce enterprise-friendly features (workspace templates, policy packs) based on actual adopter feedback.
 
 ### Superseded Long-Term Items
+
 - ~~5-Year Vision (2030)~~ — We will revisit stretch goals like hosted platforms or conferences once the next two-year plan is delivered.
 
 ---
@@ -234,12 +251,14 @@ Guiding heuristics:
 ## Contributing to the Roadmap
 
 We welcome community input:
+
 - Suggest features via GitHub Discussions tagged `roadmap`.
 - Upvote priorities with 👍 reactions to help us order work.
 - Contribute code through issues tagged `help-wanted` and align PRs with active milestones.
 - Share case studies so we can prioritise directives and templates that unlock real projects.
 
 Roadmap governance:
+
 - Monthly check-ins to review milestone progress and adjust scope.
 - Public updates when priorities shift, with rationale.
 - Transparent criteria for promoting backlog items into upcoming milestones.
@@ -252,8 +271,8 @@ TGraph Backend Generator is focused on earning trust through reliability, polish
 
 ---
 
-*Last updated: January 2026*  
-*Next review: March 2026*
+_Last updated: January 2026_  
+_Next review: March 2026_
 
 For questions or suggestions, open a [GitHub Discussion](https://github.com/trugraph/backend-generator/discussions) or reach out to the maintainers.
 

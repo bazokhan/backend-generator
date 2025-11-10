@@ -147,6 +147,7 @@ interface ControllerImportOptions {
   isAdmin: boolean;
   guardImports?: string;
   includeUseGuards?: boolean;
+  hasAdapters?: boolean;
 }
 
 export const getControllerImportStatements = ({
@@ -157,17 +158,9 @@ export const getControllerImportStatements = ({
   isAdmin,
   guardImports,
   includeUseGuards,
+  hasAdapters,
 }: ControllerImportOptions) => {
-  const commonImports = [
-    'Controller',
-    'Get',
-    'Post',
-    'Put',
-    'Delete',
-    'Body',
-    'Param',
-    'Query',
-  ];
+  const commonImports = ['Controller', 'Get', 'Post', 'Put', 'Delete', 'Body', 'Param', 'Query'];
 
   if (includeUseGuards) {
     commonImports.push('UseGuards');
@@ -195,8 +188,12 @@ export const getControllerImportStatements = ({
     `import { Create${pascalCaseName}${namingSuffix}Dto } from './create-${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.dto';`,
     `import { Update${pascalCaseName}${namingSuffix}Dto } from './update-${camelCaseName}${fileSuffix ? `.${fileSuffix}` : ''}.dto';`,
     `import { ${pascalCaseName} } from '@/generated/prisma';`,
-    `import { PrismaService } from '@/infrastructure/database/prisma.service';`,
   );
+
+  // Only import PrismaService if adapters are present
+  if (hasAdapters) {
+    importLines.push(`import { PrismaService } from '@/infrastructure/database/prisma.service';`);
+  }
 
   return `\n${importLines.join('\n')}\n`;
 };

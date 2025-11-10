@@ -30,10 +30,31 @@ export function promptUser(question: string, options?: PromptUserOptions): Promi
   });
 
   return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      rl.close();
-      resolve(answer.trim().toLowerCase().startsWith('y'));
-    });
+    const ask = () => {
+      rl.question(question, (answer) => {
+        const trimmed = answer.trim().toLowerCase();
+
+        // If empty input and no default value is set, re-prompt
+        if (trimmed.length === 0 && options?.defaultValue === undefined) {
+          console.log('⚠️  Please enter y or n');
+          ask();
+          return;
+        }
+
+        // If empty input with default value, use default
+        if (trimmed.length === 0) {
+          rl.close();
+          resolve(options?.defaultValue ?? true);
+          return;
+        }
+
+        // Otherwise resolve with y/n answer
+        rl.close();
+        resolve(trimmed.startsWith('y'));
+      });
+    };
+
+    ask();
   });
 }
 

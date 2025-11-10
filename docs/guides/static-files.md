@@ -68,7 +68,7 @@ Endpoint-level decorator that marks routes as admin-only. Works in conjunction w
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class UserController {
   @Post()
-  @IsAdmin()  // Explicitly marks this endpoint as admin-only
+  @IsAdmin() // Explicitly marks this endpoint as admin-only
   create(@Body() dto: CreateUserDto) {
     // ...
   }
@@ -183,13 +183,10 @@ export class AuditInterceptor implements NestInterceptor {
 Helper functions for building Prisma queries with pagination, sorting, and searching.
 
 ```typescript
-export function buildPaginatedQuery(
-  query: PaginatedSearchQueryDto,
-  searchFields: string[],
-) {
+export function buildPaginatedQuery(query: PaginatedSearchQueryDto, searchFields: string[]) {
   const { page, limit, search, sortBy, sortOrder } = query;
   const skip = (page - 1) * limit;
-  
+
   return {
     skip,
     take: limit,
@@ -329,11 +326,11 @@ After generation, edit the files to fit your needs:
 @Injectable()
 export class AdminGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
-  
+
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    
+
     // Custom logic: check database, cache, etc.
     return user?.permissions?.includes('ADMIN_ACCESS');
   }
@@ -410,7 +407,7 @@ import { buildPaginatedQuery } from '@/utils/paginated-search';
 
 ## File Regeneration
 
-**Important:** Running `tgraph static` will **overwrite** existing files for selected modules. 
+**Important:** Running `tgraph static` will **overwrite** existing files for selected modules.
 
 **Best practices:**
 
@@ -471,12 +468,12 @@ async search(query: PaginatedSearchQueryDto) {
     query,
     this.searchFields,
   );
-  
+
   const [data, total] = await Promise.all([
     this.prisma.user.findMany({ skip, take, where, orderBy }),
     this.prisma.user.count({ where }),
   ]);
-  
+
   return { data, total, page: query.page, limit: query.limit };
 }
 ```
@@ -492,11 +489,13 @@ async search(query: PaginatedSearchQueryDto) {
 **Solutions:**
 
 1. Check config paths exist:
+
    ```bash
    ls -la src/guards src/decorators src/dtos
    ```
 
 2. Verify permissions:
+
    ```bash
    chmod -R u+w src/
    ```
@@ -513,6 +512,7 @@ async search(query: PaginatedSearchQueryDto) {
 **Solutions:**
 
 1. Ensure path aliases are configured in `tsconfig.json`:
+
    ```json
    {
      "compilerOptions": {
@@ -524,6 +524,7 @@ async search(query: PaginatedSearchQueryDto) {
    ```
 
 2. Run TypeScript compiler:
+
    ```bash
    npx tsc --noEmit
    ```
@@ -540,11 +541,13 @@ async search(query: PaginatedSearchQueryDto) {
 **Solutions:**
 
 1. Use version control to restore:
+
    ```bash
    git checkout -- src/guards/admin.guard.ts
    ```
 
 2. Use selective generation:
+
    ```bash
    # Only regenerate what's needed
    tgraph static --include pagination.interceptor
@@ -562,4 +565,3 @@ async search(query: PaginatedSearchQueryDto) {
 - **[Authentication Guards Guide](./authentication-guards.md)** - Configure and customize authentication
 - **[API Reference](../api/generators.md)** - Generator implementation details
 - **[CLI Reference](../cli-reference.md)** - Full command documentation
-

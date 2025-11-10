@@ -80,13 +80,13 @@ const api = new Api({ baseUrl: 'http://localhost:3000' });
 
 export const UserList = () => {
   const [users, setUsers] = useState([]);
-  
+
   useEffect(() => {
     api.users.usersControllerFindAll().then(data => {
       setUsers(data.data);  // Fully typed!
     });
   }, []);
-  
+
   return <div>{/* ... */}</div>;
 };
 ```
@@ -166,7 +166,7 @@ export const config: Config = {
       swagger: {
         // Command to run for generating swagger.json
         command: 'npm run generate:swagger',
-        
+
         // Path to swagger.json (relative to workspace root)
         jsonPath: 'src/dashboard/src/types/swagger.json',
       },
@@ -237,24 +237,21 @@ import * as path from 'path';
 
 async function generateSwagger() {
   const app = await NestFactory.create(AppModule);
-  
+
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('Backend API for dashboard')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
-  
-  const outputPath = path.join(
-    __dirname,
-    '../src/dashboard/src/types/swagger.json'
-  );
-  
+
+  const outputPath = path.join(__dirname, '../src/dashboard/src/types/swagger.json');
+
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, JSON.stringify(document, null, 2));
-  
+
   console.log(`✅ Swagger JSON generated: ${outputPath}`);
   process.exit(0);
 }
@@ -288,7 +285,7 @@ export class UsersController {
   async findAll(): Promise<UserDto[]> {
     return this.usersService.findAll();
   }
-  
+
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, description: 'User found', type: UserDto })
   @ApiResponse({ status: 404, description: 'User not found' })
@@ -313,7 +310,7 @@ export class Api<SecurityDataType = unknown> {
   public users: UsersApi<SecurityDataType>;
   public posts: PostsApi<SecurityDataType>;
   // ... other resources
-  
+
   constructor(config: ApiConfig<SecurityDataType>) {
     this.users = new UsersApi(config);
     this.posts = new PostsApi(config);
@@ -321,9 +318,15 @@ export class Api<SecurityDataType = unknown> {
 }
 
 export class UsersApi<SecurityDataType = unknown> {
-  usersControllerFindAll(params?: RequestParams): Promise<UserDto[]> { /* ... */ }
-  usersControllerFindOne(id: string, params?: RequestParams): Promise<UserDto> { /* ... */ }
-  usersControllerCreate(data: CreateUserDto, params?: RequestParams): Promise<UserDto> { /* ... */ }
+  usersControllerFindAll(params?: RequestParams): Promise<UserDto[]> {
+    /* ... */
+  }
+  usersControllerFindOne(id: string, params?: RequestParams): Promise<UserDto> {
+    /* ... */
+  }
+  usersControllerCreate(data: CreateUserDto, params?: RequestParams): Promise<UserDto> {
+    /* ... */
+  }
   // ... other methods
 }
 
@@ -398,19 +401,20 @@ export const useUsers = () => {
   const [users, setUsers] = useState<UserDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  
+
   useEffect(() => {
-    api.users.usersControllerFindAll()
-      .then(data => {
+    api.users
+      .usersControllerFindAll()
+      .then((data) => {
         setUsers(data);
         setLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         setError(err);
         setLoading(false);
       });
   }, []);
-  
+
   return { users, loading, error };
 };
 ```
@@ -429,30 +433,30 @@ export const dataProvider: DataProvider = {
   getList: async (resource, params) => {
     const { page, perPage } = params.pagination;
     const { field, order } = params.sort;
-    
+
     const response = await api[resource].findAll({
       page,
       limit: perPage,
       sortBy: field,
       sortOrder: order.toLowerCase(),
     });
-    
+
     return {
       data: response.data,
       total: response.total,
     };
   },
-  
+
   getOne: async (resource, params) => {
     const data = await api[resource].findOne(params.id);
     return { data };
   },
-  
+
   create: async (resource, params) => {
     const data = await api[resource].create(params.data);
     return { data };
   },
-  
+
   // ... other methods
 };
 ```
@@ -509,22 +513,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      
+
       - uses: actions/setup-node@v2
         with:
           node-version: '18'
-      
+
       - run: npm ci
-      
+
       - name: Generate Backend
         run: tgraph api --yes
-      
+
       - name: Generate Swagger
         run: npm run generate:swagger
-      
+
       - name: Generate Types
         run: tgraph types --skip-swagger
-      
+
       - name: Check for changes
         run: git diff --exit-code || echo "Generated files changed"
 ```
@@ -545,12 +549,14 @@ Expected at: src/dashboard/src/types/swagger.json
 **Solutions:**
 
 1. Run swagger generation first:
+
    ```bash
    npm run generate:swagger
    tgraph types --skip-swagger
    ```
 
 2. Check swagger command is configured correctly:
+
    ```typescript
    swagger: {
      command: 'npm run generate:swagger',  // Must match package.json
@@ -574,11 +580,13 @@ Expected at: src/dashboard/src/types/swagger.json
 **Solutions:**
 
 1. Verify the command works standalone:
+
    ```bash
    npm run generate:swagger
    ```
 
 2. Check script exists in `package.json`:
+
    ```json
    {
      "scripts": {
@@ -599,23 +607,26 @@ Expected at: src/dashboard/src/types/swagger.json
 **Solutions:**
 
 1. Install `swagger-typescript-api`:
+
    ```bash
    npm install -D swagger-typescript-api
    ```
 
 2. Validate swagger.json:
+
    ```bash
    npx swagger-cli validate src/dashboard/src/types/swagger.json
    ```
 
 3. Check for malformed swagger spec - ensure all DTOs are properly decorated:
+
    ```typescript
    import { ApiProperty } from '@nestjs/swagger';
-   
+
    export class UserDto {
      @ApiProperty()
      id: string;
-     
+
      @ApiProperty()
      email: string;
    }
@@ -628,11 +639,13 @@ Expected at: src/dashboard/src/types/swagger.json
 **Solutions:**
 
 1. Ensure types were generated:
+
    ```bash
    ls -la src/dashboard/src/types/api.ts
    ```
 
 2. Run type generation:
+
    ```bash
    tgraph types
    ```
@@ -650,6 +663,7 @@ Expected at: src/dashboard/src/types/swagger.json
 **Solutions:**
 
 1. Regenerate everything:
+
    ```bash
    tgraph api
    npm run generate:swagger
@@ -689,8 +703,8 @@ Use comprehensive Swagger decorators:
 @Controller('users')
 export class UsersController {
   @ApiOperation({ summary: 'Search users with pagination' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Paginated users',
     type: PaginatedSearchResultDto<UserDto>,
   })
@@ -752,4 +766,3 @@ tgraph types --config tgraph.public.config.ts
 - **[CLI Reference](../cli-reference.md)** - Full `tgraph types` documentation
 - **[Configuration](../api/configuration.md)** - Swagger configuration options
 - **[Static Files Guide](./static-files.md)** - Generate supporting infrastructure
-

@@ -31,14 +31,17 @@ adapter.json(config: AdapterConfig, handler: AdapterHandler): AdapterFactoryResu
 **Example:**
 
 ```typescript
-export default adapter.json({
-  method: 'POST',
-  path: '/custom',
-  target: 'UserService.create',
-  auth: 'JwtAuthGuard',
-}, async (ctx) => {
-  return { args: ctx.body };
-});
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/custom',
+    target: 'UserService.create',
+    auth: 'JwtAuthGuard',
+  },
+  async (ctx) => {
+    return { args: ctx.body };
+  },
+);
 ```
 
 ---
@@ -61,15 +64,18 @@ adapter.multipart(config: AdapterConfig, handler: AdapterHandler): AdapterFactor
 **Example:**
 
 ```typescript
-export default adapter.multipart({
-  method: 'POST',
-  path: '/upload',
-  target: 'UserService.update',
-}, async (ctx) => {
-  const file = Array.isArray(ctx.files) ? ctx.files[0] : ctx.files;
-  const url = await ctx.helpers.upload.minio(file);
-  return { args: { avatarUrl: url } };
-});
+export default adapter.multipart(
+  {
+    method: 'POST',
+    path: '/upload',
+    target: 'UserService.update',
+  },
+  async (ctx) => {
+    const file = Array.isArray(ctx.files) ? ctx.files[0] : ctx.files;
+    const url = await ctx.helpers.upload.minio(file);
+    return { args: { avatarUrl: url } };
+  },
+);
 ```
 
 ---
@@ -97,12 +103,16 @@ adapter.response(
 **Example:**
 
 ```typescript
-return adapter.response(201, {
-  success: true,
-  message: 'Created successfully'
-}, {
-  'X-Request-Id': ctx.helpers.uuid(),
-});
+return adapter.response(
+  201,
+  {
+    success: true,
+    message: 'Created successfully',
+  },
+  {
+    'X-Request-Id': ctx.helpers.uuid(),
+  },
+);
 ```
 
 ---
@@ -115,22 +125,22 @@ Configuration object for adapter endpoints.
 
 ```typescript
 interface AdapterConfig {
-  method: HttpMethod;              // Required
-  path: string;                    // Required
-  target?: string | null;          // Optional
-  auth?: string | string[];        // Optional
-  select?: string[];               // Optional
-  include?: string[];              // Optional
-  description?: string;            // Optional
-  summary?: string;                // Optional
-  tags?: string[];                 // Optional
+  method: HttpMethod; // Required
+  path: string; // Required
+  target?: string | null; // Optional
+  auth?: string | string[]; // Optional
+  select?: string[]; // Optional
+  include?: string[]; // Optional
+  description?: string; // Optional
+  summary?: string; // Optional
+  tags?: string[]; // Optional
 }
 ```
 
 **Fields:**
 
-- `method` *(required)* - HTTP method: `'GET'`, `'POST'`, `'PUT'`, `'DELETE'`, or `'PATCH'`
-- `path` *(required)* - Route path relative to controller base (must start with `/`)
+- `method` _(required)_ - HTTP method: `'GET'`, `'POST'`, `'PUT'`, `'DELETE'`, or `'PATCH'`
+- `path` _(required)_ - Route path relative to controller base (must start with `/`)
 - `target` - Service method to call in format `ServiceName.methodName`, or `null` to bypass
 - `auth` - Guard name(s) to apply for authentication/authorization
 - `select` - Array of field names to include in response (Prisma select)
@@ -161,7 +171,7 @@ interface AdapterConfig {
 Allowed HTTP methods.
 
 ```typescript
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 ```
 
 ---
@@ -171,7 +181,7 @@ type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 Type of adapter.
 
 ```typescript
-type AdapterType = 'json' | 'multipart'
+type AdapterType = 'json' | 'multipart';
 ```
 
 ---
@@ -221,9 +231,9 @@ async (ctx: AdapterContext) => {
   const email = ctx.body.email;
   const token = ctx.headers.authorization;
   const currentUser = ctx.user;
-  
+
   return { args: { userId, email } };
-}
+};
 ```
 
 ---
@@ -252,12 +262,12 @@ async (ctx) => {
   const user = await ctx.di.prisma.user.findUnique({
     where: { id: ctx.params.id },
   });
-  
+
   // Access custom services (if configured)
   await ctx.di.emailService.send({ to: user.email });
-  
+
   return { args: user };
-}
+};
 ```
 
 ---
@@ -411,10 +421,10 @@ helpers.upload.minio = async (file, bucket = 'default') => {
     accessKey: process.env.MINIO_ACCESS_KEY,
     secretKey: process.env.MINIO_SECRET_KEY,
   });
-  
+
   const filename = `${uuid()}-${file.originalname}`;
   await client.putObject(bucket, filename, file.buffer);
-  
+
   return `https://cdn.example.com/${bucket}/${filename}`;
 };
 ```
@@ -444,7 +454,7 @@ return {
   args: {
     email: ctx.body.email,
     password: hashedPassword,
-  }
+  },
 };
 ```
 
@@ -488,7 +498,7 @@ return adapter.response(200, {
 Union of possible return types.
 
 ```typescript
-type AdapterResult = AdapterServiceCallResult | AdapterDirectResponse
+type AdapterResult = AdapterServiceCallResult | AdapterDirectResponse;
 ```
 
 ---
@@ -499,8 +509,8 @@ Handler function signature.
 
 ```typescript
 type AdapterHandler<TBody = any, TQuery = any, TParams = any> = (
-  context: AdapterContext<TBody, TQuery, TParams>
-) => Promise<AdapterResult>
+  context: AdapterContext<TBody, TQuery, TParams>,
+) => Promise<AdapterResult>;
 ```
 
 **Parameters:**
@@ -516,7 +526,7 @@ const handler: AdapterHandler = async (ctx) => {
   if (ctx.body.skipService) {
     return adapter.response(200, { skipped: true });
   }
-  
+
   return { args: ctx.body };
 };
 ```
@@ -562,19 +572,22 @@ interface UserParams {
   id: string;
 }
 
-export default adapter.json({
-  method: 'POST',
-  path: '/typed',
-  target: 'UserService.create',
-}, async (ctx: AdapterContext<CreateUserBody, any, UserParams>) => {
-  // ctx.body is typed as CreateUserBody
-  // ctx.params is typed as UserParams
-  
-  const email: string = ctx.body.email; // Type-safe
-  const userId: string = ctx.params.id;  // Type-safe
-  
-  return { args: ctx.body };
-});
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/typed',
+    target: 'UserService.create',
+  },
+  async (ctx: AdapterContext<CreateUserBody, any, UserParams>) => {
+    // ctx.body is typed as CreateUserBody
+    // ctx.params is typed as UserParams
+
+    const email: string = ctx.body.email; // Type-safe
+    const userId: string = ctx.params.id; // Type-safe
+
+    return { args: ctx.body };
+  },
+);
 ```
 
 ---
@@ -612,9 +625,9 @@ Then use in adapters:
 async (ctx) => {
   await ctx.di.emailService.send({ to: ctx.body.email });
   await ctx.di.stripeService.charge({ amount: ctx.body.amount });
-  
+
   return { args: ctx.body };
-}
+};
 ```
 
 ---
@@ -633,32 +646,35 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 
-export default adapter.json({
-  method: 'POST',
-  path: '/with-errors',
-}, async (ctx) => {
-  if (!ctx.body.email) {
-    throw new BadRequestException('Email is required');
-  }
-  
-  if (!ctx.user) {
-    throw new UnauthorizedException('Authentication required');
-  }
-  
-  if (ctx.user.role !== 'admin') {
-    throw new ForbiddenException('Admin access required');
-  }
-  
-  const existing = await ctx.di.prisma.user.findUnique({
-    where: { email: ctx.body.email },
-  });
-  
-  if (existing) {
-    throw new ConflictException('Email already exists');
-  }
-  
-  return { args: ctx.body };
-});
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/with-errors',
+  },
+  async (ctx) => {
+    if (!ctx.body.email) {
+      throw new BadRequestException('Email is required');
+    }
+
+    if (!ctx.user) {
+      throw new UnauthorizedException('Authentication required');
+    }
+
+    if (ctx.user.role !== 'admin') {
+      throw new ForbiddenException('Admin access required');
+    }
+
+    const existing = await ctx.di.prisma.user.findUnique({
+      where: { email: ctx.body.email },
+    });
+
+    if (existing) {
+      throw new ConflictException('Email already exists');
+    }
+
+    return { args: ctx.body };
+  },
+);
 ```
 
 ---
@@ -728,7 +744,7 @@ The generator adds to your controller:
 export class UserTgController {
   constructor(
     private readonly userTgService: UserTgService,
-    private readonly prisma: PrismaService,  // Added for adapters
+    private readonly prisma: PrismaService, // Added for adapters
   ) {}
 
   // ... standard CRUD endpoints ...
@@ -747,10 +763,10 @@ export class UserTgController {
   ) {
     const contextBuilder = new AdapterContextBuilder(this.prisma);
     const context = contextBuilder.build(req, res);
-    
+
     const adapterModule = await import('./adapters/create-with-password.adapter');
     const result = await adapterModule.default.handler(context);
-    
+
     if ('__isDirectResponse' in result && result.__isDirectResponse) {
       res.status(result.status);
       if (result.headers) {
@@ -760,7 +776,7 @@ export class UserTgController {
       }
       return result.body;
     }
-    
+
     const serviceResult = await this.userTgService.create(result.args);
     return { data: serviceResult };
   }
@@ -774,5 +790,3 @@ export class UserTgController {
 - [Custom Adapters Guide](../guides/custom-adapters.md) - Comprehensive usage guide
 - [Custom Endpoints Recipe](../recipes/custom-endpoints.md) - Practical examples
 - [Authentication Guards](../guides/authentication-guards.md) - Securing adapters
-
-

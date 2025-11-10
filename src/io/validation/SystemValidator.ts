@@ -2,7 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import type { Config } from '@tg-scripts/types';
+import type { Config, Guard } from '@tg-scripts/types';
+import { supportedConfigs } from '../cli/config';
 
 const execAsync = promisify(exec);
 
@@ -30,12 +31,14 @@ export class SystemValidator {
   private readonly execFn: typeof execAsync;
   private readonly fsModule: typeof fs;
   private readonly pathModule: typeof path;
-  constructor(options: {
-    fsModule?: typeof fs;
-    pathModule?: typeof path;
-    execFn?: typeof execAsync;
-    cwd?: string;
-  } = {}) {
+  constructor(
+    options: {
+      fsModule?: typeof fs;
+      pathModule?: typeof path;
+      execFn?: typeof execAsync;
+      cwd?: string;
+    } = {},
+  ) {
     this.fsModule = options.fsModule ?? fs;
     this.pathModule = options.pathModule ?? path;
     this.execFn = options.execFn ?? execAsync;
@@ -50,14 +53,10 @@ export class SystemValidator {
 
     // Check if config file exists
     const configFiles = ['tgraph.config.ts', 'tgraph.config.js'];
-    const configExists = configFiles.some((file) =>
-      this.fsModule.existsSync(this.pathModule.join(this.cwd, file)),
-    );
+    const configExists = configFiles.some((file) => this.fsModule.existsSync(this.pathModule.join(this.cwd, file)));
 
     if (configExists) {
-      const configFile = configFiles.find((file) =>
-        this.fsModule.existsSync(this.pathModule.join(this.cwd, file)),
-      );
+      const configFile = configFiles.find((file) => this.fsModule.existsSync(this.pathModule.join(this.cwd, file)));
       results.push({
         severity: 'ok',
         message: `Config file found: ${configFile}`,
@@ -70,241 +69,101 @@ export class SystemValidator {
       });
     }
 
-    // Validate input schema path
-    if (config.input?.schemaPath) {
-      results.push({
-        severity: 'ok',
-        message: `Schema path configured: ${config.input.schemaPath}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'input.schemaPath'",
-        suggestion: "Set 'input.schemaPath' in your configuration file",
-      });
-    }
+    // Helper to get value at path
+    const getValueAtPath = (obj: any, path: string): any => {
+      const parts = path.split('.');
+      let current = obj;
+      for (const part of parts) {
+        if (current === undefined || current === null) {
+          return undefined;
+        }
+        current = current[part];
+      }
+      return current;
+    };
 
-    // Validate input prismaService path
-    if (config.input?.prismaService) {
-      results.push({
-        severity: 'ok',
-        message: `PrismaService path configured: ${config.input.prismaService}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'input.prismaService'",
-        suggestion: "Set 'input.prismaService' to the path of your PrismaService file (e.g., 'src/infrastructure/database/prisma.service.ts')",
-      });
-    }
+    // Helper to format value for display
+    const formatValueForDisplay = (value: any, type: string): string => {
+      if (type === 'string[]' && Array.isArray(value)) {
+        return value.join(', ');
+      }
+      if (type === 'Guard[]' && Array.isArray(value)) {
+        return `${value.length} guard${value.length === 1 ? '' : 's'}`;
+      }
+      if (type === 'object') {
+        return 'configured';
+      }
+      if (type === 'string' && value === '') {
+        return '(empty string)';
+      }
+      return String(value);
+    };
 
-    // Validate backend output paths
-    if (config.output?.backend?.dtos) {
-      results.push({
-        severity: 'ok',
-        message: `DTO output path configured: ${config.output.backend.dtos}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'output.backend.dtos'",
-        suggestion: "Set 'output.backend.dtos' to the directory where DTOs should be generated",
-      });
-    }
+    // Dynamically validate all configs
+    for (const configEntry of supportedConfigs) {
+      const value = getValueAtPath(config, configEntry.fullPath);
+      const exists = value !== undefined && value !== null;
 
-    if (config.output?.backend?.modules?.searchPaths?.length) {
-      results.push({
-        severity: 'ok',
-        message: `Module search paths configured: ${config.output.backend.modules.searchPaths.join(', ')}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing module search paths in 'output.backend.modules.searchPaths'",
-        suggestion: 'Provide at least one directory where existing NestJS modules can be discovered',
-      });
-    }
-
-    if (config.output?.backend?.modules?.defaultRoot) {
-      results.push({
-        severity: 'ok',
-        message: `Module default root configured: ${config.output.backend.modules.defaultRoot}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'output.backend.modules.defaultRoot'",
-        suggestion: 'Set a directory where new modules should be created',
-      });
-    }
-
-    // Validate backend static files paths
-    const staticFiles = config.output?.backend?.staticFiles;
-    
-    if (staticFiles?.guards) {
-      results.push({
-        severity: 'ok',
-        message: `Guards path configured: ${staticFiles.guards}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'output.backend.staticFiles.guards'",
-        suggestion: "Set 'output.backend.staticFiles.guards' to the directory for guard files (e.g., 'src/guards')",
-      });
-    }
-
-    if (staticFiles?.decorators) {
-      results.push({
-        severity: 'ok',
-        message: `Decorators path configured: ${staticFiles.decorators}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'output.backend.staticFiles.decorators'",
-        suggestion: "Set 'output.backend.staticFiles.decorators' to the directory for decorator files (e.g., 'src/decorators')",
-      });
-    }
-
-    if (staticFiles?.dtos) {
-      results.push({
-        severity: 'ok',
-        message: `Static DTOs path configured: ${staticFiles.dtos}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'output.backend.staticFiles.dtos'",
-        suggestion: "Set 'output.backend.staticFiles.dtos' to the directory for static DTO files (e.g., 'src/dtos')",
-      });
-    }
-
-    if (staticFiles?.interceptors) {
-      results.push({
-        severity: 'ok',
-        message: `Interceptors path configured: ${staticFiles.interceptors}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'output.backend.staticFiles.interceptors'",
-        suggestion: "Set 'output.backend.staticFiles.interceptors' to the directory for interceptor files (e.g., 'src/interceptors')",
-      });
-    }
-
-    if (staticFiles?.utils) {
-      results.push({
-        severity: 'ok',
-        message: `Utils path configured: ${staticFiles.utils}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'output.backend.staticFiles.utils'",
-        suggestion: "Set 'output.backend.staticFiles.utils' to the directory for utility files (e.g., 'src/utils')",
-      });
-    }
-
-    if (config.output?.dashboard?.root) {
-      results.push({
-        severity: 'ok',
-        message: `Dashboard root configured: ${config.output.dashboard.root}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'output.dashboard.root'",
-        suggestion: 'Set the root of your React Admin dashboard',
-      });
-    }
-
-    if (config.output?.dashboard?.resources) {
-      results.push({
-        severity: 'ok',
-        message: `Dashboard resources path configured: ${config.output.dashboard.resources}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'output.dashboard.resources'",
-        suggestion: 'Set the directory where dashboard resources should be generated',
-      });
-    }
-
-    // Validate API section
-    if (config.api?.suffix !== undefined && config.api.suffix !== null) {
-      if (config.api.suffix === '' || /^[A-Z][a-zA-Z0-9]*$/.test(config.api.suffix)) {
-        results.push({
-          severity: 'ok',
-          message: `API suffix configured: ${config.api.suffix === '' ? '(empty string)' : `"${config.api.suffix}"`}`,
-        });
+      if (configEntry.required) {
+        // Required field validation
+        if (exists) {
+          // Special validation for string[]
+          if (configEntry.type === 'string[]' && Array.isArray(value)) {
+            if (value.length === 0) {
+              results.push({
+                severity: 'error',
+                message: `Missing ${configEntry.fullPath} (array is empty)`,
+                suggestion: configEntry.suggestion || `Provide at least one value for ${configEntry.fullPath}`,
+              });
+            } else {
+              results.push({
+                severity: 'ok',
+                message: `${configEntry.description}: ${formatValueForDisplay(value, configEntry.type)}`,
+              });
+            }
+          } else {
+            results.push({
+              severity: 'ok',
+              message: `${configEntry.description}: ${formatValueForDisplay(value, configEntry.type)}`,
+            });
+          }
+        } else {
+          results.push({
+            severity: 'error',
+            message: `Missing required field '${configEntry.fullPath}'`,
+            suggestion: configEntry.suggestion || `Set '${configEntry.fullPath}' in your configuration file`,
+          });
+        }
       } else {
+        // Optional field - only report if exists
+        if (exists) {
+          results.push({
+            severity: 'ok',
+            message: `${configEntry.description}: ${formatValueForDisplay(value, configEntry.type)}`,
+          });
+        }
+      }
+    }
+
+    // Special validations
+    // Validate api.suffix is PascalCase if not empty
+    if (config.api?.suffix && typeof config.api.suffix === 'string' && config.api.suffix !== '') {
+      if (!/^[A-Z][a-zA-Z0-9]*$/.test(config.api.suffix as string)) {
         results.push({
           severity: 'warning',
           message: `API suffix '${config.api.suffix}' is not PascalCase`,
           suggestion: "Use PascalCase format (e.g., 'Admin', 'Public')",
         });
       }
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'api.suffix'",
-        suggestion: "Set 'api.suffix' to control generated class names (use '' for none)",
-      });
     }
 
-    if (config.api?.prefix) {
+    // Validate authentication configuration
+    if (config.api?.authenticationEnabled !== undefined) {
+      const guardsCount = (config.api.guards as Guard[])?.length ?? 0;
+      const adminGuardsCount = (config.api.adminGuards as Guard[])?.length ?? 0;
       results.push({
         severity: 'ok',
-        message: `API route prefix configured: ${config.api.prefix}`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required field 'api.prefix'",
-        suggestion: 'Set the route prefix used for generated controllers (e.g., tg-api)',
-      });
-    }
-
-    if (config.api?.authentication) {
-      const guardsCount = config.api.authentication.guards?.length ?? 0;
-      results.push({
-        severity: 'ok',
-        message: `Authentication configured (${guardsCount} guard${guardsCount === 1 ? '' : 's'})`,
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required section 'api.authentication'",
-        suggestion: 'Define guards to be applied to generated controllers',
-      });
-    }
-
-    // Validate dashboard section
-    if (config.dashboard?.components) {
-      results.push({
-        severity: 'ok',
-        message: 'Dashboard component overrides configured',
-      });
-    } else {
-      results.push({
-        severity: 'error',
-        message: "Missing required section 'dashboard.components'",
-        suggestion: 'Provide component defaults, even if they are empty objects',
-      });
-    }
-
-    if (config.behavior) {
-      results.push({
-        severity: 'ok',
-        message: `Non-interactive mode default: ${config.behavior.nonInteractive ? 'enabled' : 'disabled'}`,
-      });
-    } else {
-      results.push({
-        severity: 'warning',
-        message: "Missing optional section 'behavior'",
-        suggestion: "Add 'behavior.nonInteractive' to control prompt defaults",
+        message: `Authentication ${config.api.authenticationEnabled ? 'enabled' : 'disabled'} (${guardsCount} guard${guardsCount === 1 ? '' : 's'}${config.api.requireAdmin ? `, ${adminGuardsCount} admin guard${adminGuardsCount === 1 ? '' : 's'}` : ''})`,
       });
     }
 
@@ -357,11 +216,11 @@ export class SystemValidator {
 
     // Check dashboard path
     if (config.output?.dashboard?.root) {
-      const dashboardPath = this.pathModule.isAbsolute(config.output.dashboard.root)
-        ? config.output.dashboard.root
-        : this.pathModule.join(this.cwd, config.output.dashboard.root);
+      const dashboardPath = this.pathModule.isAbsolute(config.output.dashboard?.root as string)
+        ? (config.output.dashboard?.root as string)
+        : this.pathModule.join(this.cwd, config.output.dashboard?.root as string);
 
-      if (this.fsModule.existsSync(dashboardPath)) {
+      if (this.fsModule.existsSync(dashboardPath as string)) {
         results.push({
           severity: 'ok',
           message: `Dashboard directory exists: ${config.output.dashboard.root}`,
@@ -375,40 +234,40 @@ export class SystemValidator {
       }
     }
 
-    if (config.output?.dashboard?.resources) {
-      const resourcesPath = this.pathModule.isAbsolute(config.output.dashboard.resources)
-        ? config.output.dashboard.resources
-        : this.pathModule.join(this.cwd, config.output.dashboard.resources);
+    if (config.output?.dashboard?.resourcesPath) {
+      const resourcesPath = this.pathModule.isAbsolute(config.output.dashboard.resourcesPath as string)
+        ? (config.output.dashboard.resourcesPath as string)
+        : this.pathModule.join(this.cwd, config.output.dashboard.resourcesPath as string);
 
       if (this.fsModule.existsSync(resourcesPath)) {
         results.push({
           severity: 'ok',
-          message: `Dashboard resources directory exists: ${config.output.dashboard.resources}`,
+          message: `Dashboard resources directory exists: ${config.output.dashboard.resourcesPath}`,
         });
       } else {
         results.push({
           severity: 'warning',
-          message: `Dashboard resources directory does not exist: ${config.output.dashboard.resources}`,
+          message: `Dashboard resources directory does not exist: ${config.output.dashboard.resourcesPath}`,
           suggestion: 'Directory will be created during generation',
         });
       }
     }
 
     // Check DTOs path
-    if (config.output?.backend?.dtos) {
-      const dtosPath = this.pathModule.isAbsolute(config.output.backend.dtos)
-        ? config.output.backend.dtos
-        : this.pathModule.join(this.cwd, config.output.backend.dtos);
+    if (config.output?.backend?.dtosPath) {
+      const dtosPath = this.pathModule.isAbsolute(config.output.backend.dtosPath as string)
+        ? (config.output.backend.dtosPath as string)
+        : this.pathModule.join(this.cwd, config.output.backend.dtosPath as string);
 
       if (this.fsModule.existsSync(dtosPath)) {
         results.push({
           severity: 'ok',
-          message: `DTOs directory exists: ${config.output.backend.dtos}`,
+          message: `DTOs directory exists: ${config.output.backend.dtosPath}`,
         });
       } else {
         results.push({
           severity: 'warning',
-          message: `DTOs directory does not exist: ${config.output.backend.dtos}`,
+          message: `DTOs directory does not exist: ${config.output.backend.dtosPath}`,
           suggestion: 'Directory will be created during generation',
         });
       }
@@ -490,25 +349,25 @@ export class SystemValidator {
   async checkPrismaSchema(config: Config): Promise<DiagnosticResult[]> {
     const results: DiagnosticResult[] = [];
 
-    if (!config.input?.schemaPath) {
+    if (!config.input?.prisma.schemaPath) {
       results.push({
         severity: 'error',
-        message: "Schema path not configured",
+        message: 'Schema path not configured',
         suggestion: "Set 'input.schemaPath' in your configuration file",
       });
       return results;
     }
 
     // Resolve schema path
-    const schemaPath = this.pathModule.isAbsolute(config.input.schemaPath)
-      ? config.input.schemaPath
-      : this.pathModule.join(this.cwd, config.input.schemaPath);
+    const schemaPath = this.pathModule.isAbsolute(config.input.prisma.schemaPath as string)
+      ? (config.input.prisma.schemaPath as string)
+      : this.pathModule.join(this.cwd, config.input.prisma.schemaPath as string);
 
     // Check if schema file exists
     if (!this.fsModule.existsSync(schemaPath)) {
       results.push({
         severity: 'error',
-        message: `Schema file not found: ${config.input.schemaPath}`,
+        message: `Schema file not found: ${config.input.prisma.schemaPath}`,
         suggestion: "Run 'npx prisma init' to create a schema",
       });
       return results;
@@ -612,4 +471,3 @@ export class SystemValidator {
     };
   }
 }
-

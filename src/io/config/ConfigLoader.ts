@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { Config } from '@tg-scripts/types';
+import { supportedConfigs } from '../cli/config';
 
 const CONFIG_FILENAMES = ['tgraph.config.ts', 'tgraph.config.js'] as const;
 
@@ -42,170 +43,159 @@ export class ConfigLoader {
 
   private logConfig(config: Config): void {
     console.log('📋 Configuration loaded successfully:');
-    console.log(`   Schema path: ${config.input.schemaPath}`);
-    console.log(`   Backend DTOs: ${config.output.backend.dtos}`);
-    console.log(`   Module search paths: ${config.output.backend.modules.searchPaths.join(', ')}`);
-    console.log(`   Module default root: ${config.output.backend.modules.defaultRoot}`);
+    console.log(`   Schema path: ${config.input.prisma.schemaPath}`);
+    console.log(`   Backend DTOs: ${config.output.backend.dtosPath}`);
+    console.log(`   Module search paths: ${(config.output.backend.modulesPaths as string[]).join(', ')}`);
+    console.log(`   Module default root: ${config.output.backend.root}`);
     console.log(`   Dashboard root: ${config.output.dashboard.root}`);
     console.log(`   API suffix: ${config.api.suffix}`);
     console.log(`   API prefix: ${config.api.prefix}`);
-    console.log(`   Authentication enabled: ${config.api.authentication.enabled}`);
-    console.log(`   Require admin: ${config.api.authentication.requireAdmin}`);
-    console.log(`   Dashboard enabled: ${config.dashboard.enabled}`);
-    console.log(`   Update data provider: ${config.dashboard.updateDataProvider}`);
+    console.log(`   Authentication enabled: ${config.api.authenticationEnabled}`);
+    console.log(`   Require admin: ${config.api.requireAdmin}`);
+    console.log(`   Dashboard enabled: ${config.output.dashboard.enabled}`);
+    console.log(`   Update data provider: ${config.output.dashboard.updateDataProvider}`);
     console.log(`   Non-interactive mode: ${config.behavior.nonInteractive}`);
-    if (config.paths?.appModule) {
-      console.log(`   AppModule override: ${config.paths.appModule}`);
-    }
-    if (config.paths?.dataProvider) {
-      console.log(`   Data provider override: ${config.paths.dataProvider}`);
-    }
-    if (config.paths?.appComponent) {
-      console.log(`   App component override: ${config.paths.appComponent}`);
-    }
   }
 
   private validateConfig(config: Config | undefined, configPath: string): void {
     if (!config) {
-      throw new ConfigLoaderError(
-        `Config file '${configPath}' does not export a 'config' object or default export.`,
-      );
+      throw new ConfigLoaderError(`Config file '${configPath}' does not export a 'config' object or default export.`);
     }
+
+    // Helper to get value at path
+    const getValueAtPath = (obj: any, path: string): any => {
+      const parts = path.split('.');
+      let current = obj;
+      for (const part of parts) {
+        if (current === undefined || current === null) {
+          return undefined;
+        }
+        current = current[part];
+      }
+      return current;
+    };
 
     // Validate main sections exist
-    if (!config.input) {
+    const requiredSections = ['input', 'output', 'api', 'behavior'];
+    for (const section of requiredSections) {
+      if (!config[section as keyof Config]) {
+        throw new ConfigLoaderError(
+          `Config file '${configPath}' is missing required section '${section}'.\n` +
+            `💡 Run 'tgraph init' to create a valid configuration file.`,
+        );
+      }
+    }
+
+    // Validate required nested sections
+    if (!config.input.prisma) {
       throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required section 'input'.\n` +
+        `Config file '${configPath}' is missing required section 'input.prisma'.\n` +
           `💡 Run 'tgraph init' to create a valid configuration file.`,
       );
     }
-    if (!config.output) {
+    if (!config.input.dashboard) {
       throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required section 'output'.\n` +
+        `Config file '${configPath}' is missing required section 'input.dashboard'.\n` +
           `💡 Run 'tgraph init' to create a valid configuration file.`,
       );
     }
-    if (!config.api) {
+    if (!config.output.backend) {
       throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required section 'api'.\n` +
+        `Config file '${configPath}' is missing required section 'output.backend'.\n` +
           `💡 Run 'tgraph init' to create a valid configuration file.`,
       );
     }
-    if (!config.dashboard) {
+    if (!config.output.dashboard) {
       throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required section 'dashboard'.\n` +
-          `💡 Run 'tgraph init' to create a valid configuration file.`,
-      );
-    }
-    if (!config.behavior) {
-      throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required section 'behavior'.\n` +
+        `Config file '${configPath}' is missing required section 'output.dashboard'.\n` +
           `💡 Run 'tgraph init' to create a valid configuration file.`,
       );
     }
 
-    // Validate input section
-    if (!config.input.schemaPath) {
-      throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required field 'input.schemaPath'.\n` +
-          `💡 Add 'input.schemaPath' to your configuration file.`,
-      );
+    // Dynamically validate all required configs
+    const requiredConfigs = supportedConfigs.filter((c) => c.required);
+    for (const configEntry of requiredConfigs) {
+      const value = getValueAtPath(config, configEntry.fullPath);
+
+      // Check if value exists (allow empty string and false)
+      if (value === undefined || value === null) {
+        throw new ConfigLoaderError(
+          `Config file '${configPath}' is missing required field '${configEntry.fullPath}'.\n` +
+            `💡 ${configEntry.suggestion || `Add '${configEntry.fullPath}' to your configuration file.`}`,
+        );
+      }
+
+      // Special validation for specific types
+      if (configEntry.type === 'string[]' && (!Array.isArray(value) || value.length === 0)) {
+        throw new ConfigLoaderError(
+          `Config file '${configPath}' requires '${configEntry.fullPath}' to be a non-empty array.\n` +
+            `💡 ${configEntry.suggestion || `Example: ${JSON.stringify(configEntry.example)}`}`,
+        );
+      }
     }
 
-    // Validate output.backend section
-    if (!config.output.backend?.dtos) {
-      throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required field 'output.backend.dtos'.\n` +
-          `💡 Add 'output.backend.dtos' to your configuration file.`,
-      );
-    }
-    if (!config.output.backend.modules) {
-      throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required section 'output.backend.modules'.\n` +
-          `💡 Run 'tgraph init' to create a valid configuration file.`,
-      );
-    }
-    if (!Array.isArray(config.output.backend.modules.searchPaths) || config.output.backend.modules.searchPaths.length === 0) {
-      throw new ConfigLoaderError(
-        `Config file '${configPath}' requires 'output.backend.modules.searchPaths' to be a non-empty array.\n` +
-          `💡 Example: searchPaths: ['src/features', 'src/modules', 'src']`,
-      );
-    }
-    if (!config.output.backend.modules.defaultRoot) {
-      throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required field 'output.backend.modules.defaultRoot'.\n` +
-          `💡 Example: defaultRoot: 'src/features'`,
-      );
+    // Special validations
+    // Validate api.suffix is PascalCase if not empty
+    if (config.api.suffix && typeof config.api.suffix === 'string' && config.api.suffix !== '') {
+      if (!/^[A-Z][a-zA-Z0-9]*$/.test(config.api.suffix as string)) {
+        console.warn(
+          `⚠️  Warning: Config field 'api.suffix' should be PascalCase (e.g., 'Admin', 'Public'). Current value: '${config.api.suffix}'`,
+        );
+      }
     }
 
-    // Validate API section
-    if (!config.api.suffix && config.api.suffix !== '') {
+    // Validate arrays are actually arrays
+    if (!Array.isArray(config.api.guards)) {
       throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required field 'api.suffix'.\n` +
-          `💡 Use empty string '' if no suffix is needed, or a PascalCase value like 'Admin'.`,
-      );
-    }
-    if (config.api.suffix && !/^[A-Z][a-zA-Z0-9]*$/.test(config.api.suffix)) {
-      console.warn(
-        `⚠️  Warning: Config field 'api.suffix' should be PascalCase (e.g., 'Admin', 'Public'). Current value: '${config.api.suffix}'`,
-      );
-    }
-    if (!config.api.prefix) {
-      throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required field 'api.prefix'.\n` +
-          `💡 Example: prefix: 'tg-api' or 'api'`,
-      );
-    }
-    if (!config.api.authentication) {
-      throw new ConfigLoaderError(
-        `Config file '${configPath}' is missing required section 'api.authentication'.\n` +
-          `💡 Run 'tgraph init' to create a valid configuration file.`,
-      );
-    }
-    if (!Array.isArray(config.api.authentication.guards)) {
-      throw new ConfigLoaderError(
-        `Config file '${configPath}' requires 'api.authentication.guards' to be an array.\n` +
+        `Config file '${configPath}' requires 'api.guards' to be an array.\n` +
           `💡 Example: guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }]`,
+      );
+    }
+    if (!Array.isArray(config.api.adminGuards)) {
+      throw new ConfigLoaderError(
+        `Config file '${configPath}' requires 'api.adminGuards' to be an array.\n` +
+          `💡 Example: adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }]`,
       );
     }
 
     // Validate schema file exists
-    const schemaPath = path.isAbsolute(config.input.schemaPath)
-      ? config.input.schemaPath
-      : path.join(this.options.cwd ?? process.cwd(), config.input.schemaPath);
+    const schemaPath = path.isAbsolute(config.input.prisma.schemaPath as string)
+      ? config.input.prisma.schemaPath
+      : path.join(this.options.cwd ?? process.cwd(), config.input.prisma.schemaPath as string);
 
     console.log(`   🔍 Validating schema file at: ${schemaPath}`);
-    
-    if (!fs.existsSync(schemaPath)) {
+
+    if (!fs.existsSync(schemaPath as string)) {
       throw new ConfigLoaderError(
-        `Prisma schema file not found at: ${config.input.schemaPath}\n` +
+        `Prisma schema file not found at: ${config.input.prisma.schemaPath as string}\n` +
           `Resolved path: ${schemaPath}\n` +
-          `💡 Run 'npx prisma init' to create a schema or update 'input.schemaPath' in your config.\n` +
+          `💡 Run 'npx prisma init' to create a schema or update 'input.prisma.schemaPath' in your config.\n` +
           `💡 Run 'tgraph doctor' for full diagnostics.`,
       );
     }
 
     // Check if schema file has content
-    const schemaStats = fs.statSync(schemaPath);
+    const schemaStats = fs.statSync(schemaPath as string);
     console.log(`   📄 Schema file size: ${schemaStats.size} bytes`);
 
     if (schemaStats.size === 0) {
       console.warn(`   ⚠️  Warning: Schema file is empty!`);
     }
 
+    // Warn for optional path overrides if they're specified but don't exist
     const cwd = this.options.cwd ?? process.cwd();
-    if (config.paths?.appModule) {
-      this.warnIfPathMissing('App module override', config.paths.appModule, cwd);
+    if (config.output.backend.appModulePath) {
+      this.warnIfPathMissing('App module override', config.output.backend.appModulePath as string, cwd);
     }
-    if (config.paths?.dataProvider) {
-      this.warnIfPathMissing('Data provider override', config.paths.dataProvider, cwd);
+    if (config.output.dashboard.dataProviderPath) {
+      this.warnIfPathMissing('Data provider override', config.output.dashboard.dataProviderPath as string, cwd);
     }
-    if (config.paths?.appComponent) {
-      this.warnIfPathMissing('App component override', config.paths.appComponent, cwd);
+    if (config.output.dashboard.appComponentPath) {
+      this.warnIfPathMissing('App component override', config.output.dashboard.appComponentPath as string, cwd);
     }
 
     // Warn if module search paths don't exist
-    for (const searchPath of config.output.backend.modules.searchPaths) {
+    for (const searchPath of config.output.backend.modulesPaths as string[]) {
       this.warnIfDirectoryMissing('Module search path', searchPath, cwd);
     }
   }
@@ -236,8 +226,8 @@ export class ConfigLoader {
 
     // If specific config path is provided, check that
     if (this.configPath) {
-      const resolvedPath = pathModule.isAbsolute(this.configPath) 
-        ? this.configPath 
+      const resolvedPath = pathModule.isAbsolute(this.configPath)
+        ? this.configPath
         : pathModule.join(cwd, this.configPath);
       return fsModule.existsSync(resolvedPath);
     }
@@ -253,8 +243,8 @@ export class ConfigLoader {
 
     // If specific config path is provided, return that
     if (this.configPath) {
-      const resolvedPath = pathModule.isAbsolute(this.configPath) 
-        ? this.configPath 
+      const resolvedPath = pathModule.isAbsolute(this.configPath)
+        ? this.configPath
         : pathModule.join(cwd, this.configPath);
       return fsModule.existsSync(resolvedPath) ? resolvedPath : null;
     }
@@ -280,14 +270,13 @@ export class ConfigLoader {
 
     // If specific config path is provided, use it
     if (this.configPath) {
-      const resolvedPath = pathModule.isAbsolute(this.configPath) 
-        ? this.configPath 
+      const resolvedPath = pathModule.isAbsolute(this.configPath)
+        ? this.configPath
         : pathModule.join(cwd, this.configPath);
-      
+
       if (!fsModule.existsSync(resolvedPath)) {
         throw new ConfigLoaderError(
-          `Configuration file not found at: ${this.configPath}\n` +
-          `Resolved path: ${resolvedPath}`,
+          `Configuration file not found at: ${this.configPath}\n` + `Resolved path: ${resolvedPath}`,
         );
       }
 

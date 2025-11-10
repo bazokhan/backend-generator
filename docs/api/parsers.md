@@ -119,11 +119,11 @@ interface PrismaModel {
   name: string;
   fields: PrismaField[];
   enums: string[];
-  modulePath?: string;      // Filled when ModulePathResolver finds a folder
-  moduleType: string;       // Folder key such as 'features'
-  tgLabelField?: string;    // From @tg_label()
-  displayField?: string;    // Computed label field for selects
-  defaultSortBy?: string;   // Computed default sort key
+  modulePath?: string; // Filled when ModulePathResolver finds a folder
+  moduleType: string; // Folder key such as 'features'
+  tgLabelField?: string; // From @tg_label()
+  displayField?: string; // Computed label field for selects
+  defaultSortBy?: string; // Computed default sort key
 }
 ```
 
@@ -144,7 +144,7 @@ interface PrismaField {
   relationToFields?: string[];
   foreignKeyName?: string;
   customValidations: CustomValidation[];
-  tsType?: string;          // Non-enumerable property set at runtime
+  tsType?: string; // Non-enumerable property set at runtime
   searchType?: 'string' | 'number' | 'boolean' | 'date' | null;
   isRelation?: boolean;
   isScalar?: boolean;
@@ -160,9 +160,9 @@ interface PrismaField {
 
 ```typescript
 interface CustomValidation {
-  decorator: string;       // e.g., 'max', 'required'
-  value: any;              // decorator argument
-  operations?: string[];   // target operations like ['create', 'update']
+  decorator: string; // e.g., 'max', 'required'
+  value: any; // decorator argument
+  operations?: string[]; // target operations like ['create', 'update']
 }
 ```
 

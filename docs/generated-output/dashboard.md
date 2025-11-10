@@ -33,8 +33,8 @@ For each eligible model:
 ```
 
 - `<resource-name>` is kebab-case plural (e.g., `UserForm` → `user-forms`).
-- If the resource folder already exists, the CLI prompts to delete it.  
-  - Answering `y` deletes the folder recursively and regenerates all files.  
+- If the resource folder already exists, the CLI prompts to delete it.
+  - Answering `y` deletes the folder recursively and regenerates all files.
   - Answering `n` skips that model entirely.
 - New folders are created with `fs.mkdirSync(..., { recursive: true })`.
 - Every generated file is overwritten without merge logic and formatted via Prettier.

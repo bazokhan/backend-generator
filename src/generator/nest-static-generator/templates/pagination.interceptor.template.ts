@@ -27,4 +27,3 @@ export class PaginationInterceptor<T = any> implements NestInterceptor<T, Pagina
   }
 }
 `;
-

@@ -12,6 +12,7 @@ Create and use custom React Admin components in generated dashboard pages.
 ## Use Case
 
 Replace default React Admin components with custom implementations to:
+
 - Match your design system
 - Add business logic
 - Integrate third-party libraries
@@ -48,7 +49,7 @@ export const CharCountTextInput: React.FC<InputProps & { maxLength?: number }> =
         {props.label}
         {props.required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      
+
       <input
         {...field}
         onChange={handleChange}
@@ -60,7 +61,7 @@ export const CharCountTextInput: React.FC<InputProps & { maxLength?: number }> =
         disabled={props.disabled}
         readOnly={props.readOnly}
       />
-      
+
       <div className="mt-1 flex justify-between items-center">
         {fieldState.error && (
           <span className="text-sm text-red-600">{fieldState.error.message}</span>
@@ -102,7 +103,7 @@ export const CurrencyInput: React.FC<InputProps> = (props) => {
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {props.label}
       </label>
-      
+
       <div className="relative">
         <span className="absolute left-3 top-2 text-gray-500">$</span>
         <input
@@ -115,11 +116,11 @@ export const CurrencyInput: React.FC<InputProps> = (props) => {
           placeholder="0.00"
         />
       </div>
-      
+
       {fieldState.error && (
         <p className="mt-1 text-sm text-red-600">{fieldState.error.message}</p>
       )}
-      
+
       {field.value > 0 && (
         <p className="mt-1 text-sm text-gray-500">
           Formatted: {formatCurrency(field.value)}
@@ -150,7 +151,7 @@ export const ImageUploadInput: React.FC<InputProps> = (props) => {
         setPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-      
+
       // Set field value (you might want to upload to server here)
       field.onChange(file);
     }
@@ -166,13 +167,13 @@ export const ImageUploadInput: React.FC<InputProps> = (props) => {
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {props.label}
       </label>
-      
+
       <div className="space-y-2">
         {preview && (
           <div className="relative inline-block">
-            <img 
-              src={preview} 
-              alt="Preview" 
+            <img
+              src={preview}
+              alt="Preview"
               className="w-32 h-32 object-cover rounded-md border-2 border-gray-300"
             />
             <button
@@ -187,7 +188,7 @@ export const ImageUploadInput: React.FC<InputProps> = (props) => {
             </button>
           </div>
         )}
-        
+
         <input
           type="file"
           accept="image/*"
@@ -200,7 +201,7 @@ export const ImageUploadInput: React.FC<InputProps> = (props) => {
                      hover:file:bg-blue-100"
         />
       </div>
-      
+
       {fieldState.error && (
         <p className="mt-1 text-sm text-red-600">{fieldState.error.message}</p>
       )}
@@ -250,7 +251,7 @@ import type { Config } from '@tgraph/backend-generator';
 
 export const config: Config = {
   // ... other config
-  
+
   dashboard: {
     enabled: true,
     updateDataProvider: true,
@@ -258,21 +259,21 @@ export const config: Config = {
       form: {
         TextInput: {
           name: 'CharCountTextInput',
-          importPath: '@/components/custom/CharCountTextInput'
+          importPath: '@/components/custom/CharCountTextInput',
         },
         NumberInput: {
           name: 'CurrencyInput',
-          importPath: '@/components/custom/CurrencyInput'
+          importPath: '@/components/custom/CurrencyInput',
         },
         FileInput: {
           name: 'ImageUploadInput',
-          importPath: '@/components/custom/ImageUploadInput'
+          importPath: '@/components/custom/ImageUploadInput',
         },
       },
       display: {
         TextField: {
           name: 'StatusBadgeField',
-          importPath: '@/components/custom/StatusBadgeField'
+          importPath: '@/components/custom/StatusBadgeField',
         },
       },
     },
@@ -336,7 +337,7 @@ export const ChipSelectInput: React.FC<ChipSelectInputProps> = (props) => {
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {props.label}
       </label>
-      
+
       <div className="flex flex-wrap gap-2">
         {props.choices.map((choice) => {
           const isSelected = selectedValues.includes(choice.id);
@@ -346,8 +347,8 @@ export const ChipSelectInput: React.FC<ChipSelectInputProps> = (props) => {
               type="button"
               onClick={() => toggleValue(choice.id)}
               className={`px-3 py-1 rounded-full text-sm font-medium transition-colors
-                ${isSelected 
-                  ? 'bg-blue-500 text-white' 
+                ${isSelected
+                  ? 'bg-blue-500 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
             >
               {choice.name}
@@ -366,6 +367,7 @@ export const ChipSelectInput: React.FC<ChipSelectInputProps> = (props) => {
 ### Rich Text Editor
 
 {% raw %}
+
 ```typescript
 // src/dashboard/src/components/custom/RichTextInput.tsx
 import React from 'react';
@@ -381,7 +383,7 @@ export const RichTextInput: React.FC<InputProps> = (props) => {
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {props.label}
       </label>
-      
+
       <ReactQuill
         value={field.value || ''}
         onChange={field.onChange}
@@ -397,7 +399,7 @@ export const RichTextInput: React.FC<InputProps> = (props) => {
           ],
         }}
       />
-      
+
       {fieldState.error && (
         <p className="mt-1 text-sm text-red-600">{fieldState.error.message}</p>
       )}
@@ -405,6 +407,7 @@ export const RichTextInput: React.FC<InputProps> = (props) => {
   );
 };
 ```
+
 {% endraw %}
 
 Install dependencies:
@@ -436,7 +439,7 @@ export const DateRangeInput: React.FC<InputProps> = (props) => {
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {props.label}
       </label>
-      
+
       <DatePicker
         selectsRange
         startDate={startDate}
@@ -588,4 +591,3 @@ dashboard: {
 - [Component Customization Guide](../guides/component-customization.md) - Detailed guide
 - [Configuration Reference](../api/configuration.md) - Full config options
 - [Multiple APIs](./multiple-apis.md) - Generate multiple APIs
-

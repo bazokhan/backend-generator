@@ -10,4 +10,4 @@ export { adapterRuntimeTemplate } from './adapter-runtime.template';
 export { adapterTypesTemplate } from './adapter-types.template';
 export { adapterHelpersTemplate } from './adapter-helpers.template';
 export { adapterContextTemplate } from './adapter-context.template';
-
+export { generateSwaggerTemplate } from './generate-swagger.template';

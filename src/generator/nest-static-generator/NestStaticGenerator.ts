@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { Config, IGenerator } from '@tg-scripts/types';
+import type { Config, Guard, IGenerator } from '@tg-scripts/types';
 import { formatGeneratedFiles } from '../../io/utils';
 import { TemplateRenderer } from './TemplateRenderer';
 import {
@@ -16,16 +16,19 @@ import {
   adapterTypesTemplate,
   adapterHelpersTemplate,
   adapterContextTemplate,
+  generateSwaggerTemplate,
 } from './templates';
 import { defaultStaticGeneratorOptions, StaticTemplateOptions } from './config';
 import { GuardResolver } from '../nest-controller-generator/GuardResolver';
+import { ProjectPathResolver } from '../../io/project-paths/ProjectPathResolver';
 
 export type StaticGeneratorOverrides = Partial<StaticTemplateOptions> & { include?: string[] };
 
-export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides, void> {
+export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides, string[]> {
   private readonly renderer: TemplateRenderer;
   private readonly templateOptions: StaticTemplateOptions;
   private readonly workspaceRoot: string;
+  private readonly projectPathResolver: ProjectPathResolver;
   constructor(
     private readonly config: Config,
     overrides: StaticGeneratorOverrides = {},
@@ -33,6 +36,7 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
     this.workspaceRoot = process.cwd();
     this.renderer = new TemplateRenderer();
     this.templateOptions = { ...defaultStaticGeneratorOptions, ...overrides };
+    this.projectPathResolver = new ProjectPathResolver(config, { workspaceRoot: this.workspaceRoot });
   }
 
   private computeOutputPaths(): {
@@ -50,26 +54,42 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
     adapterTypes: string;
     adapterHelpers: string;
     adapterContext: string;
+    generateSwagger: string;
   } {
-    const staticFiles = this.config.output.backend.staticFiles;
+    const outputFolders = this.config.output.backend;
     // Adapter files go in a dedicated directory
     const adaptersPath = path.join(this.workspaceRoot, 'src', 'adapters');
-    
+    // Scripts directory for generation utilities
+    const scriptsPath = path.join(this.workspaceRoot, 'src', 'scripts');
+
     return {
-      adminGuard: this.resolveStaticPath(staticFiles.guards, 'admin.guard.ts'),
-      featureFlagGuard: this.resolveStaticPath(staticFiles.guards, 'feature-flag.guard.ts'),
-      isAdminDecorator: this.resolveStaticPath(staticFiles.decorators, 'is-admin.decorator.ts'),
-      paginatedSearchQueryDto: this.resolveStaticPath(staticFiles.dtos, 'paginated-search-query.dto.ts'),
-      paginatedSearchResultDto: this.resolveStaticPath(staticFiles.dtos, 'paginated-search-result.dto.ts'),
-      apiResponseDto: this.resolveStaticPath(staticFiles.dtos, 'api-response.dto.ts'),
-      paginationInterceptor: this.resolveStaticPath(staticFiles.interceptors, 'pagination.interceptor.ts'),
-      auditInterceptor: this.resolveStaticPath(staticFiles.interceptors, 'audit.interceptor.ts'),
-      paginatedSearchDecorator: this.resolveStaticPath(staticFiles.decorators, 'paginated-search.decorator.ts'),
-      paginatedSearchUtil: this.resolveStaticPath(staticFiles.utils, 'paginated-search.ts'),
+      adminGuard: this.resolveStaticPath(outputFolders.guardsPath as string, 'admin.guard.ts'),
+      featureFlagGuard: this.resolveStaticPath(outputFolders.guardsPath as string, 'feature-flag.guard.ts'),
+      isAdminDecorator: this.resolveStaticPath(outputFolders.decoratorsPath as string, 'is-admin.decorator.ts'),
+      paginatedSearchQueryDto: this.resolveStaticPath(
+        outputFolders.dtosPath as string,
+        'paginated-search-query.dto.ts',
+      ),
+      paginatedSearchResultDto: this.resolveStaticPath(
+        outputFolders.dtosPath as string,
+        'paginated-search-result.dto.ts',
+      ),
+      apiResponseDto: this.resolveStaticPath(outputFolders.dtosPath as string, 'api-response.dto.ts'),
+      paginationInterceptor: this.resolveStaticPath(
+        outputFolders.interceptorsPath as string,
+        'pagination.interceptor.ts',
+      ),
+      auditInterceptor: this.resolveStaticPath(outputFolders.interceptorsPath as string, 'audit.interceptor.ts'),
+      paginatedSearchDecorator: this.resolveStaticPath(
+        outputFolders.decoratorsPath as string,
+        'paginated-search.decorator.ts',
+      ),
+      paginatedSearchUtil: this.resolveStaticPath(outputFolders.utilsPath as string, 'paginated-search.ts'),
       adapterRuntime: path.join(adaptersPath, 'runtime.ts'),
       adapterTypes: path.join(adaptersPath, 'types.ts'),
       adapterHelpers: path.join(adaptersPath, 'helpers.ts'),
       adapterContext: path.join(adaptersPath, 'context.ts'),
+      generateSwagger: path.join(scriptsPath, 'generate-swagger.ts'),
     };
   }
 
@@ -93,7 +113,36 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
     return path.join(absoluteBase, fileName);
   }
 
-  public async generate(overrides: StaticGeneratorOverrides = {}, _options?: Record<string, unknown>): Promise<void> {
+  /**
+   * Get list of available static files with their output paths
+   * @returns Array of objects with name and path
+   */
+  public getAvailableFiles(): Array<{ name: string; path: string }> {
+    const outputs = this.computeOutputPaths();
+
+    return [
+      { name: 'admin.guard', path: outputs.adminGuard },
+      { name: 'feature-flag.guard', path: outputs.featureFlagGuard },
+      { name: 'is-admin.decorator', path: outputs.isAdminDecorator },
+      { name: 'paginated-search-query.dto', path: outputs.paginatedSearchQueryDto },
+      { name: 'paginated-search-result.dto', path: outputs.paginatedSearchResultDto },
+      { name: 'api-response.dto', path: outputs.apiResponseDto },
+      { name: 'pagination.interceptor', path: outputs.paginationInterceptor },
+      { name: 'audit.interceptor', path: outputs.auditInterceptor },
+      { name: 'paginated-search.decorator', path: outputs.paginatedSearchDecorator },
+      { name: 'paginated-search.util', path: outputs.paginatedSearchUtil },
+      { name: 'adapter.runtime', path: outputs.adapterRuntime },
+      { name: 'adapter.types', path: outputs.adapterTypes },
+      { name: 'adapter.helpers', path: outputs.adapterHelpers },
+      { name: 'adapter.context', path: outputs.adapterContext },
+      { name: 'generate.swagger', path: outputs.generateSwagger },
+    ];
+  }
+
+  public async generate(
+    overrides: StaticGeneratorOverrides = {},
+    _options?: Record<string, unknown>,
+  ): Promise<string[]> {
     if (Object.keys(overrides).length > 0) {
       this.templateOptions.rolesEnumName = overrides.rolesEnumName ?? this.templateOptions.rolesEnumName;
       this.templateOptions.prismaGeneratedPath =
@@ -107,8 +156,8 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
     await this.ensureDirectories(Object.values(outputs));
 
     const guardResolver = new GuardResolver(
-      this.config.api.authentication.guards,
-      this.config.api.authentication.enabled,
+      this.config.api.guards as Guard[],
+      this.config.api.authenticationEnabled as boolean,
     );
     const guardTemplateVars = guardResolver.getTemplateVariables();
 
@@ -224,13 +273,36 @@ export class AuditInterceptor implements NestInterceptor {
         target: outputs.adapterContext,
         content: adapterContextTemplate,
       },
+      {
+        name: 'generate.swagger',
+        target: outputs.generateSwagger,
+        content: this.renderer.render(generateSwaggerTemplate, {
+          appModuleImport: this.createImportPath(
+            outputs.generateSwagger,
+            this.projectPathResolver.resolveAppModulePath() ?? path.join(this.workspaceRoot, 'src/app.module.ts'),
+          ).replace(/\.ts$/, ''),
+          swaggerJsonPath:
+            (this.config.output.dashboard.swaggerJsonPath as string) ??
+            path.join(this.config.output.dashboard.root as string, 'types', 'swagger.json'),
+          title: 'API Documentation',
+          description: 'API documentation generated by @tgraph/backend-generator',
+          version: '1.0',
+        }),
+      },
     ];
 
     const include = overrides?.include;
-    const filtered = include && include.length > 0 ? filesToWrite.filter((f) => include.includes(f.name)) : filesToWrite;
+    const filtered =
+      include && include.length > 0 ? filesToWrite.filter((f) => include.includes(f.name)) : filesToWrite;
 
     await Promise.all(filtered.map(({ target, content }) => fs.promises.writeFile(target, content, 'utf-8')));
 
-    formatGeneratedFiles(filtered.map(({ target }) => target), this.workspaceRoot);
+    formatGeneratedFiles(
+      filtered.map(({ target }) => target),
+      this.workspaceRoot,
+    );
+
+    // Return the list of generated files
+    return filtered.map(({ target }) => target);
   }
 }

@@ -24,18 +24,18 @@ export class DtoGenerator {
   constructor(config: Config) {
     this.config = config;
     this.workspaceRoot = process.cwd();
-    this.schemaPath = config.input.schemaPath;
+    this.schemaPath = config.input.prisma.schemaPath as string;
     this.schemaAbsolutePath = path.isAbsolute(this.schemaPath)
       ? this.schemaPath
       : path.join(this.workspaceRoot, this.schemaPath);
-    this.outputDir = config.output.backend.dtos;
+    this.outputDir = config.output.backend.dtosPath as string;
     this.outputAbsolutePath = path.isAbsolute(this.outputDir)
       ? this.outputDir
       : path.join(this.workspaceRoot, this.outputDir);
     this.fieldParser = new PrismaFieldParser();
     this.fieldRelationsParser = new PrismaRelationsParser();
     this.schemaParser = new PrismaSchemaParser(this.fieldParser, this.fieldRelationsParser);
-    this.dtoGenerator = new NestDtoGenerator({ suffix: config.api.suffix });
+    this.dtoGenerator = new NestDtoGenerator({ suffix: config.api.suffix as string });
   }
 
   private formatFiles(): void {
@@ -79,10 +79,10 @@ export class DtoGenerator {
   private parseSchema(): void {
     console.log('📖 Parsing Prisma schema...');
     console.log(`   Reading from: ${this.schemaAbsolutePath}`);
-    
+
     const schemaContent = fs.readFileSync(this.schemaAbsolutePath, 'utf-8');
     console.log(`   Schema content length: ${schemaContent.length} characters`);
-    
+
     this.schemaParser.load(schemaContent);
     const parsed = this.schemaParser.parse();
 

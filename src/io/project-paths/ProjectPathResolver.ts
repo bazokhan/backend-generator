@@ -31,11 +31,14 @@ export class ProjectPathResolver {
   private readonly moduleRootCache: Record<string, string[]> = {};
   private readonly pathModule: typeof path;
   private readonly workspaceRoot: string;
-  constructor(private readonly config: Config, options: ProjectPathResolverOptions = {}) {
+  constructor(
+    private readonly config: Config,
+    options: ProjectPathResolverOptions = {},
+  ) {
     this.workspaceRoot = options.workspaceRoot ?? process.cwd();
     this.fsModule = options.fsModule ?? fs;
     this.pathModule = options.pathModule ?? path;
-    const dashboardPath = this.config.output.dashboard.root;
+    const dashboardPath = this.config.output.dashboard.root as string;
     this.dashboardAbsolutePath = this.isAbsolute(dashboardPath)
       ? dashboardPath
       : this.pathModule.join(this.workspaceRoot, dashboardPath);
@@ -91,10 +94,18 @@ export class ProjectPathResolver {
   }
 
   private findFileByName(startDir: string, fileName: string, maxDepth = 4): string | null {
-    return this.findFileByPredicate(startDir, (absolutePath) => this.pathModule.basename(absolutePath) === fileName, maxDepth);
+    return this.findFileByPredicate(
+      startDir,
+      (absolutePath) => this.pathModule.basename(absolutePath) === fileName,
+      maxDepth,
+    );
   }
 
-  private findFileByPredicate(startDir: string, predicate: (absolutePath: string) => boolean, maxDepth = 4): string | null {
+  private findFileByPredicate(
+    startDir: string,
+    predicate: (absolutePath: string) => boolean,
+    maxDepth = 4,
+  ): string | null {
     const queue: Array<{ dir: string; depth: number }> = [{ dir: startDir, depth: 0 }];
 
     while (queue.length > 0) {
@@ -132,7 +143,9 @@ export class ProjectPathResolver {
   }
 
   private makeAbsolute(targetPath: string): string {
-    return this.isAbsolute(targetPath) ? this.normalizePath(targetPath) : this.pathModule.join(this.workspaceRoot, targetPath);
+    return this.isAbsolute(targetPath)
+      ? this.normalizePath(targetPath)
+      : this.pathModule.join(this.workspaceRoot, targetPath);
   }
 
   private normalizePath(targetPath: string): string {
@@ -154,7 +167,7 @@ export class ProjectPathResolver {
     const resolved: string[] = [];
 
     // Use search paths from new config structure
-    for (const searchPath of this.config.output.backend.modules.searchPaths) {
+    for (const searchPath of this.config.output.backend.modulesPaths as string[]) {
       resolved.push(this.makeAbsolute(searchPath));
     }
 
@@ -217,7 +230,7 @@ export class ProjectPathResolver {
 
   public getDefaultModuleRoot(): string {
     // With new config, we use the defaultRoot from config
-    return this.pathModule.join(this.workspaceRoot, this.config.output.backend.modules.defaultRoot);
+    return this.pathModule.join(this.workspaceRoot, this.config.output.backend.root as string);
   }
 
   public getWorkspaceRoot(): string {
@@ -229,7 +242,7 @@ export class ProjectPathResolver {
       return this.appModulePathCache;
     }
 
-    const configured = this.resolveConfiguredPath(this.config.paths?.appModule);
+    const configured = this.resolveConfiguredPath(this.config.output.backend.appModulePath as string);
     if (configured) {
       this.appModulePathCache = configured;
       return this.appModulePathCache;
@@ -261,7 +274,7 @@ export class ProjectPathResolver {
       return this.appComponentPathCache;
     }
 
-    const configured = this.resolveConfiguredPath(this.config.paths?.appComponent);
+    const configured = this.resolveConfiguredPath(this.config.output.dashboard.appComponentPath as string);
     if (configured) {
       this.appComponentPathCache = configured;
       return this.appComponentPathCache;
@@ -299,7 +312,7 @@ export class ProjectPathResolver {
       return this.dataProviderPathCache;
     }
 
-    const configured = this.resolveConfiguredPath(this.config.paths?.dataProvider);
+    const configured = this.resolveConfiguredPath(this.config.output.dashboard.dataProviderPath as string);
     if (configured) {
       this.dataProviderPathCache = configured;
       return this.dataProviderPathCache;
@@ -320,7 +333,7 @@ export class ProjectPathResolver {
   public resolveModuleRoots(): Record<string, string[]> {
     // Return all configured search paths as module roots
     const roots: Record<string, string[]> = {};
-    for (const searchPath of this.config.output.backend.modules.searchPaths) {
+    for (const searchPath of this.config.output.backend.modulesPaths as string[]) {
       const absolutePath = this.makeAbsolute(searchPath);
       const folderName = this.pathModule.basename(absolutePath);
       if (!roots[folderName]) {

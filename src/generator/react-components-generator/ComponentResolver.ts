@@ -82,7 +82,7 @@ export class ComponentResolver {
   private generateImports(components: ComponentImport[]): string {
     // Group components by import path
     const grouped = new Map<string, Set<string>>();
-    
+
     for (const component of components) {
       if (!grouped.has(component.importPath)) {
         grouped.set(component.importPath, new Set());
@@ -121,7 +121,7 @@ export class ComponentResolver {
    */
   private resolveDisplayComponent(componentType: DisplayComponentType): ComponentImport {
     const override = this.overrides.display?.[componentType];
-    
+
     if (override) {
       return {
         name: override.name,
@@ -153,7 +153,7 @@ export class ComponentResolver {
    */
   private resolveFormComponent(componentType: FormComponentType): ComponentImport {
     const override = this.overrides.form?.[componentType];
-    
+
     if (override) {
       return {
         name: override.name,
@@ -178,4 +178,3 @@ export class ComponentResolver {
     return this.deduplicateImports(components);
   }
 }
-

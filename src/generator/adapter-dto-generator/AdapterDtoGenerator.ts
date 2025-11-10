@@ -8,13 +8,13 @@ export interface AdapterDtoGeneratorInput {
 
 /**
  * Generator for adapter input DTOs
- * 
+ *
  * Creates DTO classes with validation decorators for adapter endpoints
  */
 export class AdapterDtoGenerator implements IGenerator<AdapterDtoGeneratorInput, string> {
   /**
    * Generate input DTO for an adapter
-   * 
+   *
    * @param input - Adapter and model information
    * @returns Generated DTO class code
    */
@@ -83,14 +83,10 @@ export class ${className} {
    * Get import statements for DTO
    */
   private getImports(includeFileValidation: boolean): string {
-    const imports = [
-      "import { ApiProperty } from '@nestjs/swagger';",
-    ];
+    const imports = ["import { ApiProperty } from '@nestjs/swagger';"];
 
     if (includeFileValidation) {
-      imports.push(
-        "import { IsOptional, IsString } from 'class-validator';"
-      );
+      imports.push("import { IsOptional, IsString } from 'class-validator';");
     }
 
     return imports.join('\n');
@@ -98,15 +94,12 @@ export class ${className} {
 
   /**
    * Generate all DTOs for multiple adapters
-   * 
+   *
    * @param adapters - Array of adapter definitions
    * @param modelName - Associated model name
    * @returns Map of DTO filename to content
    */
-  public generateAll(
-    adapters: AdapterDefinition[],
-    modelName: string
-  ): Map<string, string> {
+  public generateAll(adapters: AdapterDefinition[], modelName: string): Map<string, string> {
     const dtos = new Map<string, string>();
 
     for (const adapter of adapters) {
@@ -120,22 +113,20 @@ export class ${className} {
 
   /**
    * Get DTO filename for an adapter
-   * 
+   *
    * @param adapter - Adapter definition
    * @returns DTO filename (e.g., 'upload-image-input.dto.ts')
    */
   public getDtoFileName(adapter: AdapterDefinition): string {
     // Convert PascalCase adapter name to kebab-case
-    const kebabName = adapter.name
-      .replace(/([a-z])([A-Z])/g, '$1-$2')
-      .toLowerCase();
+    const kebabName = adapter.name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 
     return `${kebabName}-input.dto.ts`;
   }
 
   /**
    * Get DTO class name for an adapter
-   * 
+   *
    * @param adapter - Adapter definition
    * @returns DTO class name (e.g., 'UploadImageInputDto')
    */
@@ -143,4 +134,3 @@ export class ${className} {
     return `${adapter.name}InputDto`;
   }
 }
-

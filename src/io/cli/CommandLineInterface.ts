@@ -12,268 +12,178 @@ import { PreflightChecker } from '../preflight/PreflightChecker';
 import type { PreflightReport } from '../preflight/PreflightChecker';
 import { NestStaticGenerator } from '../../generator/nest-static-generator/NestStaticGenerator';
 import { promptText, promptUser } from '../utils/user-prompt';
-
-export type CliCommand =
-  | 'api'
-  | 'dashboard'
-  | 'dtos'
-  | 'all'
-  | 'init'
-  | 'doctor'
-  | 'preflight'
-  | 'static'
-  | 'types'
-  | 'swagger';
-
-export interface CliOptions {
-  configPath?: string;
-  nonInteractive?: boolean;
-  forcePublic?: boolean;
-}
-
-interface ParsedArguments {
-  command?: CliCommand;
-  options: CliOptions;
-  helpRequested: boolean;
-  errors: string[];
-  configPath?: string;
-  initOutputPath?: string;
-  initRequireAdmin?: boolean;
-  staticList?: boolean;
-  staticInclude?: string[];
-  skipSwagger?: boolean;
-}
+import { supportedCommands } from '../../parser/cli-parser/config';
+import { supportedConfigs } from './config';
+import { buildHelpText } from './utils';
+import type { CliCommand, CliParsedOptions, ParsedArguments } from '../../parser/cli-parser/types';
+import { CliParser } from '@tg-scripts/parser/cli-parser/CliParser';
 
 export class CommandLineInterface {
   private readonly configLoader: ConfigLoader;
+  private readonly cliParser: CliParser;
   private readonly fsModule: typeof fs;
   private readonly pathModule: typeof path;
 
-  constructor(options: { configLoader?: ConfigLoader; fsModule?: typeof fs; pathModule?: typeof path } = {}) {
+  constructor(
+    options: {
+      configLoader?: ConfigLoader;
+      cliParser?: CliParser;
+      fsModule?: typeof fs;
+      pathModule?: typeof path;
+    } = {},
+  ) {
     this.configLoader = options.configLoader ?? new ConfigLoader();
+    this.cliParser = options.cliParser ?? new CliParser();
     this.fsModule = options.fsModule ?? fs;
     this.pathModule = options.pathModule ?? path;
   }
 
-  private applyCliOverrides(config: Config, options: CliOptions): Config {
+  private applyCliOverrides(config: Config, options: CliParsedOptions): Config {
     const nextConfig: Config = { ...config };
 
     if (options.nonInteractive !== undefined) {
       nextConfig.behavior = {
         ...nextConfig.behavior,
-        nonInteractive: options.nonInteractive,
+        nonInteractive: options.nonInteractive as boolean,
       };
     }
 
     if (options.forcePublic) {
       nextConfig.api = {
         ...nextConfig.api,
-        authentication: {
-          ...nextConfig.api.authentication,
-          enabled: false,
-          requireAdmin: false,
-        },
+        authenticationEnabled: false,
+        requireAdmin: false,
       };
     }
 
     return nextConfig;
   }
 
-  private buildConfigTemplate(values?: {
-    schemaPath?: string;
-    prismaService?: string;
-    apiSuffix?: string;
-    apiPrefix?: string;
-    authEnabled?: boolean;
-    requireAdmin?: boolean;
-    backendDtos?: string;
-    backendDefaultRoot?: string;
-    staticGuards?: string;
-    staticDecorators?: string;
-    staticDtos?: string;
-    staticInterceptors?: string;
-    staticUtils?: string;
-    dashboardRoot?: string;
-    dashboardResources?: string;
-    swaggerCommand?: string;
-    swaggerJsonPath?: string;
-  }): string {
-    const v = {
-      schemaPath: values?.schemaPath ?? 'prisma/schema.prisma',
-      prismaService: values?.prismaService ?? 'src/infrastructure/database/prisma.service.ts',
-      apiSuffix: (values?.apiSuffix ?? 'Admin').trim(),
-      apiPrefix: (values?.apiPrefix ?? 'tg-api').trim(),
-      authEnabled: values?.authEnabled ?? true,
-      requireAdmin: values?.requireAdmin ?? true,
-      backendDtos: values?.backendDtos ?? 'src/dtos/generated',
-      backendDefaultRoot: values?.backendDefaultRoot ?? 'src/features',
-      staticGuards: values?.staticGuards ?? 'src/guards',
-      staticDecorators: values?.staticDecorators ?? 'src/decorators',
-      staticDtos: values?.staticDtos ?? 'src/dtos',
-      staticInterceptors: values?.staticInterceptors ?? 'src/interceptors',
-      staticUtils: values?.staticUtils ?? 'src/utils',
-      dashboardRoot: values?.dashboardRoot ?? 'src/dashboard/src',
-      dashboardResources: values?.dashboardResources ?? 'src/dashboard/src/resources',
-      swaggerCommand: values?.swaggerCommand ?? 'npm run generate:swagger',
-      swaggerJsonPath:
-        values?.swaggerJsonPath ?? `${values?.dashboardRoot ?? 'src/dashboard/src'}/types/swagger.json`,
+  private buildConfigTemplate(values?: Record<string, any>): string {
+    // Helper to format a value based on its type
+    const formatValue = (value: any, type: string): string => {
+      if (value === null || value === undefined) {
+        return 'undefined';
+      }
+
+      switch (type) {
+        case 'string':
+          return `'${value}'`;
+        case 'boolean':
+          return value ? 'true' : 'false';
+        case 'string[]':
+          if (Array.isArray(value)) {
+            return `[${value.map((v) => `'${v}'`).join(', ')}]`;
+          }
+          return '[]';
+        case 'Guard[]':
+          if (Array.isArray(value) && value.length > 0) {
+            return `[\n        ${value.map((g: any) => `{ name: '${g.name}', importPath: '${g.importPath}' }`).join(',\n        ')},\n      ]`;
+          }
+          return '[]';
+        case 'object':
+          if (typeof value === 'object' && !Array.isArray(value)) {
+            return JSON.stringify(value, null, 2)
+              .split('\n')
+              .map((line, i) => (i === 0 ? line : `    ${line}`))
+              .join('\n');
+          }
+          return '{}';
+        default:
+          return String(value);
+      }
     };
 
-    return `import type { Config } from '@tgraph/backend-generator';
+    // Helper to get default value
+    const getDefaultValue = (config: (typeof supportedConfigs)[number]): any => {
+      if (typeof config.defaultValue === 'function') {
+        // For function defaults, use the example value instead
+        return config.example;
+      }
+      return config.defaultValue;
+    };
+
+    // Helper to resolve value with override or default
+    const resolveValue = (config: (typeof supportedConfigs)[number]): any => {
+      const override = values?.[config.name];
+      if (override !== undefined) {
+        return override;
+      }
+      return getDefaultValue(config);
+    };
+
+    // Group configs by section
+    const sections = new Map<string, (typeof supportedConfigs)[number][]>();
+    for (const config of supportedConfigs) {
+      const existing = sections.get(config.section) || [];
+      existing.push(config);
+      sections.set(config.section, existing);
+    }
+
+    // Build nested object structure
+    const buildSection = (sectionConfigs: (typeof supportedConfigs)[number][], indent: string): string => {
+      const lines: string[] = [];
+
+      for (const config of sectionConfigs) {
+        // Add comment if available
+        if (config.comment) {
+          const commentLines = config.comment.split('\n');
+          for (const line of commentLines) {
+            lines.push(`${indent}// ${line}`);
+          }
+        }
+
+        // Get the last part of the fullPath for the field name
+        const fieldName = config.fullPath.split('.').pop()!;
+        const value = resolveValue(config);
+        const formattedValue = formatValue(value, config.type);
+
+        lines.push(`${indent}${fieldName}: ${formattedValue},`);
+        lines.push('');
+      }
+
+      return lines.join('\n');
+    };
+
+    // Build the config structure
+    let configContent = `import type { Config } from '@tgraph/backend-generator';
 
 export const config: Config = {
   // ============================================================================
   // INPUT: Where to read from
   // ============================================================================
-    input: {
-      // Path to your Prisma schema file
-      schemaPath: '${v.schemaPath}',
-      
-      // Path to your PrismaService file (used for generating correct imports)
-      prismaService: '${v.prismaService}',
-    },
+  input: {
+    prisma: {
+${buildSection(sections.get('input.prisma') || [], '      ')}    },
+    dashboard: {
+${buildSection(sections.get('input.dashboard') || [], '      ')}    },
+  },
 
   // ============================================================================
   // OUTPUT: Where to write generated files
   // ============================================================================
   output: {
     backend: {
-      // Where to generate DTOs
-      dtos: '${v.backendDtos}',
-
-      // Module location configuration
-      modules: {
-        // Directories to search for existing modules (in order of priority)
-        // The generator will look in these locations when finding modules
-        searchPaths: ['src/features', 'src/modules', 'src'],
-
-        // Default directory for creating new modules
-        // When a model doesn't have an existing module, create it here
-        defaultRoot: '${v.backendDefaultRoot}',
-      },
-
-      // Where to generate static helper files (guards, decorators, etc.)
-      staticFiles: {
-        guards: '${v.staticGuards}',
-        decorators: '${v.staticDecorators}',
-        dtos: '${v.staticDtos}',
-        interceptors: '${v.staticInterceptors}',
-        utils: '${v.staticUtils}',
-        prismaService: '${v.prismaService}',
-      },
-    },
-
+${buildSection(sections.get('output.backend') || [], '      ')}    },
     dashboard: {
-      // Root directory of your React Admin dashboard
-      root: '${v.dashboardRoot}',
-
-      // Where to generate dashboard resource folders
-      resources: '${v.dashboardResources}',
-
-      // Swagger generation settings for dashboard API types
-      swagger: {
-        // Command to regenerate swagger.json before running tgraph types
-        command: '${v.swaggerCommand}',
-        // Path to the swagger.json file relative to project root
-        jsonPath: '${v.swaggerJsonPath}',
-      },
-    },
+${buildSection(sections.get('output.dashboard') || [], '      ')}    },
   },
 
   // ============================================================================
   // API: Backend API generation settings
   // ============================================================================
   api: {
-    // Suffix for generated classes (e.g., 'Admin' -> UserAdminService)
-    // Use different suffixes for different APIs (e.g., 'Admin', 'Public')
-    suffix: '${v.apiSuffix}',
-
-    // API route prefix (e.g., 'tg-api' -> /tg-api/users)
-    // Use different prefixes to separate multiple APIs
-    prefix: '${v.apiPrefix}',
-
-    // Authentication and authorization configuration
-    authentication: {
-      // Whether to add authentication guards to generated controllers
-      enabled: ${v.authEnabled ? 'true' : 'false'},
-
-      // Whether endpoints require admin role (affects guard configuration)
-      requireAdmin: ${v.requireAdmin ? 'true' : 'false'},
-
-      // List of guards to apply to controllers
-      // When authentication.enabled is true, these guards are added
-      guards: [
-        { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-      ],
-      adminGuards: [
-        { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
-      ],
-    },
-
-    relations: {
-      // Include relation fields in Prisma selects (use 'all' or list relation field names)
-      include: [],
-    },
-  },
-
-  // ============================================================================
-  // DASHBOARD: Frontend dashboard generation settings
-  // ============================================================================
-  dashboard: {
-    // Whether to generate dashboard resources
-    enabled: true,
-
-    // Automatically update data provider with new endpoint mappings
-    updateDataProvider: true,
-
-    // Override default React Admin components
-    // Useful for custom styling or behavior
-    components: {
-      // Form/Input components (used in Create/Edit pages)
-      form: {
-        // Example: Use custom text input
-        // TextInput: { name: 'CustomTextInput', importPath: '@/components/inputs/TextInput' },
-        
-        // Example: Use custom number input  
-        // NumberInput: { name: 'CustomNumberInput', importPath: '@/components/inputs/NumberInput' },
-      },
-
-      // Display components (used in List/Show pages)
-      display: {
-        // Example: Use custom text field
-        // TextField: { name: 'CustomTextField', importPath: '@/components/fields/TextField' },
-        
-        // Example: Use custom date field
-        // DateField: { name: 'CustomDateField', importPath: '@/components/fields/DateField' },
-      },
-    },
-  },
+${buildSection(sections.get('api') || [], '    ')}  },
 
   // ============================================================================
   // BEHAVIOR: CLI and generation behavior
   // ============================================================================
   behavior: {
-    // Automatically answer 'yes' to all prompts (useful for CI/CD)
-    nonInteractive: false,
-  },
-
-  // ============================================================================
-  // PATHS: Advanced path overrides (optional)
-  // ============================================================================
-  // Override auto-discovery for specific files
-  // Useful for non-standard project structures
-  paths: {
-    // NestJS root module (auto-discovered if not specified)
-    // appModule: 'src/app.module.ts',
-
-    // React Admin data provider file (auto-discovered if not specified)
-    // dataProvider: 'src/dashboard/src/providers/dataProvider.ts',
-
-    // React Admin App component (auto-discovered if not specified)
-    // appComponent: 'src/dashboard/src/App.tsx',
-  },
+${buildSection(sections.get('behavior') || [], '    ')}  },
 };
 `;
+
+    return configContent;
   }
 
   private countWarnings(report: DiagnosticReport): number {
@@ -316,43 +226,49 @@ export const config: Config = {
         await new DashboardGenerator(config).generate();
         new DtoGenerator(config).generate();
         return;
-      case 'preflight':
-        await this.runPreflight(config);
-        return;
       default:
         throw new Error(`Unsupported command: ${command}`);
     }
   }
 
-  private async executeStaticCommand(parsed: ParsedArguments): Promise<number> {
-    // Load config if available (some paths are needed)
-    const loader = parsed.configPath ? new ConfigLoader({ configPath: parsed.configPath }) : this.configLoader;
-    if (!loader.exists()) {
-      console.error(`❌ Error: Configuration file not found. Run 'tgraph init' first.`);
-      return 1;
-    }
-    const config = loader.load();
+  private async executeStaticCommand(parsed: ParsedArguments, config: Config): Promise<number> {
+    const generator = new NestStaticGenerator(config);
+    const availableFiles = generator.getAvailableFiles();
+    const available = availableFiles.map((f) => f.name);
 
-    const available = [
-      'admin.guard',
-      'is-admin.decorator',
-      'paginated-search-query.dto',
-      'paginated-search-result.dto',
-      'api-response.dto',
-      'pagination.interceptor',
-      'paginated-search.decorator',
-      'paginated-search.util',
-      'feature-flag.guard',
-      'audit.interceptor',
-    ];
+    // Handle --cat or --preflight option
+    if (parsed.options.staticCat) {
+      const file = availableFiles.find((f) => f.name === parsed.options.staticCat);
+      if (!file) {
+        console.error(`❌ Error: Static file '${parsed.options.staticCat}' not found.`);
+        console.error(`   Available files: ${available.join(', ')}`);
+        return 1;
+      }
 
-    if (parsed.staticList) {
-      console.log('Available static modules:');
-      available.forEach((n) => console.log(` - ${n}`));
+      console.log(`📄 Preview of ${file.name}:`);
+      console.log(`   Will be generated at: ${file.path}\n`);
+
+      // Generate just this file to preview content
+      const generatedFiles = await generator.generate({ include: [file.name] });
+      const firstFile = generatedFiles[0];
+      if (firstFile && this.fsModule.existsSync(firstFile)) {
+        const content = this.fsModule.readFileSync(firstFile, 'utf-8');
+        console.log(content);
+      }
+
       return 0;
     }
 
-    let include = parsed.staticInclude ?? [];
+    if (parsed.options.staticList) {
+      console.log('Available static modules:');
+      availableFiles.forEach((f) => {
+        const relativePath = this.pathModule.relative(process.cwd(), f.path);
+        console.log(` - ${f.name} → ${relativePath}`);
+      });
+      return 0;
+    }
+
+    let include = (parsed.options.staticInclude ?? []) as string[];
     if (include.length === 0 && !(parsed.options.nonInteractive ?? false)) {
       console.log('No --include provided. Select which static modules to generate:');
       for (const name of available) {
@@ -364,26 +280,36 @@ export const config: Config = {
     // If still empty and nonInteractive, generate all
     if (include.length === 0) include = available;
 
-    const generator = new NestStaticGenerator(config);
-    await generator.generate({ include });
-    console.log('✅ Static files generation completed');
+    const generatedFiles = await generator.generate({ include });
+
+    console.log('\n✅ Static files generation completed successfully!');
+    console.log('\n📁 Generated files:');
+    generatedFiles.forEach((filePath) => {
+      const relativePath = this.pathModule.relative(process.cwd(), filePath);
+      console.log(`   ✓ ${relativePath}`);
+    });
+
     return 0;
   }
 
   private async executeSwaggerCommand(parsed: ParsedArguments): Promise<number> {
-    const loader = parsed.configPath ? new ConfigLoader({ configPath: parsed.configPath }) : this.configLoader;
+    const loader = parsed.options.configPath
+      ? new ConfigLoader({ configPath: parsed.options.configPath as string })
+      : this.configLoader;
     if (!loader.exists()) {
       console.error(`❌ Error: Configuration file not found. Run 'tgraph init' first.`);
       return 1;
     }
     const config = loader.load();
     const workspaceRoot = process.cwd();
-    const command = config.output.dashboard.swagger?.command ?? 'npm run generate:swagger';
+    const command = 'npm run generate:swagger';
     return this.runSwaggerCommand(command, workspaceRoot);
   }
 
   private async executeTypesCommand(parsed: ParsedArguments): Promise<number> {
-    const loader = parsed.configPath ? new ConfigLoader({ configPath: parsed.configPath }) : this.configLoader;
+    const loader = parsed.options.configPath
+      ? new ConfigLoader({ configPath: parsed.options.configPath as string })
+      : this.configLoader;
     if (!loader.exists()) {
       console.error(`❌ Error: Configuration file not found. Run 'tgraph init' first.`);
       return 1;
@@ -391,24 +317,24 @@ export const config: Config = {
     const config = loader.load();
 
     const workspaceRoot = process.cwd();
-    const dashboardRoot = this.pathModule.isAbsolute(config.output.dashboard.root)
+    const dashboardRoot = this.pathModule.isAbsolute(config.output.dashboard.root as string)
       ? config.output.dashboard.root
-      : this.pathModule.join(workspaceRoot, config.output.dashboard.root);
+      : this.pathModule.join(workspaceRoot, config.output.dashboard.root as string);
 
-    if (!parsed.skipSwagger) {
-      const swaggerCommand = config.output.dashboard.swagger?.command ?? 'npm run generate:swagger';
+    if (!parsed.options.skipSwagger) {
+      const swaggerCommand = 'npm run generate:swagger';
       const swaggerResult = this.runSwaggerCommand(swaggerCommand, workspaceRoot);
       if (swaggerResult !== 0) {
         return swaggerResult;
       }
     }
 
-    const swaggerConfigPath = config.output.dashboard.swagger?.jsonPath;
+    const swaggerConfigPath = config.output.dashboard.swaggerJsonPath as string;
     const swaggerJsonPath = swaggerConfigPath
       ? this.pathModule.isAbsolute(swaggerConfigPath)
         ? swaggerConfigPath
         : this.pathModule.join(workspaceRoot, swaggerConfigPath)
-      : this.pathModule.join(dashboardRoot, 'types', 'swagger.json');
+      : this.pathModule.join(dashboardRoot as string, 'types', 'swagger.json');
 
     if (!this.fsModule.existsSync(swaggerJsonPath)) {
       console.error('❌ Missing swagger.json. Please generate swagger before running tgraph types.');
@@ -416,10 +342,21 @@ export const config: Config = {
       return 1;
     }
 
-    const outputDir = this.pathModule.join(dashboardRoot, 'types');
+    const outputDir = this.pathModule.join(dashboardRoot as string, 'types');
     const command = `npx swagger-typescript-api generate -p "${swaggerJsonPath}" -o "${outputDir}" -n api.ts`;
     try {
       execSync(command, { stdio: 'inherit', cwd: workspaceRoot });
+
+      // Format the generated files
+      const { formatGeneratedFile } = await import('../../io/utils');
+      const apiTsPath = this.pathModule.join(outputDir, 'api.ts');
+      if (this.fsModule.existsSync(apiTsPath)) {
+        formatGeneratedFile(apiTsPath, workspaceRoot);
+      }
+      if (this.fsModule.existsSync(swaggerJsonPath)) {
+        formatGeneratedFile(swaggerJsonPath, workspaceRoot);
+      }
+
       console.log('✅ Types generated successfully');
       return 0;
     } catch (error) {
@@ -439,6 +376,11 @@ export const config: Config = {
     try {
       console.log(`🧾 Running swagger command: ${trimmed}`);
       execSync(trimmed, { stdio: 'inherit', cwd: workspaceRoot });
+
+      // Note: swagger.json formatting is handled in executeTypesCommand
+      // If running swagger command independently, we could format it here
+      // but we don't have access to the swagger path in this context
+
       return 0;
     } catch (error) {
       console.error('❌ Failed to run swagger command:', error);
@@ -446,7 +388,7 @@ export const config: Config = {
     }
   }
 
-  private async executeDoctorCommand(configPath: string | undefined, cliOptions: CliOptions): Promise<number> {
+  private async executeDoctorCommand(configPath: string | undefined, cliOptions: CliParsedOptions): Promise<number> {
     const startTime = Date.now();
     console.log(`🔍 Running system diagnostics... [${new Date().toLocaleTimeString()}]\n`);
 
@@ -464,42 +406,43 @@ export const config: Config = {
         // Config load failed - use minimal config just to run diagnostics
         config = {
           input: {
-            schemaPath: '',
-            prismaService: '',
+            prisma: {
+              schemaPath: '',
+              servicePath: '',
+            },
+            dashboard: {
+              components: {},
+            },
           },
           output: {
             backend: {
-              dtos: '',
-              modules: {
-                searchPaths: [],
-                defaultRoot: '',
-              },
-              staticFiles: {
-                guards: '',
-                decorators: '',
-                dtos: '',
-                interceptors: '',
-                utils: '',
-              },
+              root: '',
+              dtosPath: '',
+              modulesPaths: [],
+              guardsPath: '',
+              decoratorsPath: '',
+              interceptorsPath: '',
+              utilsPath: '',
+              appModulePath: '',
             },
             dashboard: {
+              enabled: false,
+              updateDataProvider: false,
               root: '',
-              resources: '',
+              resourcesPath: '',
+              swaggerJsonPath: '',
+              apiPath: '',
+              dataProviderPath: '',
+              appComponentPath: '',
             },
           },
           api: {
             suffix: '',
             prefix: '',
-            authentication: {
-              enabled: true,
-              requireAdmin: true,
-              guards: [],
-            },
-          },
-          dashboard: {
-            enabled: false,
-            updateDataProvider: false,
-            components: { form: {}, display: {} },
+            authenticationEnabled: true,
+            requireAdmin: true,
+            guards: [],
+            adminGuards: [],
           },
           behavior: {
             nonInteractive: false,
@@ -557,7 +500,10 @@ export const config: Config = {
     console.error('❌ CLI execution failed:', error);
   }
 
-  private async initializeConfig(options?: { outputPath?: string | undefined; requireAdmin?: boolean | undefined }): Promise<number> {
+  private async initializeConfig(options?: {
+    outputPath?: string | undefined;
+    requireAdmin?: boolean | undefined;
+  }): Promise<number> {
     const defaultPath = options?.outputPath
       ? this.pathModule.isAbsolute(options.outputPath)
         ? options.outputPath
@@ -570,7 +516,7 @@ export const config: Config = {
       const prismaService = await promptText('Path to PrismaService', {
         defaultValue: 'src/infrastructure/database/prisma.service.ts',
       });
-      const apiSuffix = await promptText('API class suffix (empty for none)', { defaultValue: 'Admin' });
+      const apiSuffix = await promptText('API class suffix (empty for none)', { defaultValue: '' });
       const apiPrefix = await promptText('API route prefix', { defaultValue: 'tg-api' });
       const authEnabled = await promptUser('Enable authentication guards? (y/n): ', { defaultValue: true });
       const requireAdmin = await promptUser('Require admin for this API? (y/n): ', {
@@ -607,9 +553,9 @@ export const config: Config = {
       };
     };
 
-    if (this.configLoader.exists()) {
-      const existingPath = this.configLoader.getConfigFilePath();
-      console.error(`❌ Error: Configuration file already exists at '${existingPath}'`);
+    // Check if config already exists at the target path
+    if (this.fsModule.existsSync(defaultPath)) {
+      console.error(`❌ Error: Configuration file already exists at '${defaultPath}'`);
       console.error(`   Remove it first if you want to reinitialize.`);
       return 1;
     }
@@ -617,9 +563,25 @@ export const config: Config = {
       // Ask whether to use defaults or run wizard
       const runWizard = await promptUser('Run interactive init wizard? (y/n): ', { defaultValue: true });
       const answers = runWizard ? await ask() : undefined;
-      const content = this.buildConfigTemplate(answers);
+
+      // Apply requireAdmin override if provided via CLI
+      const finalAnswers = answers
+        ? {
+            ...answers,
+            requireAdmin: options?.requireAdmin !== undefined ? options.requireAdmin : answers.requireAdmin,
+          }
+        : options?.requireAdmin !== undefined
+          ? { requireAdmin: options.requireAdmin }
+          : undefined;
+
+      const content = this.buildConfigTemplate(finalAnswers);
 
       this.fsModule.writeFileSync(defaultPath, content, 'utf-8');
+
+      // Format the generated config file
+      const { formatGeneratedFile } = await import('../../io/utils');
+      formatGeneratedFile(defaultPath, process.cwd());
+
       console.log(`✅ Created configuration file: ${defaultPath}`);
       console.log(`   You can now customize it for your project.`);
       console.log(`   Run 'tgraph all' to generate code.`);
@@ -628,103 +590,6 @@ export const config: Config = {
       console.error(`❌ Error creating configuration file:`, error);
       return 1;
     }
-  }
-
-  private parseArguments(args: string[]): ParsedArguments {
-    const parsed: ParsedArguments = {
-      options: {},
-      helpRequested: false,
-      errors: [],
-    };
-
-    let index = 0;
-    while (index < args.length) {
-      const arg = args[index];
-
-      switch (arg) {
-        case '-h':
-        case '--help':
-          parsed.helpRequested = true;
-          index += 1;
-          continue;
-        case '--config':
-        case '--file':
-        case '-c':
-          index = this.readNextValue(args, index, (value) => (parsed.configPath = value), parsed);
-          continue;
-        case '--output':
-          index = this.readNextValue(args, index, (value) => (parsed.initOutputPath = value), parsed);
-          continue;
-        case '--requireAdmin': {
-          const nextIndex = this.readNextValue(
-            args,
-            index,
-            (value) => (parsed.initRequireAdmin = value === 'true'),
-            parsed,
-          );
-          index = nextIndex;
-          continue;
-        }
-        case '--list':
-          parsed.staticList = true;
-          index += 1;
-          continue;
-        case '--include':
-          index = this.readNextValue(
-            args,
-            index,
-            (value) =>
-              (parsed.staticInclude = value
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean)),
-            parsed,
-          );
-          continue;
-        case '--skip-swagger':
-          parsed.skipSwagger = true;
-          index += 1;
-          continue;
-        case '--public':
-          parsed.options.forcePublic = true;
-          index += 1;
-          continue;
-        case '--yes':
-        case '-y':
-        case '--non-interactive':
-          parsed.options.nonInteractive = true;
-          index += 1;
-          continue;
-        case '--interactive':
-          parsed.options.nonInteractive = false;
-          index += 1;
-          continue;
-        default:
-          if (arg?.startsWith('--')) {
-            parsed.errors.push(`Unknown option: ${arg}`);
-            index += 1;
-            continue;
-          }
-
-          if (!parsed.command && arg !== undefined) {
-            const normalizedCommand = arg === 'dry-run' ? 'preflight' : arg;
-            if (
-              ['api', 'dashboard', 'dtos', 'all', 'init', 'doctor', 'preflight', 'static', 'types', 'swagger'].includes(
-                normalizedCommand,
-              )
-            ) {
-              parsed.command = normalizedCommand as CliCommand;
-              index += 1;
-              continue;
-            }
-          }
-
-          parsed.errors.push(`Unknown argument: ${arg ?? '<undefined>'}`);
-          index += 1;
-      }
-    }
-
-    return parsed;
   }
 
   private printDiagnosticCategory(category: DiagnosticCategory): void {
@@ -761,89 +626,14 @@ export const config: Config = {
   }
 
   private printHelp(command?: CliCommand): void {
-    if (command === 'init') {
-      const text = `
-tgraph init [options]
-
-Initializes a new tgraph.config.ts file. Run with no options to use interactive wizard.
-
-Options:
-  --output <file>            Output file name (default: tgraph.config.ts)
-  --requireAdmin <true|false>  Default requireAdmin in generated config (default: true)
-  -y, --yes                  Non-interactive defaults
-  -h, --help                 Show this help
-`;
-      console.log(text.trim());
-      return;
+    if (command === 'help' || command === undefined) {
+      // Print help for all commands
+      const helpText = supportedCommands.map(buildHelpText).join('\n');
+      console.log(helpText.trim());
+    } else {
+      // Print help for a specific command
+      console.log(buildHelpText(supportedCommands.find((c) => c.name === command)!));
     }
-    if (command === 'static') {
-      const text = `
-tgraph static [options]
-
-Generate selectable static backend files (guards, decorators, dtos, interceptors, utils).
-
-Options:
-  --list                     List available static modules and exit
-  --include <names>          Comma-separated list to include (e.g. admin-guard,pagination.interceptor)
-  -y, --yes                  Generate defaults without prompts
-  -h, --help                 Show this help
-
-Available names include:
-  admin.guard, is-admin.decorator, paginated-search-query.dto, paginated-search-result.dto,
-  api-response.dto, pagination.interceptor, paginated-search.decorator, paginated-search.util,
-  feature-flag.guard, audit.interceptor
-`;
-      console.log(text.trim());
-      return;
-    }
-    if (command === 'types') {
-      const text = `
-tgraph types [options]
-
-Generate dashboard API types (api.ts) from an existing swagger.json.
-
-Options:
-  -c, --config <path>        Configuration file path
-  --skip-swagger             Skip running the configured swagger generation command
-  -h, --help                 Show this help
-
-Notes:
-  - Runs the configured swagger command (default: npm run generate:swagger) before type generation unless skipped.
-`;
-      console.log(text.trim());
-      return;
-    }
-
-    const helpText = `
-tgraph <command> [options]
-
-Commands:
-  init        Initialize configuration file (tgraph.config.ts)
-  doctor      Run diagnostics to check environment and configuration
-  preflight   Analyze pending changes without modifying files
-  api         Generate NestJS modules, services, controllers, and update data provider
-  dashboard   Generate React Admin dashboard resources and field directive config
-  dtos        Generate NestJS DTO files
-  all         Run api, dashboard, and dtos generators sequentially
-  static      Generate selectable static backend files
-  types       Generate dashboard API client types from swagger.json
-  swagger     Run the configured swagger generation command
-
-Options:
-  -c, --config, --file <path>  Path to configuration file (default: tgraph.config.ts)
-  -y, --yes, --non-interactive Automatically confirm interactive prompts
-  --interactive                Force interactive prompts
-  --public                     Override config to generate controllers without authentication guards
-  -h, --help                   Display this help message
-
-Examples:
-  tgraph init                                    Create default config file
-  tgraph all                                     Generate using default config
-  tgraph api --config tgraph.admin.config.ts    Generate admin API
-  tgraph api --config tgraph.public.config.ts   Generate public API
-  tgraph doctor --config custom.config.ts       Run diagnostics with custom config
-`;
-    console.log(helpText.trim());
   }
 
   private printPathStatus(report: PreflightReport['appModule'], optional: boolean): void {
@@ -861,7 +651,7 @@ Examples:
   private printPreflightReport(report: PreflightReport, config: Config): void {
     console.log('📂 Key Paths');
     this.printPathStatus(report.appModule, false);
-    this.printPathStatus(report.dataProvider, !(config.dashboard.updateDataProvider ?? true));
+    this.printPathStatus(report.dataProvider, !((config.output.dashboard.updateDataProvider as boolean) ?? true));
     this.printPathStatus(report.appComponent, false);
     this.printPathStatus(report.swagger, false);
 
@@ -900,25 +690,6 @@ Examples:
     }
   }
 
-  private readNextValue(
-    args: string[],
-    index: number,
-    assign: (value: string) => void,
-    parsed: ParsedArguments,
-  ): number {
-    if (index + 1 >= args.length) {
-      parsed.errors.push(`Missing value for ${args[index]} option.`);
-      return args.length;
-    }
-
-    const value = args[index + 1];
-    if (value !== undefined) {
-      assign(value);
-    }
-
-    return index + 2;
-  }
-
   private async runPreflight(config: Config): Promise<void> {
     console.log('🧪 Running preflight analysis...\n');
     const checker = new PreflightChecker(config);
@@ -950,64 +721,98 @@ Examples:
    * Returns the exit code that should be used by the caller.
    */
   async run(argv: string[]): Promise<number> {
-    const parsed = this.parseArguments(argv);
-
-    if (parsed.helpRequested) {
-      this.printHelp(parsed.command);
-      return parsed.errors.length > 0 ? 1 : 0;
-    }
-
-    if (!parsed.command) {
-      parsed.errors.forEach((error) => console.error(error));
-      this.printHelp();
-      return 1;
-    }
-
-    if (parsed.errors.length > 0) {
-      parsed.errors.forEach((error) => console.error(error));
-      this.printHelp();
-      return 1;
-    }
-
-    if (parsed.command === 'init') {
-      return await this.initializeConfig({ outputPath: parsed.initOutputPath, requireAdmin: parsed.initRequireAdmin });
-    }
-
-    if (parsed.command === 'doctor') {
-      return await this.executeDoctorCommand(parsed.configPath, parsed.options);
-    }
-
-    if (parsed.command === 'static') {
-      return await this.executeStaticCommand(parsed);
-    }
-
-    if (parsed.command === 'types') {
-      return await this.executeTypesCommand(parsed);
-    }
-
-    if (parsed.command === 'swagger') {
-      return await this.executeSwaggerCommand(parsed);
-    }
-
-    // Check if config file exists (or was specified)
-    const configLoader = parsed.configPath ? new ConfigLoader({ configPath: parsed.configPath }) : this.configLoader;
-
-    if (!configLoader.exists()) {
-      if (parsed.configPath) {
-        console.error(`❌ Error: Configuration file not found at: ${parsed.configPath}`);
-      } else {
-        console.error(`❌ Error: No configuration file found.`);
-        console.error(`   Run 'tgraph init' to create a configuration file.`);
-        console.error(`   Expected file: tgraph.config.ts or tgraph.config.js in project root.`);
-        console.error(`   Or specify a config file with: --config <path>`);
-      }
-      return 1;
-    }
-
     try {
+      const parsed = this.cliParser.parse(argv);
+
+      if (parsed.options.helpRequested) {
+        this.printHelp(parsed.command);
+        return parsed.errors.length > 0 ? 1 : 0;
+      }
+
+      if (!parsed.command || parsed.errors.length > 0) {
+        parsed.errors.forEach((error) => console.error(error));
+        this.printHelp();
+        return 1; // Return error when command is missing or errors exist
+      }
+
+      // handle commands that don't require a config file
+      if (parsed.command === 'help') {
+        this.printHelp(parsed.command);
+        return 0;
+      }
+      if (parsed.command === 'init') {
+        return await this.initializeConfig({
+          outputPath: parsed.options.initOutputPath as string,
+          requireAdmin: parsed.options.initRequireAdmin as boolean,
+        });
+      }
+      if (parsed.command === 'doctor') {
+        return await this.executeDoctorCommand(parsed.options.configPath as string, parsed.options);
+      }
+
+      // Check if config file exists (or was specified)
+      const configLoader = parsed.options.configPath
+        ? new ConfigLoader({ configPath: parsed.options.configPath as string })
+        : this.configLoader;
+
+      if (!configLoader.exists()) {
+        if (parsed.options.configPath) {
+          console.error(`❌ Error: Configuration file not found at: ${parsed.options.configPath as string}`);
+        } else {
+          console.error(`❌ Error: No configuration file found.`);
+          console.error(`   Run 'tgraph init' to create a configuration file.`);
+          console.error(`   Expected file: tgraph.config.ts or tgraph.config.js in project root.`);
+          console.error(`   Or specify a config file with: --config <path>`);
+        }
+        throw new Error('Configuration file not found');
+      }
+
       const runtimeConfig = configLoader.load();
       const mergedConfig = this.applyCliOverrides(runtimeConfig, parsed.options);
-      await this.executeCommand(parsed.command, mergedConfig);
+
+      const handlers: { [K in CliCommand]: () => Promise<void> } = {
+        init: async () => {
+          await this.initializeConfig({
+            outputPath: parsed.options.initOutputPath as string,
+            requireAdmin: parsed.options.initRequireAdmin as boolean,
+          });
+        },
+        doctor: async () => {
+          await this.executeDoctorCommand(parsed.options.configPath as string, parsed.options);
+        },
+        preflight: async () => {
+          await this.runPreflight(mergedConfig);
+        },
+        api: async () => {
+          await new ApiGenerator(mergedConfig).generate();
+        },
+        dashboard: async () => {
+          await new DashboardGenerator(mergedConfig).generate();
+        },
+        dtos: async () => {
+          new DtoGenerator(mergedConfig).generate();
+        },
+        all: async () => {
+          await new ApiGenerator(mergedConfig).generate();
+          await new DashboardGenerator(mergedConfig).generate();
+          new DtoGenerator(mergedConfig).generate();
+        },
+        static: async () => {
+          await this.executeStaticCommand(parsed, mergedConfig);
+        },
+        types: async () => {
+          await this.executeTypesCommand(parsed);
+        },
+        swagger: async () => {
+          await this.executeSwaggerCommand(parsed);
+        },
+        help: async () => {
+          this.printHelp(parsed.command);
+        },
+      };
+
+      const handler = handlers[parsed.command];
+      await handler();
       return 0;
     } catch (error) {
       this.handleExecutionError(error);

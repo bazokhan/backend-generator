@@ -69,4 +69,3 @@ export async function paginatedSearch<T>({
   return new PaginatedSearchResultDto<T>(data, total, parsedPage, parsedLimit);
 }
 `;
-

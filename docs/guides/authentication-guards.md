@@ -25,26 +25,22 @@ Guards are configured in the `api.authentication` section of your config:
 ```typescript
 export const config: Config = {
   // ... other config
-  
+
   api: {
     suffix: 'Admin',
     prefix: 'tg-api',
     authentication: {
       // Whether to add authentication guards
       enabled: true,
-      
+
       // Whether endpoints require admin role
       requireAdmin: true,
-      
+
       // Base guards (always applied when enabled)
-      guards: [
-        { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-      ],
-      
+      guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
+
       // Admin guards (only applied when requireAdmin is true)
-      adminGuards: [
-        { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
-      ],
+      adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
     },
   },
 };
@@ -58,7 +54,7 @@ Each guard is defined by:
 
 ```typescript
 interface Guard {
-  name: string;       // Guard class name (e.g., 'JwtAuthGuard')
+  name: string; // Guard class name (e.g., 'JwtAuthGuard')
   importPath: string; // Import path (e.g., '@/guards/jwt-auth.guard')
 }
 ```
@@ -155,6 +151,7 @@ tgraph api --public
 ```
 
 This temporarily sets:
+
 - `authentication.enabled = false`
 - `authentication.requireAdmin = false`
 
@@ -290,15 +287,15 @@ export class AdminGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    
+
     if (!user) {
       throw new ForbiddenException('No user found in request');
     }
-    
+
     if (user.role !== Role.ADMIN) {
       throw new ForbiddenException('Admin access required');
     }
-    
+
     return true;
   }
 }
@@ -320,16 +317,16 @@ export class ApiKeyGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const apiKey = request.headers['x-api-key'];
-    
+
     if (!apiKey) {
       throw new UnauthorizedException('API key is required');
     }
-    
+
     const validKey = this.configService.get<string>('API_KEY');
     if (apiKey !== validKey) {
       throw new UnauthorizedException('Invalid API key');
     }
-    
+
     return true;
   }
 }
@@ -349,16 +346,16 @@ export class TenantGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     const tenantId = request.params.tenantId || request.headers['x-tenant-id'];
-    
+
     if (!tenantId) {
       throw new ForbiddenException('Tenant ID is required');
     }
-    
+
     // Check if user belongs to the tenant
     if (user.tenantId !== tenantId) {
       throw new ForbiddenException('Access denied to this tenant');
     }
-    
+
     return true;
   }
 }
@@ -383,12 +380,8 @@ export const config: Config = {
     authentication: {
       enabled: true,
       requireAdmin: true,
-      guards: [
-        { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-      ],
-      adminGuards: [
-        { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
-      ],
+      guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
+      adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
     },
   },
   // ... other config
@@ -408,9 +401,7 @@ export const config: Config = {
     authentication: {
       enabled: true,
       requireAdmin: false,
-      guards: [
-        { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-      ],
+      guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
       adminGuards: [
         // Defined but not used when requireAdmin is false
         { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
@@ -465,8 +456,8 @@ export const config: Config = {
     authentication: {
       enabled: !isDevelopment, // Disable in development
       requireAdmin: true,
-      guards: isDevelopment 
-        ? []  // No guards in development
+      guards: isDevelopment
+        ? [] // No guards in development
         : [
             { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
             { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
@@ -585,15 +576,14 @@ describe('UserAdminController', () => {
 ### 1. Use Environment-Specific Guards
 
 ```typescript
-const guards = process.env.NODE_ENV === 'production'
-  ? [
-      { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-      { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
-      { name: 'RateLimitGuard', importPath: '@/guards/rate-limit.guard' },
-    ]
-  : [
-      { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-    ];
+const guards =
+  process.env.NODE_ENV === 'production'
+    ? [
+        { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+        { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
+        { name: 'RateLimitGuard', importPath: '@/guards/rate-limit.guard' },
+      ]
+    : [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }];
 ```
 
 ### 2. Provide Clear Error Messages
@@ -603,19 +593,15 @@ const guards = process.env.NODE_ENV === 'production'
 export class AdminGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const user = context.switchToHttp().getRequest().user;
-    
+
     if (!user) {
-      throw new ForbiddenException(
-        'Authentication required. Please provide a valid token.'
-      );
+      throw new ForbiddenException('Authentication required. Please provide a valid token.');
     }
-    
+
     if (user.role !== Role.ADMIN) {
-      throw new ForbiddenException(
-        'Admin access required. Your current role does not have permission.'
-      );
+      throw new ForbiddenException('Admin access required. Your current role does not have permission.');
     }
-    
+
     return true;
   }
 }
@@ -691,4 +677,3 @@ If `request.user` is undefined:
 - [Configuration Reference](../api/configuration.md) - Full config options
 - [Component Customization](./component-customization.md) - Customize components
 - [Multiple APIs Recipe](../recipes/multiple-apis.md) - Admin + Public setup
-

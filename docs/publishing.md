@@ -163,17 +163,20 @@ This ensures only production files are published.
 ### Local Testing Process
 
 1. **Build:**
+
    ```bash
    npm run build
    ```
 
 2. **Pack:**
+
    ```bash
    npm pack
    # Creates @tgraph-backend-generator-0.0.1.tgz
    ```
 
 3. **Extract and inspect:**
+
    ```bash
    tar -xzf @tgraph-backend-generator-0.0.1.tgz
    cd package
@@ -182,13 +185,14 @@ This ensures only production files are published.
    ```
 
 4. **Test in another project:**
+
    ```bash
    cd ../test-project
    npm install ../backend-generator/@tgraph-backend-generator-0.0.1.tgz
-   
+
    # Test CLI
    npx tgraph --help
-   
+
    # Test SDK
    node -e "const { ApiGenerator } = require('@tgraph/backend-generator'); console.log('✓ Import works');"
    ```

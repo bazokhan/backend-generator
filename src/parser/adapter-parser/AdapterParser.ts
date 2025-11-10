@@ -5,13 +5,13 @@ import type { PrismaModel } from '@tg-scripts/types';
 
 /**
  * Parser for discovering and loading adapter files
- * 
+ *
  * Adapters are discovered in the {modulePath}/adapters/*.adapter.ts directory
  */
 export class AdapterParser {
   /**
    * Discover adapter files for a given model
-   * 
+   *
    * @param model - Prisma model to find adapters for
    * @returns Array of discovered adapter files
    */
@@ -30,8 +30,8 @@ export class AdapterParser {
     try {
       const files = fs.readdirSync(adaptersPath);
       return files
-        .filter(file => file.endsWith('.adapter.ts') || file.endsWith('.adapter.js'))
-        .map(file => path.join(adaptersPath, file));
+        .filter((file) => file.endsWith('.adapter.ts') || file.endsWith('.adapter.js'))
+        .map((file) => path.join(adaptersPath, file));
     } catch (error) {
       console.warn(`Warning: Could not read adapters directory for ${model.name}:`, error);
       return [];
@@ -40,15 +40,12 @@ export class AdapterParser {
 
   /**
    * Parse an adapter file and extract its configuration and handler code
-   * 
+   *
    * @param adapterFilePath - Path to the adapter file
    * @param workspaceRoot - Project root directory
    * @returns Parsed adapter definition or null if parsing fails
    */
-  public async parseAdapter(
-    adapterFilePath: string,
-    workspaceRoot: string
-  ): Promise<AdapterDefinition | null> {
+  public async parseAdapter(adapterFilePath: string, workspaceRoot: string): Promise<AdapterDefinition | null> {
     try {
       // Get adapter name from filename
       const fileName = path.basename(adapterFilePath);
@@ -80,21 +77,21 @@ export class AdapterParser {
 
   /**
    * Extract adapter name from filename
-   * 
+   *
    * @param fileName - Adapter filename
    * @returns Adapter name in PascalCase
-   * 
+   *
    * @example
    * extractAdapterName('upload-image.adapter.ts') => 'UploadImage'
    */
   private extractAdapterName(fileName: string): string {
     // Remove .adapter.ts or .adapter.js extension
     const nameWithoutExt = fileName.replace(/\.adapter\.(ts|js)$/, '');
-    
+
     // Convert kebab-case to PascalCase
     return nameWithoutExt
       .split('-')
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join('');
   }
 
@@ -109,7 +106,8 @@ export class AdapterParser {
   } | null {
     // Pattern to match: adapter.json({ config }, async (ctx) => { ... })
     // or: adapter.multipart({ config }, async (ctx) => { ... })
-    const adapterPattern = /adapter\.(json|multipart)\s*\(\s*(\{[\s\S]*?\})\s*,\s*(async\s*\([^)]*\)\s*=>\s*\{[\s\S]*?\})\s*\)/;
+    const adapterPattern =
+      /adapter\.(json|multipart)\s*\(\s*(\{[\s\S]*?\})\s*,\s*(async\s*\([^)]*\)\s*=>\s*\{[\s\S]*?\})\s*\)/;
 
     const match = fileContent.match(adapterPattern);
 
@@ -152,7 +150,7 @@ export class AdapterParser {
       // Convert single quotes to double quotes for JSON parsing
       const jsonLike = cleaned
         .replace(/'/g, '"')
-        .replace(/(\w+):/g, '"$1":')  // Add quotes to keys
+        .replace(/(\w+):/g, '"$1":') // Add quotes to keys
         .replace(/,(\s*[}\]])/g, '$1'); // Remove trailing commas
 
       return JSON.parse(jsonLike);
@@ -187,26 +185,20 @@ export class AdapterParser {
     } else {
       const authArrayMatch = configStr.match(/auth:\s*\[([^\]]+)\]/);
       if (authArrayMatch && authArrayMatch[1]) {
-        config.auth = authArrayMatch[1]
-          .split(',')
-          .map(s => s.trim().replace(/['"]/g, ''));
+        config.auth = authArrayMatch[1].split(',').map((s) => s.trim().replace(/['"]/g, ''));
       }
     }
 
     // Extract select (array)
     const selectMatch = configStr.match(/select:\s*\[([^\]]+)\]/);
     if (selectMatch && selectMatch[1]) {
-      config.select = selectMatch[1]
-        .split(',')
-        .map(s => s.trim().replace(/['"]/g, ''));
+      config.select = selectMatch[1].split(',').map((s) => s.trim().replace(/['"]/g, ''));
     }
 
     // Extract include (array)
     const includeMatch = configStr.match(/include:\s*\[([^\]]+)\]/);
     if (includeMatch && includeMatch[1]) {
-      config.include = includeMatch[1]
-        .split(',')
-        .map(s => s.trim().replace(/['"]/g, ''));
+      config.include = includeMatch[1].split(',').map((s) => s.trim().replace(/['"]/g, ''));
     }
 
     // Extract description
@@ -222,15 +214,12 @@ export class AdapterParser {
 
   /**
    * Parse all adapters for a given model
-   * 
+   *
    * @param model - Prisma model
    * @param workspaceRoot - Project root directory
    * @returns Array of parsed adapter definitions
    */
-  public async parseAdapters(
-    model: PrismaModel,
-    workspaceRoot: string
-  ): Promise<AdapterDefinition[]> {
+  public async parseAdapters(model: PrismaModel, workspaceRoot: string): Promise<AdapterDefinition[]> {
     const adapterFiles = this.discoverAdapters(model);
 
     if (adapterFiles.length === 0) {
@@ -249,4 +238,3 @@ export class AdapterParser {
     return adapters;
   }
 }
-

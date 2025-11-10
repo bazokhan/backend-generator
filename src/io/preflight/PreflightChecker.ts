@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { Config, PrismaModel } from '@tg-scripts/types';
+import type { ComponentOverrides, Config, PrismaModel } from '@tg-scripts/types';
 import { ProjectPathResolver } from '../project-paths/ProjectPathResolver';
 import { ModulePathResolver } from '../module-path-resolver/ModulePathResolver';
 import { PrismaFieldParser } from '../../parser/prisma-field-parser/PrismaFieldParser';
@@ -62,7 +62,10 @@ export class PreflightChecker {
   private readonly schemaParser: PrismaSchemaParser;
   private readonly workspaceRoot: string;
   private readonly swaggerCommand: string;
-  constructor(private readonly config: Config, options: PreflightCheckerOptions = {}) {
+  constructor(
+    private readonly config: Config,
+    options: PreflightCheckerOptions = {},
+  ) {
     this.workspaceRoot = options.workspaceRoot ?? process.cwd();
     this.fsModule = options.fsModule ?? fs;
     this.pathModule = options.pathModule ?? path;
@@ -74,14 +77,14 @@ export class PreflightChecker {
     this.modulePathResolver = new ModulePathResolver({
       fsModule: this.fsModule,
       pathModule: this.pathModule,
-      searchPaths: config.output.backend.modules.searchPaths,
-      defaultRoot: config.output.backend.modules.defaultRoot,
+      searchPaths: config.output.backend.modulesPaths as string[],
+      defaultRoot: config.output.backend.root as string,
     });
     const fieldParser = new PrismaFieldParser();
     const relationsParser = new PrismaRelationsParser();
     this.schemaParser = new PrismaSchemaParser(fieldParser, relationsParser);
     this.dashboardRoot = this.projectPaths.getDashboardRoot();
-    this.swaggerCommand = this.config.output.dashboard.swagger?.command ?? 'npm run generate:swagger';
+    this.swaggerCommand = 'npm run generate:swagger';
   }
 
   private collectManualSteps(context: {
@@ -102,7 +105,7 @@ export class PreflightChecker {
       });
     }
 
-    if (this.config.dashboard.updateDataProvider && !context.dataProvider.exists) {
+    if ((this.config.output.dashboard.updateDataProvider as boolean) && !context.dataProvider.exists) {
       steps.push({
         severity: 'warning',
         message:
@@ -155,42 +158,42 @@ export class PreflightChecker {
   }
 
   private evaluateAppComponent(): PreflightPathReport {
-    const configuredPath = this.config.paths?.appComponent;
+    const configuredPath = this.config.output.dashboard.appComponentPath as string;
     const resolvedPath = this.projectPaths.resolveDashboardAppComponentPath();
     const exists = resolvedPath ? this.fsModule.existsSync(resolvedPath) : false;
-    
+
     const report: PreflightPathReport = {
       label: 'Dashboard App',
       exists,
     };
-    
+
     if (configuredPath !== undefined) {
       report.configuredPath = configuredPath;
     }
     if (resolvedPath !== null && resolvedPath !== undefined) {
       report.resolvedPath = resolvedPath;
     }
-    
+
     return report;
   }
 
   private evaluateAppModule(): PreflightPathReport {
-    const configuredPath = this.config.paths?.appModule;
+    const configuredPath = this.config.output.backend.appModulePath as string;
     const resolvedPath = this.projectPaths.resolveAppModulePath();
     const exists = resolvedPath ? this.fsModule.existsSync(resolvedPath) : false;
-    
+
     const report: PreflightPathReport = {
       label: 'AppModule',
       exists,
     };
-    
+
     if (configuredPath !== undefined) {
       report.configuredPath = configuredPath;
     }
     if (resolvedPath !== null && resolvedPath !== undefined) {
       report.resolvedPath = resolvedPath;
     }
-    
+
     return report;
   }
 
@@ -208,22 +211,22 @@ export class PreflightChecker {
   }
 
   private evaluateDataProvider(): PreflightPathReport {
-    const configuredPath = this.config.paths?.dataProvider;
+    const configuredPath = this.config.output.dashboard.dataProviderPath as string;
     const resolvedPath = this.projectPaths.resolveDashboardDataProviderPath();
     const exists = resolvedPath ? this.fsModule.existsSync(resolvedPath) : false;
-    
+
     const report: PreflightPathReport = {
       label: 'Data Provider',
       exists,
     };
-    
+
     if (configuredPath !== undefined) {
       report.configuredPath = configuredPath;
     }
     if (resolvedPath !== null && resolvedPath !== undefined) {
       report.resolvedPath = resolvedPath;
     }
-    
+
     return report;
   }
 
@@ -234,10 +237,7 @@ export class PreflightChecker {
 
       if (!moduleInfo) {
         const pendingDirectory = this.pathModule.join(defaultFeatureRoot, toKebabCase(model.name));
-        const pendingModuleFile = this.pathModule.join(
-          pendingDirectory,
-          `${toCamelCase(model.name)}.module.ts`,
-        );
+        const pendingModuleFile = this.pathModule.join(pendingDirectory, `${toCamelCase(model.name)}.module.ts`);
         return {
           name: model.name,
           status: 'missing-directory',
@@ -249,10 +249,7 @@ export class PreflightChecker {
 
       const moduleFileName = this.modulePathResolver.getModuleFileName(moduleInfo.path);
       if (!moduleFileName) {
-        const pendingModuleFile = this.pathModule.join(
-          moduleInfo.path,
-          `${toCamelCase(model.name)}.module.ts`,
-        );
+        const pendingModuleFile = this.pathModule.join(moduleInfo.path, `${toCamelCase(model.name)}.module.ts`);
         return {
           name: model.name,
           status: 'missing-module-file',
@@ -285,19 +282,17 @@ export class PreflightChecker {
   }
 
   private resolveSwaggerPath(): string {
-    const configured = this.config.output.dashboard.swagger?.jsonPath;
+    const configured = this.config.output.dashboard.swaggerJsonPath as string;
     if (configured) {
-      return this.pathModule.isAbsolute(configured)
-        ? configured
-        : this.pathModule.join(this.workspaceRoot, configured);
+      return this.pathModule.isAbsolute(configured) ? configured : this.pathModule.join(this.workspaceRoot, configured);
     }
     return this.pathModule.join(this.dashboardRoot, 'types', 'swagger.json');
   }
 
   private parseSchema(): PrismaModel[] {
-    const schemaPath = this.pathModule.isAbsolute(this.config.input.schemaPath)
-      ? this.config.input.schemaPath
-      : this.pathModule.join(this.workspaceRoot, this.config.input.schemaPath);
+    const schemaPath = this.pathModule.isAbsolute(this.config.input.prisma.schemaPath as string)
+      ? (this.config.input.prisma.schemaPath as string)
+      : this.pathModule.join(this.workspaceRoot, this.config.input.prisma.schemaPath as string);
     const schemaContent = this.fsModule.readFileSync(schemaPath, 'utf-8');
     this.schemaParser.load(schemaContent);
     const { models } = this.schemaParser.parse();

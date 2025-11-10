@@ -68,6 +68,7 @@ tgraph init
 ```
 
 The wizard will ask about:
+
 - Prisma schema path
 - API configuration (suffix, prefix, authentication)
 - Output directories for generated files
@@ -138,7 +139,7 @@ export class UserTgController {
 // src/features/user/user.tg.service.ts
 export class UserTgService {
   // ... standard CRUD methods ...
-  
+
   // Auto-generated from @unique email field
   async getOneByEmail(email: string) {
     const item = await this.prisma.user.findUnique({

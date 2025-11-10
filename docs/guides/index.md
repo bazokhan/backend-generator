@@ -18,4 +18,3 @@ In-depth guides for working with TGraph Backend Generator.
 - **[Customization](./customization)** - Extend and customize generated code
 - **[Custom Adapters](./custom-adapters)** - Create custom endpoints without editing generated files
 - **[Authentication Guards](./authentication-guards)** - Configure authentication and authorization
-

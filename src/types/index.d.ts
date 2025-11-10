@@ -69,80 +69,51 @@ export type DtoType = 'response' | 'create' | 'update';
 /**
  * Main configuration interface for TGraph Backend Generator
  */
+export type InputPrismaConfig = 'schemaPath' | 'servicePath';
+export type InputDashboardConfig = 'components';
+export type OutputBackendConfig =
+  | 'root'
+  | 'dtosPath'
+  | 'modulesPaths'
+  | 'guardsPath'
+  | 'decoratorsPath'
+  | 'dtosPath'
+  | 'interceptorsPath'
+  | 'utilsPath'
+  | 'appModulePath';
+export type OutputDashboardConfig =
+  | 'enabled'
+  | 'updateDataProvider'
+  | 'dataProviderPath'
+  | 'root'
+  | 'appComponentPath'
+  | 'resourcesPath'
+  | 'swaggerJsonPath'
+  | 'apiPath';
+export type ApiConfig = 'suffix' | 'prefix' | 'authenticationEnabled' | 'requireAdmin' | 'guards' | 'adminGuards';
+export type BehaviorConfig = 'nonInteractive';
+
+type ConfigValue = string | string[] | boolean | Guard[] | ComponentOverrides;
+
 export interface Config {
-  // Input sources
   input: {
-    schemaPath: string;
-    prismaService: string;  // Path to PrismaService file (e.g., 'src/infrastructure/database/prisma.service.ts')
+    prisma: Record<InputPrismaConfig, ConfigValue>;
+    dashboard: Record<InputDashboardConfig, ConfigValue>;
   };
-  
-  // Output destinations
   output: {
-    backend: {
-      dtos: string;
-      modules: {
-        searchPaths: string[];      // e.g., ['src/features', 'src/modules', 'src']
-        defaultRoot: string;         // Where to create new modules: 'src/features'
-      };
-      staticFiles: {
-        guards: string;              // e.g., 'src/guards'
-        decorators: string;          // e.g., 'src/decorators'
-        dtos: string;                // e.g., 'src/dtos'
-        interceptors: string;        // e.g., 'src/interceptors'
-        utils: string;               // e.g., 'src/utils'
-      };
-    };
-  dashboard: {
-    root: string;                  // e.g., 'src/dashboard/src'
-    resources: string;             // e.g., 'src/dashboard/src/resources'
-    swagger?: {
-      command?: string;            // Optional command to regenerate swagger.json (default: npm run generate:swagger)
-      jsonPath?: string;           // Optional override for swagger.json path
-    };
+    backend: Record<OutputBackendConfig, ConfigValue>;
+    dashboard: Record<OutputDashboardConfig, ConfigValue>;
   };
-};
-  
-  // API generation settings
-  api: {
-    suffix: string;                  // e.g., 'Admin', 'Public', 'Tg'
-    prefix: string;                  // e.g., 'tg-api', 'api'
-    authentication: {
-      enabled: boolean;              // Add auth guards?
-      requireAdmin: boolean;         // Admin-only endpoints?
-      guards: Guard[];               // Configurable guard list
-      adminGuards?: Guard[];         // Guards applied only when requireAdmin is true
-    };
-    relations?: {
-      include?: 'all' | string[];    // Relation names to include in Prisma selects (or 'all')
-    };
-  };
-  
-  // Dashboard generation settings
-  dashboard: {
-    enabled: boolean;                // Generate dashboard?
-    updateDataProvider: boolean;     // Auto-update data provider?
-    components: ComponentOverrides;  // Override React Admin components
-  };
-  
-  // Behavior flags
-  behavior: {
-    nonInteractive: boolean;
-  };
-  
-  // Advanced path overrides (optional)
-  paths?: {
-    appModule?: string;
-    dataProvider?: string;
-    appComponent?: string;
-  };
+  api: Record<ApiConfig, ConfigValue>;
+  behavior: Record<BehaviorConfig, ConfigValue>;
 }
 
 /**
  * Component import configuration for custom React Admin components
  */
 export interface ComponentImport {
-  name: string;                      // Component name, e.g., 'CustomTextField'
-  importPath: string;                // Import path, e.g., '@/components/custom/TextField'
+  name: string; // Component name, e.g., 'CustomTextField'
+  importPath: string; // Import path, e.g., '@/components/custom/TextField'
 }
 
 /**
@@ -256,8 +227,8 @@ export interface GeneratorOptions {
  * Authentication guard configuration
  */
 export interface Guard {
-  name: string;                      // Guard class name, e.g., 'JwtAuthGuard'
-  importPath: string;                // Import path, e.g., '@/guards/jwt-auth.guard'
+  name: string; // Guard class name, e.g., 'JwtAuthGuard'
+  importPath: string; // Import path, e.g., '@/guards/jwt-auth.guard'
 }
 
 export interface FieldDirective {

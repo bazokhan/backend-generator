@@ -176,10 +176,7 @@ fs.writeFileSync('src/features/user/user.module.ts', content);
 Run Prettier against generated files without reimplementing CLI calls.
 
 ```typescript
-import {
-  formatGeneratedFile,
-  formatGeneratedFiles,
-} from '@tgraph/backend-generator/dist/io/utils/format-files';
+import { formatGeneratedFile, formatGeneratedFiles } from '@tgraph/backend-generator/dist/io/utils/format-files';
 
 await formatGeneratedFile('src/features/user/user.admin.service.ts', process.cwd());
 await formatGeneratedFiles(['fileA.ts', 'fileB.ts'], process.cwd());

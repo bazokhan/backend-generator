@@ -57,25 +57,34 @@ Adapters live in `{modulePath}/adapters/*.adapter.ts`:
 // src/features/post/adapters/create-with-slug.adapter.ts
 import { adapter } from '@/adapters/runtime';
 
-export default adapter.json({
-  method: 'POST',
-  path: '/with-slug',
-  target: 'PostService.create',
-  auth: 'JwtAuthGuard',
-}, async (ctx) => {
-  const { body, helpers } = ctx;
-  
-  // Transform request
-  const slug = helpers.slugify(body.title);
-  
-  // Return args for service method
-  return {
-    args: {
-      ...body,
-      slug,
-    }
-  };
-});
+// Define the request body type for full type safety
+interface CreatePostBody {
+  title: string;
+  content: string;
+}
+
+export default adapter.json<CreatePostBody>(
+  {
+    method: 'POST',
+    path: '/with-slug',
+    target: 'PostService.create',
+    auth: 'JwtAuthGuard',
+  },
+  async (ctx) => {
+    const { body, helpers } = ctx;
+
+    // body is now typed as CreatePostBody - get full IntelliSense!
+    const slug = helpers.slugify(body.title); // ✓ body.title is string
+
+    // Return args for service method
+    return {
+      args: {
+        ...body,
+        slug,
+      },
+    };
+  },
+);
 ```
 
 ### Step 2: Run Generator
@@ -123,14 +132,17 @@ Response:
 For standard JSON requests:
 
 ```typescript
-export default adapter.json({
-  method: 'POST',
-  path: '/custom-endpoint',
-  target: 'ServiceName.methodName',
-}, async (ctx) => {
-  // ctx.body contains parsed JSON
-  return { args: { ...ctx.body } };
-});
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/custom-endpoint',
+    target: 'ServiceName.methodName',
+  },
+  async (ctx) => {
+    // ctx.body contains parsed JSON
+    return { args: { ...ctx.body } };
+  },
+);
 ```
 
 ### Multipart Adapters
@@ -138,26 +150,29 @@ export default adapter.json({
 For file uploads:
 
 ```typescript
-export default adapter.multipart({
-  method: 'POST',
-  path: '/upload-image',
-  target: 'PostService.update',
-}, async (ctx) => {
-  const { files, body, helpers } = ctx;
-  
-  // files is Express.Multer.File or Express.Multer.File[]
-  const file = Array.isArray(files) ? files[0] : files;
-  
-  // Upload to storage
-  const url = await helpers.upload.minio(file, 'images');
-  
-  return {
-    args: {
-      id: body.id,
-      imageUrl: url,
-    }
-  };
-});
+export default adapter.multipart(
+  {
+    method: 'POST',
+    path: '/upload-image',
+    target: 'PostService.update',
+  },
+  async (ctx) => {
+    const { files, body, helpers } = ctx;
+
+    // files is Express.Multer.File or Express.Multer.File[]
+    const file = Array.isArray(files) ? files[0] : files;
+
+    // Upload to storage
+    const url = await helpers.upload.minio(file, 'images');
+
+    return {
+      args: {
+        id: body.id,
+        imageUrl: url,
+      },
+    };
+  },
+);
 ```
 
 ---
@@ -222,29 +237,29 @@ The adapter handler receives a context object with everything you need:
 ```typescript
 async (ctx) => {
   // URL and parameters
-  ctx.url         // Full request URL
-  ctx.params      // Route parameters: { id: '123' }
-  ctx.query       // Query string: { page: '1' }
-  
+  ctx.url; // Full request URL
+  ctx.params; // Route parameters: { id: '123' }
+  ctx.query; // Query string: { page: '1' }
+
   // Request data
-  ctx.body        // Parsed JSON body
-  ctx.headers     // Request headers
-  ctx.files       // Uploaded file(s) (multipart only)
-  
+  ctx.body; // Parsed JSON body
+  ctx.headers; // Request headers
+  ctx.files; // Uploaded file(s) (multipart only)
+
   // User and auth
-  ctx.user        // Authenticated user from guard
-  
+  ctx.user; // Authenticated user from guard
+
   // Dependencies
-  ctx.di          // Dependency injection container
-  ctx.di.prisma   // PrismaService instance
-  
+  ctx.di; // Dependency injection container
+  ctx.di.prisma; // PrismaService instance
+
   // Helpers
-  ctx.helpers     // Utility functions
-  
+  ctx.helpers; // Utility functions
+
   // Raw objects (advanced)
-  ctx.req         // Express Request
-  ctx.res         // Express Response
-}
+  ctx.req; // Express Request
+  ctx.res; // Express Response
+};
 ```
 
 ---
@@ -307,7 +322,9 @@ Upload utilities are placeholders. Implement your own:
 // src/adapters/helpers.ts
 
 helpers.upload.minio = async (file, bucket = 'default') => {
-  const minioClient = new Minio.Client({ /* config */ });
+  const minioClient = new Minio.Client({
+    /* config */
+  });
   const filename = `${uuid()}-${file.originalname}`;
   await minioClient.putObject(bucket, filename, file.buffer);
   return `https://cdn.example.com/${bucket}/${filename}`;
@@ -327,7 +344,7 @@ return {
   args: {
     title: 'My Title',
     content: 'My Content',
-  }
+  },
 };
 ```
 
@@ -340,16 +357,20 @@ Use `adapter.response()` to bypass the service:
 ```typescript
 return adapter.response(200, {
   success: true,
-  message: 'Processed successfully'
+  message: 'Processed successfully',
 });
 ```
 
 With custom headers:
 
 ```typescript
-return adapter.response(201, { id: '123' }, {
-  'X-Custom-Header': 'value',
-});
+return adapter.response(
+  201,
+  { id: '123' },
+  {
+    'X-Custom-Header': 'value',
+  },
+);
 ```
 
 ---
@@ -361,14 +382,17 @@ return adapter.response(201, { id: '123' }, {
 Return specific fields only:
 
 ```typescript
-adapter.json({
-  method: 'GET',
-  path: '/summary',
-  target: 'PostService.getOne',
-  select: ['id', 'title', 'createdAt'],
-}, async (ctx) => {
-  return { args: ctx.params.id };
-});
+adapter.json(
+  {
+    method: 'GET',
+    path: '/summary',
+    target: 'PostService.getOne',
+    select: ['id', 'title', 'createdAt'],
+  },
+  async (ctx) => {
+    return { args: ctx.params.id };
+  },
+);
 ```
 
 Response:
@@ -388,14 +412,17 @@ Response:
 Load related data:
 
 ```typescript
-adapter.json({
-  method: 'GET',
-  path: '/with-author',
-  target: 'PostService.getOne',
-  include: ['author', 'comments'],
-}, async (ctx) => {
-  return { args: ctx.params.id };
-});
+adapter.json(
+  {
+    method: 'GET',
+    path: '/with-author',
+    target: 'PostService.getOne',
+    include: ['author', 'comments'],
+  },
+  async (ctx) => {
+    return { args: ctx.params.id };
+  },
+);
 ```
 
 **Note:** You cannot use both `select` and `include`.
@@ -407,91 +434,103 @@ adapter.json({
 ### External API Integration
 
 ```typescript
-export default adapter.json({
-  method: 'POST',
-  path: '/sync-stripe',
-}, async (ctx) => {
-  const { body, di } = ctx;
-  
-  // Call external API
-  const stripeCustomer = await stripe.customers.create({
-    email: body.email,
-  });
-  
-  // Save to database
-  await di.prisma.user.update({
-    where: { id: body.userId },
-    data: { stripeCustomerId: stripeCustomer.id },
-  });
-  
-  return adapter.response(200, {
-    success: true,
-    customerId: stripeCustomer.id,
-  });
-});
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/sync-stripe',
+  },
+  async (ctx) => {
+    const { body, di } = ctx;
+
+    // Call external API
+    const stripeCustomer = await stripe.customers.create({
+      email: body.email,
+    });
+
+    // Save to database
+    await di.prisma.user.update({
+      where: { id: body.userId },
+      data: { stripeCustomerId: stripeCustomer.id },
+    });
+
+    return adapter.response(200, {
+      success: true,
+      customerId: stripeCustomer.id,
+    });
+  },
+);
 ```
 
 ### Webhook Receiver
 
 ```typescript
-export default adapter.json({
-  method: 'POST',
-  path: '/webhook/stripe',
-}, async (ctx) => {
-  const { body, headers } = ctx;
-  
-  // Verify signature
-  const signature = headers['stripe-signature'];
-  stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  
-  // Process event
-  await processStripeEvent(body);
-  
-  return adapter.response(200, { received: true });
-});
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/webhook/stripe',
+  },
+  async (ctx) => {
+    const { body, headers } = ctx;
+
+    // Verify signature
+    const signature = headers['stripe-signature'];
+    stripe.webhooks.constructEvent(body, signature, webhookSecret);
+
+    // Process event
+    await processStripeEvent(body);
+
+    return adapter.response(200, { received: true });
+  },
+);
 ```
 
 ### Bulk Operations
 
 ```typescript
-export default adapter.json({
-  method: 'POST',
-  path: '/bulk-create',
-}, async (ctx) => {
-  const { body, di } = ctx;
-  
-  const results = await di.prisma.post.createMany({
-    data: body.posts,
-  });
-  
-  return adapter.response(201, {
-    created: results.count,
-  });
-});
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/bulk-create',
+  },
+  async (ctx) => {
+    const { body, di } = ctx;
+
+    const results = await di.prisma.post.createMany({
+      data: body.posts,
+    });
+
+    return adapter.response(201, {
+      created: results.count,
+    });
+  },
+);
 ```
 
 ### Custom Validation
 
 ```typescript
-export default adapter.json({
-  method: 'POST',
-  path: '/validate-and-create',
-  target: 'UserService.create',
-}, async (ctx) => {
-  const { body, helpers, di } = ctx;
-  
-  // Custom validation
-  helpers.assert(body.age >= 18, 'Must be 18 or older');
-  helpers.assert(body.password.length >= 8, 'Password too short');
-  
-  // Check uniqueness
-  const existing = await di.prisma.user.findUnique({
-    where: { email: body.email },
-  });
-  helpers.assert(!existing, 'Email already registered');
-  
-  return { args: body };
-});
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/validate-and-create',
+    target: 'UserService.create',
+  },
+  async (ctx) => {
+    const { body, helpers, di } = ctx;
+
+    // Custom validation
+    helpers.assert(body.age >= 18, 'Must be 18 or older');
+    helpers.assert(body.password.length >= 8, 'Password too short');
+
+    // Check uniqueness
+    const existing = await di.prisma.user.findUnique({
+      where: { email: body.email },
+    });
+    helpers.assert(!existing, 'Email already registered');
+
+    return { args: body };
+  },
+);
 ```
 
 ---
@@ -510,15 +549,15 @@ export default adapter.json({
   if (!ctx.body.required Field) {
     throw new BadRequestException('Required field is missing');
   }
-  
+
   const item = await ctx.di.prisma.item.findUnique({
     where: { id: ctx.body.id },
   });
-  
+
   if (!item) {
     throw new NotFoundException('Item not found');
   }
-  
+
   return { args: item };
 });
 ```
@@ -536,9 +575,9 @@ describe('CreateWithSlug Adapter', () => {
       body: { title: 'Hello World', content: 'Test' },
       helpers: { slugify: (s: string) => s.toLowerCase().replace(/\s+/g, '-') },
     };
-    
+
     const result = await adapterHandler(ctx);
-    
+
     expect(result.args.slug).toBe('hello-world');
   });
 });
@@ -554,7 +593,7 @@ describe('POST /posts/with-slug', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ title: 'Test Post', content: 'Content' })
       .expect(201);
-    
+
     expect(response.body.data.slug).toBe('test-post');
   });
 });
@@ -610,23 +649,26 @@ helpers.assert(body.age >= 18, 'Must be 18+');
 Add comments for non-obvious operations:
 
 ```typescript
-export default adapter.json({
-  method: 'POST',
-  path: '/process',
-  description: 'Process payment and send confirmation email',
-  summary: 'Process Payment',
-}, async (ctx) => {
-  // 1. Charge payment via Stripe
-  const charge = await stripe.charges.create(/* ... */);
-  
-  // 2. Update order status
-  await ctx.di.prisma.order.update(/* ... */);
-  
-  // 3. Send confirmation email
-  await sendEmail(/* ... */);
-  
-  return adapter.response(200, { orderId: charge.metadata.orderId });
-});
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/process',
+    description: 'Process payment and send confirmation email',
+    summary: 'Process Payment',
+  },
+  async (ctx) => {
+    // 1. Charge payment via Stripe
+    const charge = await stripe.charges.create(/* ... */);
+
+    // 2. Update order status
+    await ctx.di.prisma.order.update(/* ... */);
+
+    // 3. Send confirmation email
+    await sendEmail(/* ... */);
+
+    return adapter.response(200, { orderId: charge.metadata.orderId });
+  },
+);
 ```
 
 ### 5. Handle Errors Gracefully
@@ -638,9 +680,7 @@ try {
   const result = await externalAPI.call();
   return { args: result };
 } catch (error) {
-  throw new BadRequestException(
-    `External API failed: ${error.message}`
-  );
+  throw new BadRequestException(`External API failed: ${error.message}`);
 }
 ```
 
@@ -651,14 +691,189 @@ Access Prisma and custom services:
 ```typescript
 async (ctx) => {
   const { di } = ctx;
-  
+
   // Use Prisma
   const user = await di.prisma.user.findUnique({});
-  
+
   // Use custom services (if injected)
   const result = await di.emailService.send({});
-}
+};
 ```
+
+---
+
+## TypeScript Typing
+
+Adapters support full TypeScript type safety including generics for strong typing of request/response data.
+
+### Type-Safe Context with Generics
+
+By default, `ctx.body`, `ctx.query`, and `ctx.params` are typed as `any`. You can provide explicit types using generic parameters:
+
+```typescript
+interface CreatePostBody {
+  title: string;
+  content: string;
+  authorId: string;
+}
+
+interface PostQuery {
+  published?: boolean;
+  page?: string;
+}
+
+interface PostParams {
+  categoryId: string;
+}
+
+// Pass generic types: <TBody, TQuery, TParams>
+export default adapter.json<CreatePostBody, PostQuery, PostParams>(
+  {
+    method: 'POST',
+    path: '/:categoryId/posts',
+    target: 'PostService.create',
+  },
+  async (ctx) => {
+    // Now fully typed - no more 'any'!
+    const title: string = ctx.body.title; // ✓ Typed as string
+    const content: string = ctx.body.content; // ✓ Typed as string
+    const published = ctx.query.published; // ✓ Typed as boolean | undefined
+    const categoryId: string = ctx.params.categoryId; // ✓ Typed as string
+
+    return { args: ctx.body };
+  },
+);
+```
+
+**Generic Parameter Order:**
+
+1. `TBody` - Request body type (accessed via `ctx.body`)
+2. `TQuery` - Query parameters (accessed via `ctx.query`)
+3. `TParams` - Route parameters (accessed via `ctx.params`)
+
+**You can provide 1, 2, or all 3 types:**
+
+```typescript
+// Body only
+export default adapter.json<CreatePostBody>(
+  {
+    method: 'POST',
+    path: '/posts',
+    target: 'PostService.create',
+  },
+  async (ctx) => {
+    ctx.body; // ✓ Typed as CreatePostBody
+    ctx.query; // any
+    ctx.params; // any
+  },
+);
+
+// Body and query
+export default adapter.json<CreatePostBody, PostQuery>(
+  {
+    method: 'POST',
+    path: '/posts',
+    target: 'PostService.create',
+  },
+  async (ctx) => {
+    ctx.body; // ✓ Typed as CreatePostBody
+    ctx.query; // ✓ Typed as PostQuery
+    ctx.params; // any
+  },
+);
+
+// All three types
+export default adapter.json<CreatePostBody, PostQuery, PostParams>(
+  {
+    method: 'POST',
+    path: '/:categoryId/posts',
+    target: 'PostService.create',
+  },
+  async (ctx) => {
+    ctx.body; // ✓ Typed as CreatePostBody
+    ctx.query; // ✓ Typed as PostQuery
+    ctx.params; // ✓ Typed as PostParams
+  },
+);
+```
+
+**Benefits:**
+
+- **Full IntelliSense** - Get autocomplete for all properties
+- **Type checking** - Catch errors at compile time
+- **Better DTOs** - Generator can infer types for adapter DTOs
+- **Documentation** - Types serve as inline documentation
+
+### Synchronous vs Asynchronous Handlers
+
+Adapters support both `async` and synchronous handlers:
+
+```typescript
+// Async handler (most common)
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/create',
+    target: 'PostService.create',
+  },
+  async (ctx) => {
+    await someAsyncOperation();
+    return { args: ctx.body };
+  },
+);
+
+// Synchronous handler (no TypeScript errors)
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/create',
+    target: 'PostService.create',
+  },
+  (ctx) => {
+    // No await needed - TypeScript won't complain
+    return { args: ctx.body };
+  },
+);
+```
+
+**Note:** TypeScript allows both return types so you won't get errors when declaring `async` functions without `await`.
+
+### Typing Helper Functions
+
+The `helpers.assert()` function preserves TypeScript type guards:
+
+```typescript
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/create',
+    target: 'PostService.create',
+  },
+  async (ctx) => {
+    const { body, helpers } = ctx;
+
+    // Before assertion: body.title might be undefined
+    helpers.assert(body.title, 'Title is required');
+    // After assertion: TypeScript knows body.title is truthy
+
+    const upperTitle = body.title.toUpperCase(); // ✓ No error
+
+    return { args: { ...body, title: upperTitle } };
+  },
+);
+```
+
+**Important:** Don't explicitly type `helpers` as `typeof helpers` - this loses the assertion signature. Use `helpers` directly from the context.
+
+### Type Safety Requirements
+
+Ensure you have these packages installed in your project:
+
+```bash
+npm install --save-dev @types/express @types/multer
+```
+
+These provide type definitions for `Express.Request`, `Express.Response`, and `Multer.File` used in adapter templates.
 
 ---
 
@@ -692,9 +907,11 @@ async (ctx) => {
 
 **Solutions:**
 
-1. Import types: `import type { AdapterContext } from '@/adapters/types';`
-2. Type the context: `async (ctx: AdapterContext) => {}`
-3. Check helper function signatures
+1. Install required type packages: `npm install --save-dev @types/express @types/multer`
+2. Import types if needed: `import type { AdapterContext } from '@/adapters/types';`
+3. Don't type `helpers` as `typeof helpers` - it loses assertion signatures
+4. Check helper function signatures
+5. Ensure adapter files are properly exported with `export default`
 
 ### File Upload Issues
 
@@ -729,14 +946,17 @@ export class CustomPostController {
 **After (adapter):**
 
 ```typescript
-export default adapter.json({
-  method: 'POST',
-  path: '/with-slug',
-  target: 'PostService.create',
-}, async (ctx) => {
-  const slug = ctx.helpers.slugify(ctx.body.title);
-  return { args: { ...ctx.body, slug } };
-});
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/with-slug',
+    target: 'PostService.create',
+  },
+  async (ctx) => {
+    const slug = ctx.helpers.slugify(ctx.body.title);
+    return { args: { ...ctx.body, slug } };
+  },
+);
 ```
 
 **Benefits:**
@@ -753,5 +973,3 @@ export default adapter.json({
 - [API Reference](../api/adapters.md) - Detailed API documentation
 - [Recipes](../recipes/custom-endpoints.md) - More practical examples
 - [Authentication Guards](./authentication-guards.md) - Securing endpoints
-
-

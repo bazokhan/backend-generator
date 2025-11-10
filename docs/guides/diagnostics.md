@@ -3,7 +3,7 @@ layout: default
 title: System Diagnostics
 parent: Guides
 nav_order: 5
-description: "Using tgraph doctor to validate your environment and troubleshoot issues"
+description: 'Using tgraph doctor to validate your environment and troubleshoot issues'
 ---
 
 # System Diagnostics with `tgraph doctor`
@@ -357,10 +357,10 @@ your-project/
 
 The `doctor` command returns different exit codes based on results:
 
-| Exit Code | Meaning | Description |
-|-----------|---------|-------------|
-| `0` | Success | All checks passed or only warnings present |
-| `1` | Failure | One or more critical errors detected |
+| Exit Code | Meaning | Description                                |
+| --------- | ------- | ------------------------------------------ |
+| `0`       | Success | All checks passed or only warnings present |
+| `1`       | Failure | One or more critical errors detected       |
 
 **Usage in Scripts:**
 
@@ -506,18 +506,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run diagnostics
         run: npx tgraph doctor
-      
+
       - name: Generate code
         run: npx tgraph all
 ```
@@ -566,6 +566,7 @@ Catch issues early by validating in CI:
 ### 3. After Environment Changes
 
 Run diagnostics after:
+
 - Updating Node.js
 - Updating Prisma
 - Cloning to a new machine
@@ -586,6 +587,7 @@ Include in your project README:
 ### 5. Fix Warnings
 
 While warnings don't block generation, fix them when possible:
+
 - Use PascalCase for `suffix`
 - Create directories before generation (optional)
 - Keep schema file non-empty
@@ -646,6 +648,7 @@ chmod +r tgraph.config.ts
 3. **Report bug:**
 
 If diagnostics are incorrect, please [report an issue](https://github.com/trugraph/backend-generator/issues) with:
+
 - Full diagnostic output
 - Your config file
 - Your environment (OS, Node version)
@@ -666,12 +669,14 @@ If diagnostics are incorrect, please [report an issue](https://github.com/trugra
 The `tgraph doctor` command is your first line of defense when troubleshooting issues:
 
 ✅ **Use it to:**
+
 - Validate setup before generation
 - Troubleshoot generation failures
 - Verify environment after changes
 - Validate CI/CD configurations
 
 ✅ **It checks:**
+
 - Configuration file validity
 - Node.js version compatibility
 - Prisma CLI installation
@@ -679,9 +684,9 @@ The `tgraph doctor` command is your first line of defense when troubleshooting i
 - Project directory structure
 
 ✅ **Each error includes:**
+
 - Clear description of the issue
 - Actionable suggestion (💡)
 - Severity indicator (✓/⚠️/❌)
 
 Run `tgraph doctor` early and often to catch issues before they cause problems!
-

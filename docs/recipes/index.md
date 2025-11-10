@@ -16,4 +16,3 @@ Practical step-by-step recipes for common use cases.
 - **[Custom Validation](./custom-validation)** - Add complex validation rules
 - **[Custom Endpoints](./custom-endpoints)** - Practical adapter examples for real-world use cases
 - **[Extending Generated Code](./extending-generated-code)** - Advanced extension patterns
-

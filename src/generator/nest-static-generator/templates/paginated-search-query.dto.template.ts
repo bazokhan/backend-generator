@@ -31,4 +31,3 @@ export class PaginatedSearchQueryDto {
   sortOrder?: 'asc' | 'desc';
 }
 `;
-

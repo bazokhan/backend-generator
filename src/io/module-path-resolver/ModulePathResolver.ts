@@ -47,7 +47,7 @@ export class ModulePathResolver {
     // Search through all configured search paths
     for (const searchPath of this.searchPaths) {
       const absoluteSearchPath = this.toAbsolute(searchPath, baseDir);
-      
+
       for (const variation of uniqueVariations) {
         const folderPath = this.pathModule.join(absoluteSearchPath, variation);
         if (this.fsModule.existsSync(folderPath)) {

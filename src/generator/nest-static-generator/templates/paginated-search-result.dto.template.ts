@@ -14,4 +14,3 @@ export const paginatedSearchResultDtoTemplate = `export class PaginatedSearchRes
   }
 }
 `;
-

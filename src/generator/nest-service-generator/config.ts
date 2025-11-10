@@ -13,10 +13,11 @@ export const getList = (camelCaseName: string, searchableFields: string, default
 `;
 
 export const getOne = (pascalCaseName: string, camelCaseName: string) => `
-  async getOne(id: string) {
+  async getOne(id: string, select?: any, include?: any) {
     const item = await this.prisma.${camelCaseName}.findUnique({
       where: { id },
-      select: this.getSelectFields(),
+      select: select ?? this.getSelectFields(),
+      ...(include && { include }),
     });
 
     if (!item) {
@@ -28,10 +29,11 @@ export const getOne = (pascalCaseName: string, camelCaseName: string) => `
 `;
 
 export const getMany = (camelCaseName: string) => `
-  async getMany(ids: string[]) {
+  async getMany(ids: string[], select?: any, include?: any) {
     const items = await this.prisma.${camelCaseName}.findMany({
       where: { id: { in: ids } },
-      select: this.getSelectFields(),
+      select: select ?? this.getSelectFields(),
+      ...(include && { include }),
     });
 
     return { data: items };
@@ -59,13 +61,14 @@ export const create = (
 ) => {
   const uniqueChecks = generateUniqueChecks(pascalCaseName, camelCaseName, uniqueFields, false);
   return `
-  async create(dto: Create${pascalCaseName}${namingSuffix}Dto) {
+  async create(dto: Create${pascalCaseName}${namingSuffix}Dto, select?: any, include?: any) {
     // Check unique constraints
     ${uniqueChecks}
 
     const item = await this.prisma.${camelCaseName}.create({
       data: dto,
-      select: this.getSelectFields(),
+      select: select ?? this.getSelectFields(),
+      ...(include && { include }),
     });
 
     return item;
@@ -81,7 +84,7 @@ export const update = (
 ) => {
   const uniqueChecks = generateUniqueChecks(pascalCaseName, camelCaseName, uniqueFields, true);
   return `
-  async update(id: string, dto: Update${pascalCaseName}${namingSuffix}Dto) {
+  async update(id: string, dto: Update${pascalCaseName}${namingSuffix}Dto, select?: any, include?: any) {
     await this.getOne(id); // Check if exists
 
     // Check unique constraints for update
@@ -90,7 +93,8 @@ export const update = (
     const item = await this.prisma.${camelCaseName}.update({
       where: { id },
       data: dto,
-      select: this.getSelectFields(),
+      select: select ?? this.getSelectFields(),
+      ...(include && { include }),
     });
 
     return item;
@@ -133,7 +137,7 @@ export const deleteMany = () => `
 export const getSelectFields = (fields: string[], relationSelects: string[] = []) => {
   const fieldSelects = fields.map((field) => `${field}: true`).join(',\n      ');
   const relations = relationSelects.length > 0 ? `,\n      ${relationSelects.join(',\n      ')}` : '';
-  
+
   return `
   private getSelectFields() {
     return {
@@ -186,55 +190,55 @@ export const getImportStatements = (
   if (!options?.serviceFilePath) {
     throw new Error(
       'Service generator requires serviceFilePath to compute import paths. ' +
-      'This is a configuration error in the generator setup.'
+        'This is a configuration error in the generator setup.',
     );
   }
-  
+
   if (!options?.dtosPath) {
     throw new Error(
       'Service generator requires dtosPath (output.backend.staticFiles.dtos) to compute import paths. ' +
-      'Please ensure this is configured in your tgraph.config file.'
+        'Please ensure this is configured in your tgraph.config file.',
     );
   }
-  
+
   if (!options?.utilsPath) {
     throw new Error(
       'Service generator requires utilsPath (output.backend.staticFiles.utils) to compute import paths. ' +
-      'Please ensure this is configured in your tgraph.config file.'
+        'Please ensure this is configured in your tgraph.config file.',
     );
   }
-  
+
   if (!options?.workspaceRoot) {
     throw new Error(
       'Service generator requires workspaceRoot to compute import paths. ' +
-      'This is a configuration error in the generator setup.'
+        'This is a configuration error in the generator setup.',
     );
   }
 
   const serviceDir = path.dirname(options.serviceFilePath);
-  
+
   // Compute relative path to paginated-search-query.dto.ts
   const dtosFile = path.join(options.workspaceRoot, options.dtosPath, 'paginated-search-query.dto.ts');
   let paginatedSearchQueryDtoImport = path.relative(serviceDir, dtosFile).replace(/\\/g, '/').replace(/\.ts$/, '');
   if (!paginatedSearchQueryDtoImport.startsWith('.')) {
     paginatedSearchQueryDtoImport = './' + paginatedSearchQueryDtoImport;
   }
-  
+
   // Compute relative path to paginated-search.ts
   const utilsFile = path.join(options.workspaceRoot, options.utilsPath, 'paginated-search.ts');
   let paginatedSearchImport = path.relative(serviceDir, utilsFile).replace(/\\/g, '/').replace(/\.ts$/, '');
   if (!paginatedSearchImport.startsWith('.')) {
     paginatedSearchImport = './' + paginatedSearchImport;
   }
-  
+
   // Compute relative path to prisma.service.ts
   if (!options?.prismaServicePath) {
     throw new Error(
       'Service generator requires prismaServicePath (input.prismaService) to compute import paths. ' +
-      'Please ensure this is configured in your tgraph.config file.'
+        'Please ensure this is configured in your tgraph.config file.',
     );
   }
-  
+
   const prismaFile = path.join(options.workspaceRoot, options.prismaServicePath);
   let prismaServiceImport = path.relative(serviceDir, prismaFile).replace(/\\/g, '/').replace(/\.ts$/, '');
   if (!prismaServiceImport.startsWith('.')) {

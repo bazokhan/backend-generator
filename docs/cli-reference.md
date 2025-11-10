@@ -51,6 +51,7 @@ tgraph init [options]
 **Interactive wizard prompts:**
 
 When running without `-y`, the wizard will ask:
+
 - Path to Prisma schema
 - Path to PrismaService
 - API class suffix (e.g., "Admin", "Public")
@@ -416,8 +417,10 @@ tgraph static [options]
 
 **Options:**
 
-- `--list` - List available static modules and exit
-- `--include <names>` - Comma-separated list of modules to include (e.g., `admin.guard,pagination.interceptor`)
+- `--list` - List available static modules with their output paths
+- `--cat <name>` - Preview contents of a specific static file before generation
+- `--preflight <name>` - Alias for `--cat`
+- `--include <names>` - Comma-separated list of modules to include (e.g., `admin.guard,adapter.runtime`)
 - `-y, --yes` - Generate all modules without prompts
 - `-c, --config <path>` - Path to configuration file
 
@@ -433,10 +436,16 @@ tgraph static [options]
 - `audit.interceptor` - Audit logging interceptor stub
 - `paginated-search.decorator` - Paginated search endpoint decorator
 - `paginated-search.util` - Pagination utility functions
+- `adapter.runtime` - Adapter runtime factory functions
+- `adapter.types` - Adapter TypeScript type definitions
+- `adapter.helpers` - Adapter helper utilities
+- `adapter.context` - Adapter context builder
+- `generate.swagger` - Swagger generation script template
 
 **What it generates:**
 
 Static backend files are generated based on paths configured in `config.output.backend.staticFiles`:
+
 - Guards → `src/guards/`
 - Decorators → `src/decorators/`
 - DTOs → `src/dtos/`
@@ -453,14 +462,18 @@ Static backend files are generated based on paths configured in `config.output.b
 **Examples:**
 
 ```bash
-# List available modules
+# List available modules with their output paths
 tgraph static --list
+
+# Preview a specific module before generating
+tgraph static --cat admin.guard
+tgraph static --preflight adapter.runtime
 
 # Interactive selection (prompts for each module)
 tgraph static
 
 # Generate specific modules
-tgraph static --include admin.guard,pagination.interceptor
+tgraph static --include admin.guard,adapter.runtime
 
 # Generate all modules without prompts
 tgraph static --yes
@@ -627,7 +640,6 @@ tgraph api --suffix Public --public
 
 ---
 
-
 ### `--admin`
 
 Force admin mode generation (require admin authentication guards).
@@ -784,6 +796,7 @@ export const config: Config = {
 **Config file discovery:**
 
 The CLI searches for config files in this order:
+
 1. `tgraph.config.ts`
 2. `tgraph.config.js`
 

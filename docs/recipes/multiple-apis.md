@@ -12,6 +12,7 @@ Generate separate Admin and Public APIs from the same Prisma schema with differe
 ## Use Case
 
 You want to generate two APIs:
+
 1. **Admin API** - Full CRUD access with admin-only authentication
 2. **Public API** - Limited read access for authenticated users
 
@@ -35,7 +36,7 @@ export const config: Config = {
     schemaPath: 'prisma/schema.prisma',
     prismaService: 'src/infrastructure/database/prisma.service.ts',
   },
-  
+
   output: {
     backend: {
       dtos: 'src/dtos/admin',
@@ -48,15 +49,15 @@ export const config: Config = {
         decorators: 'src/decorators',
         dtos: 'src/dtos',
         interceptors: 'src/interceptors',
-          utils: 'src/utils',
-        },
+        utils: 'src/utils',
+      },
     },
     dashboard: {
       root: 'src/dashboard/src',
       resources: 'src/dashboard/src/resources',
     },
   },
-  
+
   api: {
     suffix: 'Admin',
     prefix: 'admin-api',
@@ -69,13 +70,13 @@ export const config: Config = {
       ],
     },
   },
-  
+
   dashboard: {
     enabled: true,
     updateDataProvider: true,
     components: { form: {}, display: {} },
   },
-  
+
   behavior: {
     nonInteractive: false,
   },
@@ -94,7 +95,7 @@ export const config: Config = {
     schemaPath: 'prisma/schema.prisma',
     prismaService: 'src/infrastructure/database/prisma.service.ts',
   },
-  
+
   output: {
     backend: {
       dtos: 'src/dtos/public',
@@ -107,33 +108,31 @@ export const config: Config = {
         decorators: 'src/decorators',
         dtos: 'src/dtos',
         interceptors: 'src/interceptors',
-          utils: 'src/utils',
-        },
+        utils: 'src/utils',
+      },
     },
     dashboard: {
       root: 'src/dashboard/src',
       resources: 'src/dashboard/src/resources',
     },
   },
-  
+
   api: {
     suffix: 'Public',
     prefix: 'api',
     authentication: {
       enabled: true,
-      requireAdmin: false,  // Any authenticated user
-      guards: [
-        { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-      ],
+      requireAdmin: false, // Any authenticated user
+      guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
     },
   },
-  
+
   dashboard: {
-    enabled: false,  // No dashboard for public API
+    enabled: false, // No dashboard for public API
     updateDataProvider: false,
     components: { form: {}, display: {} },
   },
-  
+
   behavior: {
     nonInteractive: false,
   },
@@ -187,15 +186,16 @@ your-project/
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class UserAdminController {
   // Full CRUD
-  @Get() list() { }
-  @Get(':id') getOne() { }
-  @Post() create() { }
-  @Put(':id') update() { }
-  @Delete(':id') delete() { }
+  @Get() list() {}
+  @Get(':id') getOne() {}
+  @Post() create() {}
+  @Put(':id') update() {}
+  @Delete(':id') delete() {}
 }
 ```
 
 Routes:
+
 - `GET /admin-api/users` - List all users
 - `GET /admin-api/users/:id` - Get user by ID
 - `POST /admin-api/users` - Create user
@@ -210,12 +210,13 @@ Routes:
 @UseGuards(JwtAuthGuard)
 export class UserPublicController {
   // Read-only
-  @Get() list() { }
-  @Get(':id') getOne() { }
+  @Get() list() {}
+  @Get(':id') getOne() {}
 }
 ```
 
 Routes:
+
 - `GET /api/users` - List users (public info only)
 - `GET /api/users/:id` - Get user by ID (public info only)
 
@@ -269,9 +270,9 @@ Ensure different DTOs for admin and public:
 export class UserAdminDto {
   id: string;
   name: string;
-  email: string;        // Sensitive
-  phone: string;        // Sensitive
-  role: Role;           // Sensitive
+  email: string; // Sensitive
+  phone: string; // Sensitive
+  role: Role; // Sensitive
   createdAt: Date;
 }
 
@@ -313,19 +314,19 @@ npm run generate:all
 describe('UserAdminController (e2e)', () => {
   it('should create user (admin only)', async () => {
     const adminToken = getAdminToken();
-    
+
     const response = await request(app.getHttpServer())
       .post('/admin-api/users')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: 'John', email: 'john@example.com' })
       .expect(201);
-      
+
     expect(response.body).toHaveProperty('id');
   });
-  
+
   it('should reject non-admin users', async () => {
     const userToken = getUserToken();
-    
+
     await request(app.getHttpServer())
       .post('/admin-api/users')
       .set('Authorization', `Bearer ${userToken}`)
@@ -341,23 +342,23 @@ describe('UserAdminController (e2e)', () => {
 describe('UserPublicController (e2e)', () => {
   it('should list users (authenticated)', async () => {
     const userToken = getUserToken();
-    
+
     const response = await request(app.getHttpServer())
       .get('/api/users')
       .set('Authorization', `Bearer ${userToken}`)
       .expect(200);
-      
+
     expect(Array.isArray(response.body)).toBe(true);
   });
-  
+
   it('should not allow write operations', async () => {
     const userToken = getUserToken();
-    
+
     await request(app.getHttpServer())
       .post('/api/users')
       .set('Authorization', `Bearer ${userToken}`)
       .send({ name: 'John' })
-      .expect(404);  // Route doesn't exist
+      .expect(404); // Route doesn't exist
   });
 });
 ```
@@ -420,16 +421,19 @@ api: {
 Generate three APIs with different access levels:
 
 ### Admin API
+
 - Full CRUD
 - Admin role required
 - All fields accessible
 
 ### Partner API
+
 - Read + limited write
 - Partner role required
 - Most fields accessible
 
 ### Public API
+
 - Read only
 - Basic authentication
 - Public fields only
@@ -441,4 +445,3 @@ Create three config files following the same pattern.
 - [Configuration Reference](../api/configuration.md) - Full config options
 - [Authentication Guards](../guides/authentication-guards.md) - Configure guards
 - [Custom Components](./custom-components.md) - Customize dashboard
-

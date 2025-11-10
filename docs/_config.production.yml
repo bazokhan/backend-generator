@@ -6,6 +6,5 @@ theme: null
 remote_theme: just-the-docs/just-the-docs
 
 # Production URLs
-baseurl: "/backend-generator"
-url: "https://trugraph.github.io"
-
+baseurl: '/backend-generator'
+url: 'https://trugraph.github.io'

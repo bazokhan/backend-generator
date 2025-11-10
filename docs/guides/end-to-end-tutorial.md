@@ -125,11 +125,7 @@ Update `dashboard/src/App.tsx` so React Admin boots without components yet:
 import { Admin, Resource } from 'react-admin';
 import { dataProvider } from './providers/dataProvider';
 
-export const App = () => (
-  <Admin dataProvider={dataProvider}>
-    {/* Resources injected by TGraph go here */}
-  </Admin>
-);
+export const App = () => <Admin dataProvider={dataProvider}>{/* Resources injected by TGraph go here */}</Admin>;
 
 export default App;
 ```

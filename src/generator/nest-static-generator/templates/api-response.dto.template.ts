@@ -20,4 +20,3 @@ export const apiResponseDtoTemplate = `export class ApiResponseDto<T> {
   }
 }
 `;
-

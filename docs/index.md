@@ -2,7 +2,7 @@
 layout: default
 title: Home
 nav_order: 1
-description: "Transform your Prisma schema into production-ready NestJS APIs and React Admin dashboards"
+description: 'Transform your Prisma schema into production-ready NestJS APIs and React Admin dashboards'
 permalink: /
 ---
 

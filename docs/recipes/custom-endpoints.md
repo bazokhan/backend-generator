@@ -65,28 +65,25 @@ const minioClient = new Minio.Client({
 
 helpers.upload.minio = async (file: Express.Multer.File, bucket: string = 'products') => {
   const filename = `${helpers.uuid()}-${file.originalname}`;
-  
+
   // Upload original
   await minioClient.putObject(bucket, filename, file.buffer, file.size, {
     'Content-Type': file.mimetype,
   });
-  
+
   return `https://${process.env.MINIO_ENDPOINT}/${bucket}/${filename}`;
 };
 
 helpers.upload.thumbnail = async (file: Express.Multer.File, bucket: string = 'products') => {
   const filename = `thumb-${helpers.uuid()}.webp`;
-  
+
   // Resize to thumbnail
-  const thumbnail = await sharp(file.buffer)
-    .resize(200, 200, { fit: 'cover' })
-    .webp({ quality: 80 })
-    .toBuffer();
-  
+  const thumbnail = await sharp(file.buffer).resize(200, 200, { fit: 'cover' }).webp({ quality: 80 }).toBuffer();
+
   await minioClient.putObject(bucket, filename, thumbnail, thumbnail.length, {
     'Content-Type': 'image/webp',
   });
-  
+
   return `https://${process.env.MINIO_ENDPOINT}/${bucket}/${filename}`;
 };
 ```
@@ -97,46 +94,46 @@ helpers.upload.thumbnail = async (file: Express.Multer.File, bucket: string = 'p
 // src/features/product/adapters/create-with-image.adapter.ts
 import { adapter } from '@/adapters/runtime';
 
-export default adapter.multipart({
-  method: 'POST',
-  path: '/with-image',
-  target: 'ProductService.create',
-  auth: 'JwtAuthGuard',
-  summary: 'Create product with image upload',
-  description: 'Upload product image, generate thumbnail, and create product',
-}, async (ctx) => {
-  const { body, files, helpers } = ctx;
-  
-  // Validate
-  helpers.assert(files, 'Image file is required');
-  helpers.assert(body.name, 'Product name is required');
-  helpers.assert(body.price, 'Price is required');
-  
-  const file = Array.isArray(files) ? files[0] : files;
-  
-  // Validate image type
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  helpers.assert(
-    allowedTypes.includes(file.mimetype),
-    'Only JPEG, PNG, and WebP images are allowed'
-  );
-  
-  // Upload full image and thumbnail in parallel
-  const [imageUrl, thumbnailUrl] = await Promise.all([
-    helpers.upload.minio(file, 'products'),
-    helpers.upload.thumbnail(file, 'products'),
-  ]);
-  
-  return {
-    args: {
-      name: body.name,
-      description: body.description || '',
-      price: parseFloat(body.price),
-      imageUrl,
-      thumbnailUrl,
-    }
-  };
-});
+export default adapter.multipart(
+  {
+    method: 'POST',
+    path: '/with-image',
+    target: 'ProductService.create',
+    auth: 'JwtAuthGuard',
+    summary: 'Create product with image upload',
+    description: 'Upload product image, generate thumbnail, and create product',
+  },
+  async (ctx) => {
+    const { body, files, helpers } = ctx;
+
+    // Validate
+    helpers.assert(files, 'Image file is required');
+    helpers.assert(body.name, 'Product name is required');
+    helpers.assert(body.price, 'Price is required');
+
+    const file = Array.isArray(files) ? files[0] : files;
+
+    // Validate image type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    helpers.assert(allowedTypes.includes(file.mimetype), 'Only JPEG, PNG, and WebP images are allowed');
+
+    // Upload full image and thumbnail in parallel
+    const [imageUrl, thumbnailUrl] = await Promise.all([
+      helpers.upload.minio(file, 'products'),
+      helpers.upload.thumbnail(file, 'products'),
+    ]);
+
+    return {
+      args: {
+        name: body.name,
+        description: body.description || '',
+        price: parseFloat(body.price),
+        imageUrl,
+        thumbnailUrl,
+      },
+    };
+  },
+);
 ```
 
 ### Step 4: Test
@@ -170,7 +167,7 @@ model Order {
   stripePaymentId String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
+
   user User @relation(fields: [userId], references: [id])
 }
 ```
@@ -187,66 +184,69 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
 });
 
-export default adapter.json({
-  method: 'POST',
-  path: '/webhook/stripe',
-  // No auth - Stripe signature verification instead
-  summary: 'Stripe webhook receiver',
-  description: 'Processes Stripe payment events',
-}, async (ctx) => {
-  const { body, headers, di } = ctx;
-  
-  // Verify Stripe signature
-  const signature = headers['stripe-signature'];
-  if (!signature) {
-    throw new BadRequestException('Missing stripe-signature header');
-  }
-  
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(
-      JSON.stringify(body),
-      signature as string,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
-  } catch (err) {
-    throw new BadRequestException(`Webhook signature verification failed: ${err.message}`);
-  }
-  
-  // Handle different event types
-  switch (event.type) {
-    case 'payment_intent.succeeded': {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      
-      // Update order status
-      await di.prisma.order.update({
-        where: { stripePaymentId: paymentIntent.id },
-        data: { status: 'paid' },
-      });
-      
-      console.log(`✅ Payment succeeded: ${paymentIntent.id}`);
-      break;
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/webhook/stripe',
+    // No auth - Stripe signature verification instead
+    summary: 'Stripe webhook receiver',
+    description: 'Processes Stripe payment events',
+  },
+  async (ctx) => {
+    const { body, headers, di } = ctx;
+
+    // Verify Stripe signature
+    const signature = headers['stripe-signature'];
+    if (!signature) {
+      throw new BadRequestException('Missing stripe-signature header');
     }
-    
-    case 'payment_intent.payment_failed': {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      
-      // Update order status
-      await di.prisma.order.update({
-        where: { stripePaymentId: paymentIntent.id },
-        data: { status: 'failed' },
-      });
-      
-      console.log(`❌ Payment failed: ${paymentIntent.id}`);
-      break;
+
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        JSON.stringify(body),
+        signature as string,
+        process.env.STRIPE_WEBHOOK_SECRET!,
+      );
+    } catch (err) {
+      throw new BadRequestException(`Webhook signature verification failed: ${err.message}`);
     }
-    
-    default:
-      console.log(`Unhandled event type: ${event.type}`);
-  }
-  
-  return adapter.response(200, { received: true });
-});
+
+    // Handle different event types
+    switch (event.type) {
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+
+        // Update order status
+        await di.prisma.order.update({
+          where: { stripePaymentId: paymentIntent.id },
+          data: { status: 'paid' },
+        });
+
+        console.log(`✅ Payment succeeded: ${paymentIntent.id}`);
+        break;
+      }
+
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+
+        // Update order status
+        await di.prisma.order.update({
+          where: { stripePaymentId: paymentIntent.id },
+          data: { status: 'failed' },
+        });
+
+        console.log(`❌ Payment failed: ${paymentIntent.id}`);
+        break;
+      }
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    return adapter.response(200, { received: true });
+  },
+);
 ```
 
 ### Step 2: Register Webhook in Stripe
@@ -296,94 +296,87 @@ import { adapter } from '@/adapters/runtime';
 import { parse } from 'csv-parse/sync';
 import { BadRequestException } from '@nestjs/common';
 
-export default adapter.multipart({
-  method: 'POST',
-  path: '/bulk-import',
-  auth: ['JwtAuthGuard', 'AdminGuard'],
-  summary: 'Bulk import users from CSV',
-  description: 'Upload CSV file with user data (email, name, role)',
-}, async (ctx) => {
-  const { files, helpers, di } = ctx;
-  
-  helpers.assert(files, 'CSV file is required');
-  
-  const file = Array.isArray(files) ? files[0] : files;
-  
-  // Validate CSV file
-  helpers.assert(
-    file.mimetype === 'text/csv' || helpers.ext(file.originalname) === 'csv',
-    'File must be a CSV'
-  );
-  
-  // Parse CSV
-  const csvContent = file.buffer.toString('utf-8');
-  const records = parse(csvContent, {
-    columns: true,
-    skip_empty_lines: true,
-    trim: true,
-  });
-  
-  helpers.assert(records.length > 0, 'CSV file is empty');
-  helpers.assert(records.length <= 1000, 'Maximum 1000 users per import');
-  
-  // Validate required columns
-  const requiredColumns = ['email', 'name'];
-  const firstRecord = records[0];
-  for (const col of requiredColumns) {
-    helpers.assert(col in firstRecord, `Missing required column: ${col}`);
-  }
-  
-  // Prepare user data
-  const users = records.map((record: any, index: number) => {
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(record.email)) {
-      throw new BadRequestException(
-        `Invalid email at row ${index + 2}: ${record.email}`
-      );
+export default adapter.multipart(
+  {
+    method: 'POST',
+    path: '/bulk-import',
+    auth: ['JwtAuthGuard', 'AdminGuard'],
+    summary: 'Bulk import users from CSV',
+    description: 'Upload CSV file with user data (email, name, role)',
+  },
+  async (ctx) => {
+    const { files, helpers, di } = ctx;
+
+    helpers.assert(files, 'CSV file is required');
+
+    const file = Array.isArray(files) ? files[0] : files;
+
+    // Validate CSV file
+    helpers.assert(file.mimetype === 'text/csv' || helpers.ext(file.originalname) === 'csv', 'File must be a CSV');
+
+    // Parse CSV
+    const csvContent = file.buffer.toString('utf-8');
+    const records = parse(csvContent, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+    });
+
+    helpers.assert(records.length > 0, 'CSV file is empty');
+    helpers.assert(records.length <= 1000, 'Maximum 1000 users per import');
+
+    // Validate required columns
+    const requiredColumns = ['email', 'name'];
+    const firstRecord = records[0];
+    for (const col of requiredColumns) {
+      helpers.assert(col in firstRecord, `Missing required column: ${col}`);
     }
-    
-    return {
-      email: record.email.toLowerCase().trim(),
-      name: record.name.trim(),
-      role: record.role || 'user',
-      id: helpers.uuid(),
-    };
-  });
-  
-  // Check for duplicate emails in CSV
-  const emails = users.map(u => u.email);
-  const duplicates = emails.filter((e, i) => emails.indexOf(e) !== i);
-  helpers.assert(
-    duplicates.length === 0,
-    `Duplicate emails in CSV: ${duplicates.join(', ')}`
-  );
-  
-  // Check for existing emails in database
-  const existing = await di.prisma.user.findMany({
-    where: { email: { in: emails } },
-    select: { email: true },
-  });
-  
-  if (existing.length > 0) {
-    const existingEmails = existing.map(u => u.email).join(', ');
-    throw new BadRequestException(
-      `These emails already exist: ${existingEmails}`
-    );
-  }
-  
-  // Bulk insert
-  const result = await di.prisma.user.createMany({
-    data: users,
-    skipDuplicates: true,
-  });
-  
-  return adapter.response(201, {
-    success: true,
-    imported: result.count,
-    total: records.length,
-  });
-});
+
+    // Prepare user data
+    const users = records.map((record: any, index: number) => {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(record.email)) {
+        throw new BadRequestException(`Invalid email at row ${index + 2}: ${record.email}`);
+      }
+
+      return {
+        email: record.email.toLowerCase().trim(),
+        name: record.name.trim(),
+        role: record.role || 'user',
+        id: helpers.uuid(),
+      };
+    });
+
+    // Check for duplicate emails in CSV
+    const emails = users.map((u) => u.email);
+    const duplicates = emails.filter((e, i) => emails.indexOf(e) !== i);
+    helpers.assert(duplicates.length === 0, `Duplicate emails in CSV: ${duplicates.join(', ')}`);
+
+    // Check for existing emails in database
+    const existing = await di.prisma.user.findMany({
+      where: { email: { in: emails } },
+      select: { email: true },
+    });
+
+    if (existing.length > 0) {
+      const existingEmails = existing.map((u) => u.email).join(', ');
+      throw new BadRequestException(`These emails already exist: ${existingEmails}`);
+    }
+
+    // Bulk insert
+    const result = await di.prisma.user.createMany({
+      data: users,
+      skipDuplicates: true,
+    });
+
+    return adapter.response(201, {
+      success: true,
+      imported: result.count,
+      total: records.length,
+    });
+  },
+);
 ```
 
 ### Step 3: Test
@@ -438,78 +431,76 @@ model Developer {
 import { adapter } from '@/adapters/runtime';
 import { NotFoundException } from '@nestjs/common';
 
-export default adapter.json({
-  method: 'POST',
-  path: '/sync-github',
-  auth: 'JwtAuthGuard',
-  summary: 'Sync developer from GitHub',
-  description: 'Fetch GitHub user data and create/update developer profile',
-}, async (ctx) => {
-  const { body, helpers, di } = ctx;
-  
-  helpers.assert(body.githubUsername, 'GitHub username is required');
-  
-  // Fetch from GitHub API
-  const response = await fetch(
-    `https://api.github.com/users/${body.githubUsername}`,
-    {
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/sync-github',
+    auth: 'JwtAuthGuard',
+    summary: 'Sync developer from GitHub',
+    description: 'Fetch GitHub user data and create/update developer profile',
+  },
+  async (ctx) => {
+    const { body, helpers, di } = ctx;
+
+    helpers.assert(body.githubUsername, 'GitHub username is required');
+
+    // Fetch from GitHub API
+    const response = await fetch(`https://api.github.com/users/${body.githubUsername}`, {
       headers: {
         'User-Agent': 'TGraph-App',
-        'Accept': 'application/vnd.github.v3+json',
+        Accept: 'application/vnd.github.v3+json',
       },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new NotFoundException(`GitHub user not found: ${body.githubUsername}`);
+      }
+      throw new Error(`GitHub API error: ${response.statusText}`);
     }
-  );
-  
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new NotFoundException(
-        `GitHub user not found: ${body.githubUsername}`
-      );
+
+    const githubData = await response.json();
+
+    // Check if developer exists
+    const existing = await di.prisma.developer.findUnique({
+      where: { githubUsername: body.githubUsername },
+    });
+
+    const data = {
+      githubUsername: githubData.login,
+      githubId: githubData.id,
+      name: githubData.name || githubData.login,
+      bio: githubData.bio,
+      avatarUrl: githubData.avatar_url,
+      followers: githubData.followers,
+      repos: githubData.public_repos,
+      lastSyncedAt: new Date(),
+    };
+
+    if (existing) {
+      // Update existing
+      const updated = await di.prisma.developer.update({
+        where: { id: existing.id },
+        data,
+      });
+
+      return adapter.response(200, {
+        data: updated,
+        message: 'Developer profile updated',
+      });
+    } else {
+      // Create new
+      const created = await di.prisma.developer.create({
+        data: { id: helpers.uuid(), ...data },
+      });
+
+      return adapter.response(201, {
+        data: created,
+        message: 'Developer profile created',
+      });
     }
-    throw new Error(`GitHub API error: ${response.statusText}`);
-  }
-  
-  const githubData = await response.json();
-  
-  // Check if developer exists
-  const existing = await di.prisma.developer.findUnique({
-    where: { githubUsername: body.githubUsername },
-  });
-  
-  const data = {
-    githubUsername: githubData.login,
-    githubId: githubData.id,
-    name: githubData.name || githubData.login,
-    bio: githubData.bio,
-    avatarUrl: githubData.avatar_url,
-    followers: githubData.followers,
-    repos: githubData.public_repos,
-    lastSyncedAt: new Date(),
-  };
-  
-  if (existing) {
-    // Update existing
-    const updated = await di.prisma.developer.update({
-      where: { id: existing.id },
-      data,
-    });
-    
-    return adapter.response(200, {
-      data: updated,
-      message: 'Developer profile updated',
-    });
-  } else {
-    // Create new
-    const created = await di.prisma.developer.create({
-      data: { id: helpers.uuid(), ...data },
-    });
-    
-    return adapter.response(201, {
-      data: created,
-      message: 'Developer profile created',
-    });
-  }
-});
+  },
+);
 ```
 
 ### Step 2: Test
@@ -552,7 +543,7 @@ model Order {
   discount     Float    @default(0)
   promoCodeId  String?
   createdAt    DateTime @default(now())
-  
+
   user      User      @relation(fields: [userId], references: [id])
   promoCode PromoCode? @relation(fields: [promoCodeId], references: [id])
 }
@@ -565,67 +556,70 @@ model Order {
 import { adapter } from '@/adapters/runtime';
 import { BadRequestException } from '@nestjs/common';
 
-export default adapter.json({
-  method: 'POST',
-  path: '/with-promo',
-  target: 'OrderService.create',
-  auth: 'JwtAuthGuard',
-  summary: 'Create order with promo code',
-  description: 'Validate promo code and apply discount',
-}, async (ctx) => {
-  const { body, user, helpers, di } = ctx;
-  
-  helpers.assert(body.amount, 'Amount is required');
-  helpers.assert(body.amount > 0, 'Amount must be positive');
-  
-  let discount = 0;
-  let promoCodeId = null;
-  
-  // Validate promo code if provided
-  if (body.promoCode) {
-    const promoCode = await di.prisma.promoCode.findUnique({
-      where: { code: body.promoCode.toUpperCase() },
-    });
-    
-    // Validation checks
-    if (!promoCode) {
-      throw new BadRequestException('Invalid promo code');
+export default adapter.json(
+  {
+    method: 'POST',
+    path: '/with-promo',
+    target: 'OrderService.create',
+    auth: 'JwtAuthGuard',
+    summary: 'Create order with promo code',
+    description: 'Validate promo code and apply discount',
+  },
+  async (ctx) => {
+    const { body, user, helpers, di } = ctx;
+
+    helpers.assert(body.amount, 'Amount is required');
+    helpers.assert(body.amount > 0, 'Amount must be positive');
+
+    let discount = 0;
+    let promoCodeId = null;
+
+    // Validate promo code if provided
+    if (body.promoCode) {
+      const promoCode = await di.prisma.promoCode.findUnique({
+        where: { code: body.promoCode.toUpperCase() },
+      });
+
+      // Validation checks
+      if (!promoCode) {
+        throw new BadRequestException('Invalid promo code');
+      }
+
+      if (!promoCode.active) {
+        throw new BadRequestException('Promo code is no longer active');
+      }
+
+      if (new Date() > new Date(promoCode.expiresAt)) {
+        throw new BadRequestException('Promo code has expired');
+      }
+
+      if (promoCode.usedCount >= promoCode.maxUses) {
+        throw new BadRequestException('Promo code has reached its usage limit');
+      }
+
+      // Calculate discount
+      discount = (body.amount * promoCode.discount) / 100;
+      promoCodeId = promoCode.id;
+
+      // Increment usage count
+      await di.prisma.promoCode.update({
+        where: { id: promoCode.id },
+        data: { usedCount: promoCode.usedCount + 1 },
+      });
     }
-    
-    if (!promoCode.active) {
-      throw new BadRequestException('Promo code is no longer active');
-    }
-    
-    if (new Date() > new Date(promoCode.expiresAt)) {
-      throw new BadRequestException('Promo code has expired');
-    }
-    
-    if (promoCode.usedCount >= promoCode.maxUses) {
-      throw new BadRequestException('Promo code has reached its usage limit');
-    }
-    
-    // Calculate discount
-    discount = (body.amount * promoCode.discount) / 100;
-    promoCodeId = promoCode.id;
-    
-    // Increment usage count
-    await di.prisma.promoCode.update({
-      where: { id: promoCode.id },
-      data: { usedCount: promoCode.usedCount + 1 },
-    });
-  }
-  
-  const finalAmount = body.amount - discount;
-  
-  return {
-    args: {
-      userId: user.id,
-      amount: finalAmount,
-      discount,
-      promoCodeId,
-    }
-  };
-});
+
+    const finalAmount = body.amount - discount;
+
+    return {
+      args: {
+        userId: user.id,
+        amount: finalAmount,
+        discount,
+        promoCodeId,
+      },
+    };
+  },
+);
 ```
 
 ### Step 2: Test
@@ -657,75 +651,76 @@ Create a product with image upload, external API sync, and validation.
 import { adapter } from '@/adapters/runtime';
 import { BadRequestException } from '@nestjs/common';
 
-export default adapter.multipart({
-  method: 'POST',
-  path: '/advanced',
-  target: 'ProductService.create',
-  auth: ['JwtAuthGuard', 'AdminGuard'],
-  summary: 'Advanced product creation',
-  description: 'Upload image, validate with external API, and create product',
-}, async (ctx) => {
-  const { body, files, helpers, di } = ctx;
-  
-  // 1. Validate inputs
-  helpers.assert(body.name, 'Product name is required');
-  helpers.assert(body.price, 'Price is required');
-  helpers.assert(files, 'Product image is required');
-  
-  const price = parseFloat(body.price);
-  helpers.assert(price > 0, 'Price must be positive');
-  
-  // 2. Check for duplicate product name
-  const existing = await di.prisma.product.findFirst({
-    where: { name: body.name },
-  });
-  
-  if (existing) {
-    throw new BadRequestException(
-      `Product "${body.name}" already exists`
-    );
-  }
-  
-  // 3. Validate with external pricing API
-  const pricingResponse = await fetch('https://api.example.com/validate-price', {
+export default adapter.multipart(
+  {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ category: body.category, price }),
-  });
-  
-  if (!pricingResponse.ok) {
-    throw new BadRequestException('Price validation failed');
-  }
-  
-  const pricingData = await pricingResponse.json();
-  if (!pricingData.valid) {
-    throw new BadRequestException(
-      `Invalid price for category. Suggested range: $${pricingData.min}-$${pricingData.max}`
-    );
-  }
-  
-  // 4. Upload and process image
-  const file = Array.isArray(files) ? files[0] : files;
-  const [imageUrl, thumbnailUrl] = await Promise.all([
-    helpers.upload.minio(file, 'products'),
-    helpers.upload.thumbnail(file, 'products'),
-  ]);
-  
-  // 5. Generate slug
-  const slug = helpers.slugify(body.name);
-  
-  return {
-    args: {
-      name: body.name,
-      slug,
-      description: body.description || '',
-      category: body.category,
-      price,
-      imageUrl,
-      thumbnailUrl,
+    path: '/advanced',
+    target: 'ProductService.create',
+    auth: ['JwtAuthGuard', 'AdminGuard'],
+    summary: 'Advanced product creation',
+    description: 'Upload image, validate with external API, and create product',
+  },
+  async (ctx) => {
+    const { body, files, helpers, di } = ctx;
+
+    // 1. Validate inputs
+    helpers.assert(body.name, 'Product name is required');
+    helpers.assert(body.price, 'Price is required');
+    helpers.assert(files, 'Product image is required');
+
+    const price = parseFloat(body.price);
+    helpers.assert(price > 0, 'Price must be positive');
+
+    // 2. Check for duplicate product name
+    const existing = await di.prisma.product.findFirst({
+      where: { name: body.name },
+    });
+
+    if (existing) {
+      throw new BadRequestException(`Product "${body.name}" already exists`);
     }
-  };
-});
+
+    // 3. Validate with external pricing API
+    const pricingResponse = await fetch('https://api.example.com/validate-price', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category: body.category, price }),
+    });
+
+    if (!pricingResponse.ok) {
+      throw new BadRequestException('Price validation failed');
+    }
+
+    const pricingData = await pricingResponse.json();
+    if (!pricingData.valid) {
+      throw new BadRequestException(
+        `Invalid price for category. Suggested range: $${pricingData.min}-$${pricingData.max}`,
+      );
+    }
+
+    // 4. Upload and process image
+    const file = Array.isArray(files) ? files[0] : files;
+    const [imageUrl, thumbnailUrl] = await Promise.all([
+      helpers.upload.minio(file, 'products'),
+      helpers.upload.thumbnail(file, 'products'),
+    ]);
+
+    // 5. Generate slug
+    const slug = helpers.slugify(body.name);
+
+    return {
+      args: {
+        name: body.name,
+        slug,
+        description: body.description || '',
+        category: body.category,
+        price,
+        imageUrl,
+        thumbnailUrl,
+      },
+    };
+  },
+);
 ```
 
 ---
@@ -735,5 +730,3 @@ export default adapter.multipart({
 - [Custom Adapters Guide](../guides/custom-adapters.md) - Comprehensive usage guide
 - [Adapters API Reference](../api/adapters.md) - Complete API documentation
 - [Authentication Guards](../guides/authentication-guards.md) - Securing your adapters
-
-
