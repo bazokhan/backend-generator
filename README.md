@@ -7,16 +7,16 @@
 
 ## Features
 
-- **Full-Stack Generation** – Generate NestJS controllers, services, DTOs, and React Admin pages from Prisma schemas
-- **Type Safety** – End-to-end TypeScript types from database to frontend (including Swagger-generated API clients)
-- **Smart Introspection** – Automatically discovers your project structure
-- **Unique Field Getters** – Auto-generated methods for fields marked with `@unique` in Prisma
-- **Relation Support** – Configurable relation includes in service selects
-- **Static Infrastructure** – Generate guards, interceptors, decorators, and utilities
-- **Field Directives** – Fine-grained control with `@tg_format`, `@tg_upload`, `@tg_readonly`
-- **Safe Regeneration** – Preserves your custom code, regenerates boilerplate
-- **Convention Over Configuration** – Works out of the box with sensible defaults
-- **Interactive Wizard** – Guided setup with `tgraph init`
+- **Full-Stack Generation**: Generate NestJS controllers, services, DTOs, and React Admin pages from Prisma schemas
+- **Type Safety**: Carry TypeScript types from database to frontend, including Swagger-based API clients
+- **Smart Introspection**: Automatically discovers your project structure and preserves custom code
+- **Unique Field Getters**: Auto-generated getters for every Prisma `@unique` field
+- **Relation Support**: React Admin resources and DTOs understand Prisma relations out of the box
+- **Static Infrastructure**: Generate guards, interceptors, decorators, and utilities
+- **Field Directives**: Fine-grained control with `@tg_format`, `@tg_upload`, and `@tg_readonly`
+- **Safe Regeneration**: Generated files live beside your code and can be overwritten safely
+- **Convention Over Configuration**: Works out of the box with sensible defaults
+- **Interactive Wizard**: Guided setup with `tgraph init`
 
 ## Quick Start
 
@@ -40,26 +40,25 @@ model User {
 npx tgraph all
 ```
 
-**Result:** Complete CRUD API + admin dashboard in seconds.
+**Result:** Complete CRUD API plus an admin dashboard in seconds.
 
 ## What Gets Generated
 
 ### Backend (NestJS)
 
-- ✅ REST controllers with pagination and search
-- ✅ Services with CRUD operations and unique field getters
-- ✅ DTOs with class-validator decorators (including array validators)
-- ✅ Automatic AppModule updates
-- ✅ Static infrastructure files (guards, interceptors, decorators)
-- ✅ Configurable relation includes in queries
+- REST controllers with pagination and search
+- Services with CRUD operations, unique field getters, and Prisma integration
+- DTOs with class-validator decorators (including arrays and enums)
+- Automatic AppModule updates
+- Optional static modules (guards, DTOs, interceptors, utilities)
 
 ### Frontend (React Admin)
 
-- ✅ List/Edit/Create/Show pages
-- ✅ Studio pages (spreadsheet-like editing)
-- ✅ Type-appropriate inputs (date pickers, file uploads, etc.)
-- ✅ Relation handling with autocomplete
-- ✅ Type-safe API client generated from Swagger
+- List/Edit/Create/Show pages for every model
+- Studio pages for spreadsheet-style editing
+- Type-appropriate inputs (dates, uploads, references, JSON)
+- Relation handling with autocomplete widgets
+- Type-safe API client generated from Swagger
 
 ## Example
 
@@ -78,7 +77,7 @@ model Post {
 }
 ```
 
-**Output:** Instant admin system with working API and dashboard.
+**Output:** Instant admin system with a working API and dashboard.
 
 ## Installation
 
@@ -96,17 +95,20 @@ npm install -g @tgraph/backend-generator
 # Generate everything
 tgraph all
 
-# Preview pending changes without writing
+# Preview pending changes without writing files
 tgraph preflight
 
-# Generate only API
+# Generate only API files
 tgraph api
 
-# Generate only dashboard
+# Generate only dashboard resources
 tgraph dashboard
 
+# Generate only DTOs
+tgraph dtos
+
 # With options
-tgraph all --suffix Admin --no-update-data-provider
+tgraph all --config tgraph.admin.config.ts --non-interactive
 
 # List available static modules
 tgraph static --list
@@ -122,31 +124,35 @@ tgraph types
 
 - Node.js 18.0.0 or newer
 - NestJS project with Prisma
-- React Admin dashboard (optional, for dashboard generation)
+- React Admin dashboard (optional, only required for dashboard generation)
 
 ## Documentation
 
-📚 **[Complete Documentation](https://trugraph.github.io/backend-generator/)**
+- **[Complete Documentation](https://trugraph.github.io/backend-generator/)** - Browse every guide and reference
 
 ### Getting Started
 
-- [Getting Started](https://trugraph.github.io/backend-generator/getting-started.html) – Installation and setup
-- [Quick Start Tutorial](https://trugraph.github.io/backend-generator/quick-start.html) – Build a blog in 5 minutes
-- [CLI Reference](https://trugraph.github.io/backend-generator/cli-reference.html) – All commands and options
+- [Getting Started](https://trugraph.github.io/backend-generator/getting-started.html) - Installation and setup
+- [Quick Start Tutorial](https://trugraph.github.io/backend-generator/quick-start.html) - Build a blog in 5 minutes
+- [CLI Reference](https://trugraph.github.io/backend-generator/cli-reference.html) - All commands and options
 
 ### Guides
 
-- [Prisma Setup](https://trugraph.github.io/backend-generator/guides/prisma-setup.html) – Configure your schema
-- [Field Directives](https://trugraph.github.io/backend-generator/guides/field-directives.html) – Control generation behavior
-- [Authentication Guards](https://trugraph.github.io/backend-generator/guides/authentication-guards.html) – Configure authentication
-- [Static Files Generation](https://trugraph.github.io/backend-generator/guides/static-files.html) – Infrastructure generation
-- [Dashboard Types Generation](https://trugraph.github.io/backend-generator/guides/dashboard-types.html) – Type-safe API clients
+- [Prisma Setup](https://trugraph.github.io/backend-generator/guides/prisma-setup.html) - Configure your schema
+- [Field Directives](https://trugraph.github.io/backend-generator/guides/field-directives.html) - Control generation behavior
+- [Authentication Guards](https://trugraph.github.io/backend-generator/guides/authentication-guards.html) - Configure authentication
+- [Static Files Generation](https://trugraph.github.io/backend-generator/guides/static-files.html) - Infrastructure generation
+- [Dashboard Types Generation](https://trugraph.github.io/backend-generator/guides/dashboard-types.html) - Type-safe API clients
 
 ### Advanced
 
-- [Recipes](https://trugraph.github.io/backend-generator/recipes/basic-crud.html) – Practical examples
-- [SDK Reference](https://trugraph.github.io/backend-generator/sdk-reference.html) – Programmatic usage
-- [Troubleshooting](https://trugraph.github.io/backend-generator/troubleshooting.html) – Common issues
+- [Recipes](https://trugraph.github.io/backend-generator/recipes/basic-crud.html) - Practical examples
+- [SDK Reference](https://trugraph.github.io/backend-generator/sdk-reference.html) - Programmatic usage
+- [Troubleshooting](https://trugraph.github.io/backend-generator/troubleshooting.html) - Common issues
+
+### AI Integration
+
+- [LLM Integration Guide](https://trugraph.github.io/backend-generator/llm-guide.html) - Complete guide for AI assistants
 
 ## Configuration
 
@@ -156,136 +162,123 @@ Initialize a configuration file in your project:
 npx tgraph init
 ```
 
-This creates `tgraph.config.ts` in your project root with default values:
+This creates `tgraph.config.ts` with typed defaults:
 
 ```typescript
 import type { Config } from '@tgraph/backend-generator';
 
 export const config: Config = {
   input: {
-    schemaPath: 'prisma/schema.prisma',
-  },
-
-  output: {
-    backend: {
-      dtos: 'src/dtos/generated',
-      modules: {
-        searchPaths: ['src/features', 'src/modules', 'src'],
-        defaultRoot: 'src/features',
-      },
-      staticFiles: {
-        guards: 'src/guards',
-        decorators: 'src/decorators',
-        dtos: 'src/dtos',
-        interceptors: 'src/interceptors',
-      },
+    prisma: {
+      schemaPath: 'prisma/schema.prisma',
+      servicePath: 'src/infrastructure/database/prisma.service.ts',
     },
     dashboard: {
-      root: 'src/dashboard/src',
-      resources: 'src/dashboard/src/resources',
-      swagger: {
-        command: 'npm run generate:swagger',
-        jsonPath: 'src/dashboard/src/types/swagger.json',
-      },
+      components: { form: {}, display: {} },
     },
   },
-
-  api: {
-    suffix: 'Admin',
-    prefix: 'tg-api',
-    authentication: {
+  output: {
+    backend: {
+      root: 'src/features',
+      dtosPath: 'src/dtos/generated',
+      modulesPaths: ['src/features', 'src/modules', 'src'],
+      guardsPath: 'src/guards',
+      decoratorsPath: 'src/decorators',
+      interceptorsPath: 'src/interceptors',
+      utilsPath: 'src/utils',
+      appModulePath: 'src/app.module.ts',
+    },
+    dashboard: {
       enabled: true,
-      requireAdmin: true,
-      guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
-      adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
-    },
-    relations: {
-      include: [], // or 'all' or ['author', 'comments']
-    },
-  },
-
-  dashboard: {
-    enabled: true,
-    updateDataProvider: true,
-    components: {
-      form: {}, // Override React Admin form components
-      display: {}, // Override React Admin display components
+      updateDataProvider: true,
+      root: 'src/dashboard/src',
+      resourcesPath: 'src/dashboard/src/resources',
+      swaggerJsonPath: 'src/dashboard/src/types/swagger.json',
+      apiPath: 'src/dashboard/src/types/api.ts',
+      appComponentPath: 'src/dashboard/src/App.tsx',
+      dataProviderPath: 'src/dashboard/src/providers/dataProvider.ts',
     },
   },
-
+  api: {
+    suffix: '',
+    prefix: 'tg-api',
+    authenticationEnabled: true,
+    requireAdmin: true,
+    guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
+    adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
+  },
   behavior: {
     nonInteractive: false,
   },
 };
 ```
 
-The new structured configuration makes it easy to:
-
-- Generate multiple APIs with different configs (`--config tgraph.admin.config.ts`)
-- Customize component imports for consistent UI
-- Configure authentication guards per API
-- Control where files are generated
-
-Customize the values for your project, or use the `--config` flag to use different configurations.
+The structured configuration makes it easy to run multiple variants (`--config tgraph.public.config.ts`), customize component imports, and control every output path.
 
 ### Public vs Admin Controllers
 
-- Set `api.authentication.enabled = false` or leave `guards` empty to generate public controllers without `@UseGuards`.
-- Set `api.authentication.requireAdmin = true` to add `@IsAdmin()` to controllers.
+- Set `api.authenticationEnabled = false` (or pass `--public`) to generate public controllers without guards.
+- Set `api.requireAdmin = true` to add the `@IsAdmin()` decorator and admin guards.
 
 ### Route Prefix
 
-- `api.prefix` controls controller base route (e.g., `tg-api`, `public-api`). This replaces previous hardcoded defaults.
+`api.prefix` controls the base route for generated controllers (for example `tg-api`, `public-api`). Use different prefixes per config file.
 
 ### Static Assets Generation
 
-- During `tgraph api`, you’ll be prompted to generate static files. Use `--yes` for non-interactive generation or `tgraph static --include <names>` for a targeted run.
+- During `tgraph api`, you'll be prompted to generate static files. Use `--yes` for non-interactive generation or `tgraph static --include <names>` for a targeted run.
 - Available names include: `admin.guard`, `feature-flag.guard`, `is-admin.decorator`, `paginated-search-query.dto`, `paginated-search-result.dto`, `api-response.dto`, `pagination.interceptor`, `audit.interceptor`, `paginated-search.decorator`, `paginated-search.util`.
 
 ### Dashboard API Types
 
-- `tgraph types` reads `<dashboardRoot>/types/swagger.json` and generates `api.ts`. Ensure `swagger.json` is up to date before running.
+`tgraph types` reads the file defined by `output.dashboard.swaggerJsonPath` (default `src/dashboard/src/types/swagger.json`) and generates the client at `output.dashboard.apiPath`. Ensure `swagger.json` is fresh before running.
 
 ## Programmatic Usage
 
 ```typescript
-import { ApiGenerator, DashboardGenerator } from '@tgraph/backend-generator';
+import { ApiGenerator, DashboardGenerator, DtoGenerator } from '@tgraph/backend-generator';
+import { config } from './tgraph.config';
 
-const generator = new ApiGenerator(config);
-await generator.generate();
+const api = new ApiGenerator(config);
+await api.generate();
 
 const dashboard = new DashboardGenerator(config);
 await dashboard.generate();
+
+const dtos = new DtoGenerator(config);
+await dtos.generate();
 ```
 
-See [SDK Reference](https://trugraph.github.io/backend-generator/sdk-reference.html) for complete API documentation.
+See the [SDK Reference](https://trugraph.github.io/backend-generator/sdk-reference.html) for every method and option.
 
 ## Project Structure
 
 ```
 your-project/
-├── prisma/
-│   └── schema.prisma          # Source of truth
-├── src/
-│   ├── app.module.ts          # Auto-updated
-│   ├── features/
-│   │   └── user/
-│   │       ├── user.tg.controller.ts   # Generated
-│   │       ├── user.tg.service.ts      # Generated
-│   │       ├── create-user.tg.dto.ts   # Generated
-│   │       └── user.service.ts         # Your custom code
-│   └── dashboard/src/
-│       ├── App.tsx            # Auto-updated
-│       └── resources/
-│           └── users/
-│               ├── UserList.tsx        # Generated
-│               ├── UserEdit.tsx        # Generated
-│               └── ...
+|- prisma/
+|  |- schema.prisma
+|
+|- src/
+|  |- app.module.ts
+|  |- features/
+|     |- user/
+|        |- user.tg.controller.ts   # Generated
+|        |- user.tg.service.ts      # Generated
+|        |- create-user.tg.dto.ts   # Generated
+|        |- user.service.ts         # Your custom logic
+|
+|- dashboard/src/
+   |- App.tsx
+   |- resources/
+      |- users/
+         |- UserList.tsx           # Generated
+         |- UserEdit.tsx           # Generated
+         |- ...
 ```
 
 ## Field Directives
 
-Control generation with special comments:
+Control generation directly from your Prisma schema:
 
 ```prisma
 model User {
@@ -300,26 +293,22 @@ model User {
 }
 ```
 
-See [Field Directives Guide](https://trugraph.github.io/backend-generator/guides/field-directives.html) for all directives.
+See the [Field Directives Guide](https://trugraph.github.io/backend-generator/guides/field-directives.html) for every directive.
 
 ## Philosophy
 
-TGraph Backend Generator follows these principles:
-
-- **Convention over Configuration** – Works out of the box
-- **Generate, Don't Replace** – Coexist with custom code
-- **Progressive Disclosure** – Start simple, add complexity as needed
-- **Type Safety First** – Compile-time error checking
-
-Read more in [Philosophy & Principles](https://trugraph.github.io/backend-generator/architecture/philosophy.html).
+- **Convention over Configuration**: Works out of the box
+- **Generate, Don't Replace**: Generated files live beside your code
+- **Progressive Disclosure**: Start simple, add complexity when needed
+- **Type Safety First**: Catch errors at compile time
 
 ## Contributing
 
-Contributions are welcome! See [Contributing Guide](https://trugraph.github.io/backend-generator/contributing.html).
+Contributions are welcome! See the [Contributing Guide](https://trugraph.github.io/backend-generator/contributing.html).
 
 ## Publishing
 
-For maintainers: See [Publishing Guide](https://trugraph.github.io/backend-generator/publishing.html) for release process.
+For maintainers: see the [Publishing Guide](https://trugraph.github.io/backend-generator/publishing.html) for the release process.
 
 ## License
 
@@ -334,4 +323,4 @@ ISC
 
 ---
 
-**Made with ❤️ by the TruGraph team**
+Made with love by the TruGraph team.

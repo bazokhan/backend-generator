@@ -12,18 +12,18 @@ Transform your Prisma schema into a complete NestJS backend and React Admin dash
 
 ## What is TGraph Backend Generator?
 
-TGraph Backend Generator is a powerful CLI toolkit that automatically generates production-ready code from your Prisma schema. It creates type-safe NestJS APIs, DTOs, services, controllers, and React Admin dashboard pages—all while preserving your custom code.
+TGraph Backend Generator is a powerful CLI toolkit that automatically produces production-ready code from your Prisma schema. It creates type-safe NestJS APIs, DTOs, services, controllers, and React Admin dashboard pages--all while preserving your custom code.
 
 ## Features
 
-- **Full-Stack Generation** – Generate NestJS backend APIs and React Admin dashboard pages from Prisma schemas
-- **Type Safety** – End-to-end TypeScript types from database to frontend
-- **Smart Introspection** – Discovers your project structure and preserves manual code
-- **Field Directives** – Control generation behavior with schema comments (`@tg_format`, `@tg_upload`, `@tg_readonly`)
-- **Composable Architecture** – Use the CLI or embed generators in your build pipeline
-- **Safe Regeneration** – Auto-generated files are clearly marked and safe to regenerate
-- **Validation** – Automatic class-validator decorators from Prisma schema constraints
-- **Admin Authentication** – All generated endpoints respect authentication guards
+- **Full-Stack Generation**: Generate NestJS APIs and React Admin dashboards from Prisma schemas
+- **Type Safety**: End-to-end TypeScript types from database to frontend
+- **Smart Introspection**: Discovers your project structure and preserves manual code
+- **Field Directives**: Control generation behavior with schema comments (`@tg_format`, `@tg_upload`, `@tg_readonly`)
+- **Composable Architecture**: Use the CLI or embed generators in your build pipeline
+- **Safe Regeneration**: Auto-generated files are clearly marked and safe to regenerate
+- **Validation**: Automatic class-validator decorators from Prisma schema constraints
+- **Admin Authentication**: Generated endpoints respect authentication guards
 
 ## Quick Links
 
@@ -62,6 +62,7 @@ TGraph Backend Generator is a powerful CLI toolkit that automatically generates 
 ### Help
 
 - [Troubleshooting](./troubleshooting.html)
+- [LLM Integration Guide](./llm-guide.html) - For AI assistants
 
 ## Installation
 
@@ -129,10 +130,10 @@ You get:
 
 TGraph Backend Generator embraces **convention over configuration**. It provides excellent defaults while remaining highly customizable. The generator:
 
-- **Preserves manual code** – Auto-generated sections are clearly bounded
-- **Follows best practices** – REST conventions, TypeScript standards, React Admin patterns
-- **Stays out of your way** – Generated files use distinct naming (`.tg.` suffix)
-- **Enables incremental adoption** – Opt-in per model with `@tg_form()`
+- **Preserves manual code**: Auto-generated sections are clearly bounded
+- **Follows best practices**: REST conventions, TypeScript standards, React Admin patterns
+- **Stays out of your way**: Generated files use a distinct `.tg.` suffix
+- **Enables incremental adoption**: Opt in per model with `@tg_form()`
 
 ## Requirements
 
