@@ -102,6 +102,15 @@ export const supportedCommands: Command[] = [
     }),
   },
   {
+    name: 'adapters',
+    aliases: ['adapters'],
+    description: 'Generate adapters for all models',
+    options: supportedOptions.filter((option) => {
+      const options: CliOption[] = ['--help'];
+      return options.includes(option.name);
+    }),
+  },
+  {
     name: 'all',
     aliases: ['all'],
     description: 'Run api, dashboard, and dtos generators sequentially',

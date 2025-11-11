@@ -27,6 +27,8 @@ export class AdapterValidator {
    * @throws AdapterValidationError if validation fails
    */
   public validate(adapter: AdapterDefinition, model?: PrismaModel): void {
+    console.log('[Adapter Validator] Validating', adapter.name, model ? `for ${model.name}` : '');
+    
     this.validateConfig(adapter);
 
     if (model) {

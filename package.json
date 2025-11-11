@@ -7,11 +7,22 @@
   "bin": {
     "tgraph": "dist/bin/cli.js"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/runtime/adapters/index.d.ts",
+      "default": "./dist/runtime/adapters/index.js"
+    }
+  },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "rimraf dist && tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
+    "build:watch": "concurrently \"tsc -p tsconfig.json --watch\" \"tsc-alias -p tsconfig.json --watch\"",
     "package": "npm run build && rimraf package && npm pack && node -e \"const fs=require('fs'); const f=fs.readdirSync('.').find(x=>x.endsWith('.tgz')); fs.mkdirSync('package',{recursive:true}); require('child_process').execSync(`tar -xzf ${f} -C package`)\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm test",
@@ -46,16 +57,34 @@
     "typescript",
     "cli"
   ],
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/swagger": "^7.0.0",
+    "@types/express": "^4.17.0",
+    "@types/multer": "^1.4.0",
+    "express": "^4.18.0",
+    "multer": "^1.4.5-lts.1"
+  },
   "devDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/swagger": "^7.0.0",
     "@swc/core": "^1.7.0",
     "@swc/jest": "^0.2.36",
+    "@types/express": "^4.17.0",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^1.4.0",
     "@types/node": "^24.10.0",
+    "concurrently": "^9.2.1",
     "esbuild-register": "^3.6.0",
+    "express": "^4.18.0",
     "jest": "^30.2.0",
+    "multer": "^1.4.5-lts.1",
     "prettier": "^3.6.2",
     "rimraf": "^6.1.0",
     "tsc-alias": "^1.8.16",
+    "tslib": "^2.8.1",
     "typescript": "^5.9.3"
   }
 }

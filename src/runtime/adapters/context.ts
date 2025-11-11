@@ -1,7 +1,5 @@
-export const adapterContextTemplate = `import type { Request, Response } from 'express';
-import type * as Multer from 'multer';
-import type { PrismaService } from '@/infrastructure/database/prisma.service';
-import type { AdapterContext, AdapterDI } from './types';
+import type { Request, Response } from 'express';
+import type { AdapterContext, AdapterDI, IPrismaService } from './types';
 import { helpers } from './helpers';
 
 /**
@@ -9,42 +7,49 @@ import { helpers } from './helpers';
  * Used by generated controllers to construct context for adapter handlers
  */
 export class AdapterContextBuilder {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly customDI: Record<string, any> = {}
-  ) {}
+  constructor(private readonly prisma: IPrismaService) {}
 
   /**
    * Build the context object for an adapter handler
-   * 
+   *
+   * @param body - Request body
+   * @param query - Query string parameters
+   * @param params - Route parameters
    * @param req - Express request object
    * @param res - Express response object
    * @param files - Uploaded files (for multipart requests)
    * @returns Complete adapter context
    */
-  build(
+  build<TBody = any, TQuery = any, TParams = any>(
+    body: TBody,
+    query: TQuery,
+    params: TParams,
     req: Request,
     res: Response,
-    files?: Multer.File | Multer.File[]
-  ): AdapterContext {
+    files?: Express.Multer.File | Express.Multer.File[],
+  ): AdapterContext<TBody, TQuery, TParams> {
     const di: AdapterDI = {
       prisma: this.prisma,
-      ...this.customDI,
     };
 
-    return {
+    const context: AdapterContext<TBody, TQuery, TParams> = {
       url: req.url,
-      params: req.params,
-      query: req.query,
+      params,
+      query,
       headers: req.headers as Record<string, string | string[] | undefined>,
-      body: req.body,
-      files,
+      body,
       user: (req as any).user,
       req,
       res,
       di,
       helpers,
     };
+
+    if (files !== undefined) {
+      context.files = files;
+    }
+
+    return context;
   }
 }
-`;
+

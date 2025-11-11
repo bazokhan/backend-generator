@@ -169,6 +169,37 @@ export default adapter.json({
       expect(result?.config.select).toEqual(['id', 'title', 'createdAt']);
     });
 
+    it('should parse adapter using generics and trailing comma', async () => {
+      const content = `
+import { adapter } from '@/adapters/runtime';
+
+export default adapter.json<CreatePostDto>(
+  {
+    method: 'POST',
+    path: '/with-slug',
+    target: 'PostService.create',
+  },
+  async (ctx) => {
+    const helpers = ctx.helpers;
+    helpers.assert(ctx.body.title, 'required');
+    return {
+      args: {
+        ...ctx.body,
+      },
+    };
+  },
+);
+`;
+
+      (fs.readFileSync as jest.Mock).mockReturnValue(content);
+
+      const result = await parser.parseAdapter('/test/test.adapter.ts', '/test');
+
+      expect(result).not.toBeNull();
+      expect(result?.config.path).toBe('/with-slug');
+      expect(result?.type).toBe('json');
+    });
+
     it('should return null for invalid adapter content', async () => {
       (fs.readFileSync as jest.Mock).mockReturnValue('invalid content');
 

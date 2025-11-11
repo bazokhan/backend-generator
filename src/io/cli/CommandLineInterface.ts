@@ -11,17 +11,27 @@ import type { DiagnosticReport, DiagnosticCategory } from '../validation/SystemV
 import { PreflightChecker } from '../preflight/PreflightChecker';
 import type { PreflightReport } from '../preflight/PreflightChecker';
 import { NestStaticGenerator } from '../../generator/nest-static-generator/NestStaticGenerator';
-import { promptText, promptUser } from '../utils/user-prompt';
+import { promptUser } from '../utils/user-prompt';
 import { supportedCommands } from '../../parser/cli-parser/config';
-import { supportedConfigs } from './config';
 import { buildHelpText } from './utils';
 import type { CliCommand, CliParsedOptions, ParsedArguments } from '../../parser/cli-parser/types';
 import { CliParser } from '@tg-scripts/parser/cli-parser/CliParser';
+import { AdaptersGenerator } from '../../generator/adapters-generator/AdaptersGenerator';
+import { PrismaSchemaParser } from '@tg-scripts/parser/prisma-schema-parser/PrismaSchemaParser';
+import { PrismaRelationsParser } from '@tg-scripts/parser/prisma-relation-parser/PrismaRelationsParser';
+import { PrismaFieldParser } from '@tg-scripts/parser/prisma-field-parser/PrismaFieldParser';
+import { AdapterParser } from '@tg-scripts/parser/adapter-parser/AdapterParser';
+import { AdapterDtoGenerator } from '@tg-scripts/generator/adapter-dto-generator/AdapterDtoGenerator';
+import { AdapterValidator } from '../validation/AdapterValidator';
+import { ConfigFileGenerator } from '@tg-scripts/generator/config-file-generator/ConfigFileGenerator';
+import { ModulePathResolver } from '../module-path-resolver/ModulePathResolver';
 
 export class CommandLineInterface {
   private readonly configLoader: ConfigLoader;
   private readonly cliParser: CliParser;
+  private readonly configFileGenerator: ConfigFileGenerator;
   private readonly fsModule: typeof fs;
+  // pathModule is a module that provides functions for working with file paths
   private readonly pathModule: typeof path;
 
   constructor(
@@ -36,6 +46,10 @@ export class CommandLineInterface {
     this.cliParser = options.cliParser ?? new CliParser();
     this.fsModule = options.fsModule ?? fs;
     this.pathModule = options.pathModule ?? path;
+    this.configFileGenerator = new ConfigFileGenerator({
+      type: 'commonjs',
+      extension: 'ts',
+    });
   }
 
   private applyCliOverrides(config: Config, options: CliParsedOptions): Config {
@@ -57,133 +71,6 @@ export class CommandLineInterface {
     }
 
     return nextConfig;
-  }
-
-  private buildConfigTemplate(values?: Record<string, any>): string {
-    // Helper to format a value based on its type
-    const formatValue = (value: any, type: string): string => {
-      if (value === null || value === undefined) {
-        return 'undefined';
-      }
-
-      switch (type) {
-        case 'string':
-          return `'${value}'`;
-        case 'boolean':
-          return value ? 'true' : 'false';
-        case 'string[]':
-          if (Array.isArray(value)) {
-            return `[${value.map((v) => `'${v}'`).join(', ')}]`;
-          }
-          return '[]';
-        case 'Guard[]':
-          if (Array.isArray(value) && value.length > 0) {
-            return `[\n        ${value.map((g: any) => `{ name: '${g.name}', importPath: '${g.importPath}' }`).join(',\n        ')},\n      ]`;
-          }
-          return '[]';
-        case 'object':
-          if (typeof value === 'object' && !Array.isArray(value)) {
-            return JSON.stringify(value, null, 2)
-              .split('\n')
-              .map((line, i) => (i === 0 ? line : `    ${line}`))
-              .join('\n');
-          }
-          return '{}';
-        default:
-          return String(value);
-      }
-    };
-
-    // Helper to get default value
-    const getDefaultValue = (config: (typeof supportedConfigs)[number]): any => {
-      if (typeof config.defaultValue === 'function') {
-        // For function defaults, use the example value instead
-        return config.example;
-      }
-      return config.defaultValue;
-    };
-
-    // Helper to resolve value with override or default
-    const resolveValue = (config: (typeof supportedConfigs)[number]): any => {
-      const override = values?.[config.name];
-      if (override !== undefined) {
-        return override;
-      }
-      return getDefaultValue(config);
-    };
-
-    // Group configs by section
-    const sections = new Map<string, (typeof supportedConfigs)[number][]>();
-    for (const config of supportedConfigs) {
-      const existing = sections.get(config.section) || [];
-      existing.push(config);
-      sections.set(config.section, existing);
-    }
-
-    // Build nested object structure
-    const buildSection = (sectionConfigs: (typeof supportedConfigs)[number][], indent: string): string => {
-      const lines: string[] = [];
-
-      for (const config of sectionConfigs) {
-        // Add comment if available
-        if (config.comment) {
-          const commentLines = config.comment.split('\n');
-          for (const line of commentLines) {
-            lines.push(`${indent}// ${line}`);
-          }
-        }
-
-        // Get the last part of the fullPath for the field name
-        const fieldName = config.fullPath.split('.').pop()!;
-        const value = resolveValue(config);
-        const formattedValue = formatValue(value, config.type);
-
-        lines.push(`${indent}${fieldName}: ${formattedValue},`);
-        lines.push('');
-      }
-
-      return lines.join('\n');
-    };
-
-    // Build the config structure
-    let configContent = `import type { Config } from '@tgraph/backend-generator';
-
-export const config: Config = {
-  // ============================================================================
-  // INPUT: Where to read from
-  // ============================================================================
-  input: {
-    prisma: {
-${buildSection(sections.get('input.prisma') || [], '      ')}    },
-    dashboard: {
-${buildSection(sections.get('input.dashboard') || [], '      ')}    },
-  },
-
-  // ============================================================================
-  // OUTPUT: Where to write generated files
-  // ============================================================================
-  output: {
-    backend: {
-${buildSection(sections.get('output.backend') || [], '      ')}    },
-    dashboard: {
-${buildSection(sections.get('output.dashboard') || [], '      ')}    },
-  },
-
-  // ============================================================================
-  // API: Backend API generation settings
-  // ============================================================================
-  api: {
-${buildSection(sections.get('api') || [], '    ')}  },
-
-  // ============================================================================
-  // BEHAVIOR: CLI and generation behavior
-  // ============================================================================
-  behavior: {
-${buildSection(sections.get('behavior') || [], '    ')}  },
-};
-`;
-
-    return configContent;
   }
 
   private countWarnings(report: DiagnosticReport): number {
@@ -504,78 +391,23 @@ ${buildSection(sections.get('behavior') || [], '    ')}  },
     outputPath?: string | undefined;
     requireAdmin?: boolean | undefined;
   }): Promise<number> {
-    const defaultPath = options?.outputPath
-      ? this.pathModule.isAbsolute(options.outputPath)
-        ? options.outputPath
-        : this.pathModule.join(process.cwd(), options.outputPath)
-      : this.pathModule.join(process.cwd(), 'tgraph.config.ts');
-
-    // Interactive wizard
-    const ask = async () => {
-      const schemaPath = await promptText('Path to Prisma schema', { defaultValue: 'prisma/schema.prisma' });
-      const prismaService = await promptText('Path to PrismaService', {
-        defaultValue: 'src/infrastructure/database/prisma.service.ts',
-      });
-      const apiSuffix = await promptText('API class suffix (empty for none)', { defaultValue: '' });
-      const apiPrefix = await promptText('API route prefix', { defaultValue: 'tg-api' });
-      const authEnabled = await promptUser('Enable authentication guards? (y/n): ', { defaultValue: true });
-      const requireAdmin = await promptUser('Require admin for this API? (y/n): ', {
-        defaultValue: options?.requireAdmin ?? true,
-      });
-      const backendDefaultRoot = await promptText('Default feature root', { defaultValue: 'src/features' });
-      const backendDtos = await promptText('Generated DTOs directory', { defaultValue: 'src/dtos/generated' });
-      const staticGuards = await promptText('Guards directory', { defaultValue: 'src/guards' });
-      const staticDecorators = await promptText('Decorators directory', { defaultValue: 'src/decorators' });
-      const staticDtos = await promptText('Static DTOs directory', { defaultValue: 'src/dtos' });
-      const staticInterceptors = await promptText('Interceptors directory', { defaultValue: 'src/interceptors' });
-      const staticUtils = await promptText('Utils directory', { defaultValue: 'src/utils' });
-      const dashboardRoot = await promptText('Dashboard root', { defaultValue: 'src/dashboard/src' });
-      const dashboardResources = await promptText('Dashboard resources dir', {
-        defaultValue: 'src/dashboard/src/resources',
-      });
-
-      return {
-        schemaPath,
-        prismaService,
-        apiSuffix,
-        apiPrefix,
-        authEnabled,
-        requireAdmin,
-        backendDtos,
-        backendDefaultRoot,
-        staticGuards,
-        staticDecorators,
-        staticDtos,
-        staticInterceptors,
-        staticUtils,
-        dashboardRoot,
-        dashboardResources,
-      };
-    };
-
-    // Check if config already exists at the target path
-    if (this.fsModule.existsSync(defaultPath)) {
-      console.error(`❌ Error: Configuration file already exists at '${defaultPath}'`);
-      console.error(`   Remove it first if you want to reinitialize.`);
-      return 1;
-    }
     try {
-      // Ask whether to use defaults or run wizard
-      const runWizard = await promptUser('Run interactive init wizard? (y/n): ', { defaultValue: true });
-      const answers = runWizard ? await ask() : undefined;
+      const defaultPath = options?.outputPath
+        ? this.pathModule.isAbsolute(options.outputPath)
+          ? options.outputPath
+          : this.pathModule.join(process.cwd(), options.outputPath)
+        : this.pathModule.join(process.cwd(), 'tgraph.config.ts');
 
-      // Apply requireAdmin override if provided via CLI
-      const finalAnswers = answers
-        ? {
-            ...answers,
-            requireAdmin: options?.requireAdmin !== undefined ? options.requireAdmin : answers.requireAdmin,
-          }
-        : options?.requireAdmin !== undefined
-          ? { requireAdmin: options.requireAdmin }
-          : undefined;
+      // Check if config already exists at the target path
+      if (this.fsModule.existsSync(defaultPath)) {
+        console.error(`❌ Error: Configuration file already exists at '${defaultPath}'`);
+        console.error(`   Remove it first if you want to reinitialize.`);
+        return 1;
+      }
 
-      const content = this.buildConfigTemplate(finalAnswers);
-
+      const content = await this.configFileGenerator.generate({
+        requireAdmin: options?.requireAdmin,
+      });
       this.fsModule.writeFileSync(defaultPath, content, 'utf-8');
 
       // Format the generated config file
@@ -587,7 +419,7 @@ ${buildSection(sections.get('behavior') || [], '    ')}  },
       console.log(`   Run 'tgraph all' to generate code.`);
       return 0;
     } catch (error) {
-      console.error(`❌ Error creating configuration file:`, error);
+      console.error('❌ Error initializing config:', error);
       return 1;
     }
   }
@@ -785,6 +617,30 @@ ${buildSection(sections.get('behavior') || [], '    ')}  },
         },
         api: async () => {
           await new ApiGenerator(mergedConfig).generate();
+        },
+        adapters: async () => {
+          const schema = fs.readFileSync(mergedConfig.input.prisma.schemaPath as string, 'utf8');
+          const schemaParser = new PrismaSchemaParser(new PrismaFieldParser(), new PrismaRelationsParser());
+          schemaParser.load(schema);
+          const models = schemaParser.parse().models;
+          const adapters = await new AdaptersGenerator(
+            new AdapterParser(),
+            new AdapterValidator(),
+            new AdapterDtoGenerator(),
+            new ModulePathResolver(),
+          ).generate({
+            models: models,
+          });
+          console.log(
+            Object.entries(adapters)
+              .map(([modelName, { adapters, dtos }]) => ({
+                modelName,
+                adapters,
+                dtos,
+              }))
+              .filter(({ adapters, dtos }) => adapters.length > 0 || dtos.length > 0)
+              .map(({ adapters, dtos, modelName }) => adapters?.[0]?.config),
+          );
         },
         dashboard: async () => {
           await new DashboardGenerator(mergedConfig).generate();

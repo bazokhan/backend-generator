@@ -52,6 +52,9 @@ const config = {
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
   moduleNameMapper,
+  transformIgnorePatterns: [
+    'node_modules/(?!(@nestjs|tslib)/)',
+  ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.spec.ts',

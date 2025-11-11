@@ -1,5 +1,4 @@
 import type { Request, Response } from 'express';
-import type { PrismaService } from '@/infrastructure/database/prisma.service';
 
 /**
  * HTTP methods supported by adapters
@@ -10,6 +9,14 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
  * Adapter type - determines how the request body is parsed
  */
 export type AdapterType = 'json' | 'multipart';
+
+/**
+ * Minimal Prisma service interface
+ * Users' PrismaService will satisfy this through structural typing
+ */
+export interface IPrismaService {
+  [key: string]: any;
+}
 
 /**
  * Configuration object for an adapter endpoint
@@ -79,7 +86,7 @@ export interface AdapterHelpers {
  */
 export interface AdapterDI {
   /** Prisma client instance */
-  prisma: PrismaService;
+  prisma: IPrismaService;
 
   /** Custom repositories or services can be added by user */
   [key: string]: any;
@@ -124,15 +131,7 @@ export interface AdapterContext<TBody = any, TQuery = any, TParams = any> {
 }
 
 /**
- * Result returned by adapter handler when calling service
- */
-export interface AdapterServiceCallResult {
-  /** Arguments to pass to the target service method */
-  args: any;
-}
-
-/**
- * Result returned by adapter handler when bypassing service
+ * Result returned by adapter handler when bypassing service (direct response)
  */
 export interface AdapterDirectResponse {
   /** Response status code */
@@ -150,19 +149,46 @@ export interface AdapterDirectResponse {
 
 /**
  * Union type for adapter handler results
+ * Either returns the service DTO directly, or a direct response
  */
-export type AdapterResult = AdapterServiceCallResult | AdapterDirectResponse;
+export type AdapterResult<TResult = any> = TResult | AdapterDirectResponse;
 
 /**
  * Adapter handler function signature
+ * Supports both synchronous and asynchronous handlers
  */
-export type AdapterHandler<TBody = any, TQuery = any, TParams = any> = (
+export type AdapterHandler<
+  TBody = any,
+  TQuery = any,
+  TParams = any,
+  TResult = any,
+> = (
   context: AdapterContext<TBody, TQuery, TParams>,
-) => Promise<AdapterResult>;
+) => Promise<AdapterResult<TResult>> | AdapterResult<TResult>;
 
 /**
  * Complete adapter definition (parsed from adapter file)
  */
+export interface ExtractedPropertyDefinition {
+  name: string;
+  type: string;
+  isOptional: boolean;
+  isArray: boolean;
+  description?: string;
+}
+
+export interface ExtractedImportInfo {
+  name: string;
+  from: string;
+  isTypeOnly: boolean;
+}
+
+export interface ExtractedTypeInfo {
+  name: string;
+  properties: ExtractedPropertyDefinition[];
+  imports: ExtractedImportInfo[];
+}
+
 export interface AdapterDefinition {
   /** Adapter file path */
   filePath: string;
@@ -179,6 +205,9 @@ export interface AdapterDefinition {
   /** Handler function (as string for code generation) */
   handlerCode: string;
 
+  /** Extracted body type definition */
+  bodyType?: ExtractedTypeInfo;
+
   /** Expected input DTO type name */
   inputDtoName?: string;
 
@@ -187,18 +216,15 @@ export interface AdapterDefinition {
 }
 
 /**
- * Options for the adapter runtime factory functions
- */
-export interface AdapterFactoryOptions {
-  config: AdapterConfig;
-  handler: AdapterHandler;
-}
-
-/**
  * Adapter runtime factory return type
  */
-export interface AdapterFactoryResult {
+export interface AdapterFactoryResult<
+  TBody = any,
+  TQuery = any,
+  TParams = any,
+  TResult = any,
+> {
   config: AdapterConfig;
-  handler: AdapterHandler;
+  handler: AdapterHandler<TBody, TQuery, TParams, TResult>;
   type: AdapterType;
 }

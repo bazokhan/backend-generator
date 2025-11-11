@@ -1,5 +1,13 @@
+import * as path from 'path';
 import type { AdapterDefinition, PrismaModel } from '@tg-scripts/types';
 import { toCamelCase, toPascalCase } from '../utils';
+
+/**
+ * Detect if adapter uses direct response (adapter.response())
+ */
+function usesDirectResponse(adapter: AdapterDefinition): boolean {
+  return adapter.handlerCode.includes('adapter.response(') || !adapter.config.target;
+}
 
 /**
  * Generate controller endpoint method for an adapter
@@ -10,19 +18,21 @@ import { toCamelCase, toPascalCase } from '../utils';
  * @returns Generated controller method code
  */
 export function generateAdapterEndpoint(adapter: AdapterDefinition, model: PrismaModel, serviceSuffix: string): string {
+  console.log('[Adapter Gen] Generating endpoint for', adapter.name);
+  
   const methodName = toCamelCase(adapter.name);
-  const dtoClassName = `${adapter.name}InputDto`;
   const httpMethod = adapter.config.method.toLowerCase();
   const httpDecorator = toPascalCase(adapter.config.method);
+  const adapterImportName = getAdapterImportName(adapter);
 
   // Generate decorators
   const decorators = generateDecorators(adapter, model, httpDecorator);
 
   // Generate method parameters
-  const parameters = generateParameters(adapter, dtoClassName);
+  const parameters = generateParameters(adapter);
 
   // Generate method body
-  const body = generateMethodBody(adapter, model, serviceSuffix, methodName);
+  const body = generateMethodBody(adapter, adapterImportName);
 
   return `
   ${decorators}
@@ -73,12 +83,12 @@ function generateDecorators(adapter: AdapterDefinition, model: PrismaModel, http
 /**
  * Generate method parameters
  */
-function generateParameters(adapter: AdapterDefinition, dtoClassName: string): string {
+function generateParameters(adapter: AdapterDefinition): string {
   const params: string[] = [];
 
-  // Body parameter
+  // Body parameter (type will be inferred from adapter, or use 'any')
   if (adapter.config.method !== 'GET') {
-    params.push(`@Body() body: ${dtoClassName}`);
+    params.push(`@Body() body: any`);
   }
 
   // File parameter for multipart
@@ -104,15 +114,7 @@ function generateParameters(adapter: AdapterDefinition, dtoClassName: string): s
 /**
  * Generate method body that calls adapter handler and optionally service
  */
-function generateMethodBody(
-  adapter: AdapterDefinition,
-  model: PrismaModel,
-  serviceSuffix: string,
-  methodName: string,
-): string {
-  const modelCamel = toCamelCase(model.name);
-  const serviceName = `${modelCamel}${serviceSuffix}Service`;
-
+function generateMethodBody(adapter: AdapterDefinition, adapterImportName: string): string {
   const lines: string[] = [];
 
   // Build adapter context
@@ -120,36 +122,38 @@ function generateMethodBody(
   lines.push(`const contextBuilder = new AdapterContextBuilder(this.prisma);`);
 
   const filesArg = adapter.type === 'multipart' ? 'file' : 'undefined';
-  lines.push(`const context = contextBuilder.build(req, res, ${filesArg});`);
+  lines.push(`const context = contextBuilder.build(body, query, params, req, res, ${filesArg});`);
   lines.push(``);
 
   // Load and execute adapter handler
   lines.push(`// Execute adapter handler`);
-  lines.push(`const adapterPath = '${adapter.filePath}';`);
-  lines.push(`const adapterModule = await import(adapterPath);`);
-  lines.push(`const adapterResult = adapterModule.default;`);
-  lines.push(`const result = await adapterResult.handler(context);`);
+  lines.push(`const result = await ${adapterImportName}.handler(context);`);
   lines.push(``);
 
-  // Check if direct response
-  lines.push(`// Check if direct response`);
-  lines.push(`if ('__isDirectResponse' in result && result.__isDirectResponse) {`);
-  lines.push(`  if (result.headers) {`);
-  lines.push(`    for (const [key, value] of Object.entries(result.headers)) {`);
-  lines.push(`      res.setHeader(key, value);`);
-  lines.push(`    }`);
-  lines.push(`  }`);
-  lines.push(`  res.status(result.status);`);
-  lines.push(`  return result.body;`);
-  lines.push(`}`);
-  lines.push(``);
+  // Only check for direct response if adapter might use it
+  if (usesDirectResponse(adapter)) {
+    lines.push(`// Check if direct response`);
+    lines.push(`if ('__isDirectResponse' in result && result.__isDirectResponse) {`);
+    lines.push(`  if (result.headers) {`);
+    lines.push(`    for (const [key, value] of Object.entries(result.headers)) {`);
+    lines.push(`      res.setHeader(key, value);`);
+    lines.push(`    }`);
+    lines.push(`  }`);
+    lines.push(`  res.status(result.status);`);
+    lines.push(`  return result.body;`);
+    lines.push(`}`);
+    lines.push(``);
+  }
 
-  // Call service if target specified
   if (adapter.config.target) {
-    const [, methodName] = adapter.config.target.split('.');
+    const [serviceName, methodName] = adapter.config.target.split('.');
+    if (!serviceName || !methodName) {
+      throw new Error(`Invalid target service format: ${adapter.config.target}`);
+    }
+    const serviceImportName = toCamelCase(serviceName);
 
-    lines.push(`// Call target service method`);
-    lines.push(`const serviceResult = await this.${serviceName}.${methodName}(result.args);`);
+    lines.push(`// Call target service method with result from adapter`);
+    lines.push(`const serviceResult = await this.${serviceImportName}.${methodName}(result);`);
     lines.push(``);
 
     // Apply select/include if specified
@@ -169,7 +173,7 @@ function generateMethodBody(
     }
   } else {
     lines.push(`// No service call - return adapter result`);
-    lines.push(`return result.args;`);
+    lines.push(`return result;`);
   }
 
   return lines.join('\n    ');
@@ -178,37 +182,44 @@ function generateMethodBody(
 /**
  * Generate imports needed for adapter endpoints
  */
-export function generateAdapterImports(adapters: AdapterDefinition[]): string[] {
+export function generateAdapterImports(adapters: AdapterDefinition[], model: PrismaModel): string[] {
   const imports: string[] = [];
 
   if (adapters.length === 0) {
     return imports;
   }
 
-  // Check if we need file upload imports
   const hasMultipart = adapters.some((a) => a.type === 'multipart');
+  const hasDirectResponse = adapters.some((a) => usesDirectResponse(a));
+  
+  console.log('[Adapter Gen] Generating imports, hasMultipart:', hasMultipart, 'hasDirectResponse:', hasDirectResponse);
 
+  // Always import AdapterContextBuilder from package
+  imports.push(`import { AdapterContextBuilder } from '@tgraph/backend-generator/adapters';`);
+
+  // Common imports
+  imports.push(`import { Req, Res } from '@nestjs/common';`);
+  imports.push(`import type { Request, Response } from 'express';`); // TYPE import
+
+  // Conditional multipart imports
   if (hasMultipart) {
-    imports.push(
-      `import { FileInterceptor } from '@nestjs/platform-express';`,
-      `import { UploadedFile, UseInterceptors } from '@nestjs/common';`,
-      `import { ApiConsumes } from '@nestjs/swagger';`,
-    );
+    imports.push(`import { FileInterceptor } from '@nestjs/platform-express';`);
+    imports.push(`import { UploadedFile, UseInterceptors } from '@nestjs/common';`);
+    imports.push(`import { ApiConsumes } from '@nestjs/swagger';`);
   }
 
-  // Always need these for adapters
-  imports.push(
-    `import { Req, Res } from '@nestjs/common';`,
-    `import { Request, Response } from 'express';`,
-    `import { AdapterContextBuilder } from '@/adapters/context';`,
-    `import { helpers } from '@/adapters/helpers';`,
-  );
+  // Import helpers if select is used
+  const needsHelpers = adapters.some((a) => a.config.select && a.config.select.length > 0);
+  if (needsHelpers) {
+    imports.push(`import { helpers } from '@tgraph/backend-generator/adapters';`);
+  }
 
-  // Add DTO imports
+  // Add adapter module imports (no DTO imports - user provides them)
   for (const adapter of adapters) {
-    const dtoFileName = adapter.name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+    const adapterImportName = getAdapterImportName(adapter);
+    const adapterImportPath = resolveAdapterImportPath(model, adapter);
 
-    imports.push(`import { ${adapter.name}InputDto } from './adapters/${dtoFileName}-input.dto';`);
+    imports.push(`import ${adapterImportName} from '${adapterImportPath}';`);
   }
 
   return imports;
@@ -236,4 +247,20 @@ export function generateAdapterGuardImports(adapters: AdapterDefinition[]): stri
   }
 
   return imports;
+}
+
+function getAdapterImportName(adapter: AdapterDefinition): string {
+  return `${toCamelCase(adapter.name)}Adapter`;
+}
+
+function resolveAdapterImportPath(model: PrismaModel, adapter: AdapterDefinition): string {
+  const controllerDir = model.modulePath ?? path.dirname(adapter.filePath);
+  const relativePath = path.relative(controllerDir, adapter.filePath).replace(/\\/g, '/');
+  const withoutExtension = relativePath.replace(/\.(ts|tsx|js|jsx)$/, '');
+
+  if (withoutExtension.startsWith('.')) {
+    return withoutExtension;
+  }
+
+  return `./${withoutExtension}`;
 }

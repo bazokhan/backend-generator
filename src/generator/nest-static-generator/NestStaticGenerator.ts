@@ -12,10 +12,6 @@ import {
   paginatedSearchResultDtoTemplate,
   paginatedSearchUtilTemplate,
   paginationInterceptorTemplate,
-  adapterRuntimeTemplate,
-  adapterTypesTemplate,
-  adapterHelpersTemplate,
-  adapterContextTemplate,
   generateSwaggerTemplate,
 } from './templates';
 import { defaultStaticGeneratorOptions, StaticTemplateOptions } from './config';
@@ -50,15 +46,9 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
     auditInterceptor: string;
     paginatedSearchDecorator: string;
     paginatedSearchUtil: string;
-    adapterRuntime: string;
-    adapterTypes: string;
-    adapterHelpers: string;
-    adapterContext: string;
     generateSwagger: string;
   } {
     const outputFolders = this.config.output.backend;
-    // Adapter files go in a dedicated directory
-    const adaptersPath = path.join(this.workspaceRoot, 'src', 'adapters');
     // Scripts directory for generation utilities
     const scriptsPath = path.join(this.workspaceRoot, 'src', 'scripts');
 
@@ -85,10 +75,6 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
         'paginated-search.decorator.ts',
       ),
       paginatedSearchUtil: this.resolveStaticPath(outputFolders.utilsPath as string, 'paginated-search.ts'),
-      adapterRuntime: path.join(adaptersPath, 'runtime.ts'),
-      adapterTypes: path.join(adaptersPath, 'types.ts'),
-      adapterHelpers: path.join(adaptersPath, 'helpers.ts'),
-      adapterContext: path.join(adaptersPath, 'context.ts'),
       generateSwagger: path.join(scriptsPath, 'generate-swagger.ts'),
     };
   }
@@ -131,10 +117,6 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
       { name: 'audit.interceptor', path: outputs.auditInterceptor },
       { name: 'paginated-search.decorator', path: outputs.paginatedSearchDecorator },
       { name: 'paginated-search.util', path: outputs.paginatedSearchUtil },
-      { name: 'adapter.runtime', path: outputs.adapterRuntime },
-      { name: 'adapter.types', path: outputs.adapterTypes },
-      { name: 'adapter.helpers', path: outputs.adapterHelpers },
-      { name: 'adapter.context', path: outputs.adapterContext },
       { name: 'generate.swagger', path: outputs.generateSwagger },
     ];
   }
@@ -252,26 +234,6 @@ export class AuditInterceptor implements NestInterceptor {
           queryDtoPath: this.createImportPath(outputs.paginatedSearchUtil, outputs.paginatedSearchQueryDto),
           resultDtoPath: this.createImportPath(outputs.paginatedSearchUtil, outputs.paginatedSearchResultDto),
         }),
-      },
-      {
-        name: 'adapter.runtime',
-        target: outputs.adapterRuntime,
-        content: adapterRuntimeTemplate,
-      },
-      {
-        name: 'adapter.types',
-        target: outputs.adapterTypes,
-        content: adapterTypesTemplate,
-      },
-      {
-        name: 'adapter.helpers',
-        target: outputs.adapterHelpers,
-        content: adapterHelpersTemplate,
-      },
-      {
-        name: 'adapter.context',
-        target: outputs.adapterContext,
-        content: adapterContextTemplate,
       },
       {
         name: 'generate.swagger',

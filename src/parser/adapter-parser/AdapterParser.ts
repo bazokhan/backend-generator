@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { AdapterDefinition } from '@tg-scripts/types';
 import type { PrismaModel } from '@tg-scripts/types';
+import { TypeExtractor, type ExtractedType } from './TypeExtractor';
 
 /**
  * Parser for discovering and loading adapter files
@@ -9,6 +10,11 @@ import type { PrismaModel } from '@tg-scripts/types';
  * Adapters are discovered in the {modulePath}/adapters/*.adapter.ts directory
  */
 export class AdapterParser {
+  private typeExtractor: TypeExtractor;
+
+  constructor() {
+    this.typeExtractor = new TypeExtractor();
+  }
   /**
    * Discover adapter files for a given model
    *
@@ -16,7 +22,10 @@ export class AdapterParser {
    * @returns Array of discovered adapter files
    */
   public discoverAdapters(model: PrismaModel): string[] {
+    console.log('[Adapter Parser] Discovering adapters for', model.name);
+    
     if (!model.modulePath) {
+      console.log('[Adapter Parser] No module path for', model.name);
       return [];
     }
 
@@ -24,14 +33,18 @@ export class AdapterParser {
 
     // Check if adapters directory exists
     if (!fs.existsSync(adaptersPath)) {
+      console.log('[Adapter Parser] No adapters directory at', adaptersPath);
       return [];
     }
 
     try {
       const files = fs.readdirSync(adaptersPath);
-      return files
+      const adapterFiles = files
         .filter((file) => file.endsWith('.adapter.ts') || file.endsWith('.adapter.js'))
         .map((file) => path.join(adaptersPath, file));
+      
+      console.log('[Adapter Parser] Found', adapterFiles.length, 'adapter file(s) for', model.name);
+      return adapterFiles;
     } catch (error) {
       console.warn(`Warning: Could not read adapters directory for ${model.name}:`, error);
       return [];
@@ -46,6 +59,8 @@ export class AdapterParser {
    * @returns Parsed adapter definition or null if parsing fails
    */
   public async parseAdapter(adapterFilePath: string, workspaceRoot: string): Promise<AdapterDefinition | null> {
+    console.log('[Adapter Parser] Parsing', path.basename(adapterFilePath));
+    
     try {
       // Get adapter name from filename
       const fileName = path.basename(adapterFilePath);
@@ -58,19 +73,50 @@ export class AdapterParser {
       const adapterInfo = this.extractAdapterInfo(fileContent);
 
       if (!adapterInfo) {
-        console.warn(`Warning: Could not extract adapter info from ${adapterFilePath}`);
+        console.warn(`[Adapter Parser] Warning: Could not extract adapter info from ${adapterFilePath}`);
         return null;
       }
 
-      return {
+      // Extract type definition
+      const bodyTypeName = this.typeExtractor.extractTBodyTypeName(fileContent);
+      let bodyType: import('../../types/adapter').ExtractedTypeInfo | undefined;
+      
+      if (bodyTypeName && bodyTypeName !== 'any') {
+        const extractedType = this.typeExtractor.extractTypeDefinition(fileContent, bodyTypeName, adapterFilePath);
+        if (extractedType) {
+          bodyType = {
+            name: extractedType.name,
+            properties: extractedType.properties,
+            imports: extractedType.imports,
+          };
+          console.log('[Adapter Parser] Extracted type definition with', extractedType.properties.length, 'properties');
+        }
+      }
+
+      console.log('[Adapter Parser] Extracted:', {
+        name: adapterName,
+        type: adapterInfo.type,
+        method: adapterInfo.config.method,
+        path: adapterInfo.config.path,
+        target: adapterInfo.config.target,
+        bodyType: bodyType?.name,
+      });
+
+      const result: AdapterDefinition = {
         filePath: adapterFilePath,
         name: adapterName,
         type: adapterInfo.type,
         config: adapterInfo.config,
         handlerCode: adapterInfo.handlerCode,
       };
+
+      if (bodyType) {
+        result.bodyType = bodyType;
+      }
+
+      return result;
     } catch (error) {
-      console.warn(`Warning: Failed to parse adapter ${adapterFilePath}:`, error);
+      console.warn(`[Adapter Parser] Warning: Failed to parse adapter ${adapterFilePath}:`, error);
       return null;
     }
   }
@@ -107,7 +153,7 @@ export class AdapterParser {
     // Pattern to match: adapter.json({ config }, async (ctx) => { ... })
     // or: adapter.multipart({ config }, async (ctx) => { ... })
     const adapterPattern =
-      /adapter\.(json|multipart)\s*\(\s*(\{[\s\S]*?\})\s*,\s*(async\s*\([^)]*\)\s*=>\s*\{[\s\S]*?\})\s*\)/;
+      /adapter\.(json|multipart)\s*(?:<[\s\S]+>)?\s*\(\s*(\{[\s\S]*?\})\s*,\s*(async\s*\([^)]*\)\s*=>\s*\{[\s\S]*?\})\s*,?\s*\)/;
 
     const match = fileContent.match(adapterPattern);
 

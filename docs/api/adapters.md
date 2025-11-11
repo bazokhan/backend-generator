@@ -9,6 +9,97 @@ nav_order: 4
 
 Complete reference for the custom adapter system in `@tgraph/backend-generator`.
 
+## Prerequisites
+
+Before using adapters, ensure these peer dependencies are installed in your project:
+
+```bash
+npm install express @types/express multer @types/multer @nestjs/common @nestjs/platform-express @nestjs/swagger
+```
+
+## Getting Started
+
+Import the adapter runtime from the package:
+
+```typescript
+import { adapter } from '@tgraph/backend-generator/adapters';
+import type { AdapterContext } from '@tgraph/backend-generator/adapters';
+```
+
+**Important:** Return your DTO directly from the handler. For direct responses (no service call), use `adapter.response()`.
+
+---
+
+## DTO Generation
+
+The backend generator automatically extracts type definitions from your adapter files and generates corresponding DTO classes with proper validation decorators.
+
+### Supported Type Patterns
+
+- **Simple interfaces**: `interface CreateDto { name: string; }`
+- **Type aliases**: `type CreateDto = { name: string; }`
+- **Omit types**: `type CreateDto = Omit<BaseDto, 'id'>`
+- **Pick types**: `type CreateDto = Pick<BaseDto, 'name' | 'email'>`
+- **Intersection types**: `type CreateDto = BaseDto & { extra: string }`
+- **Complex combinations**: `type CreateDto = Omit<BaseDto, 'id'> & { slug: string }`
+
+### Example
+
+```typescript
+// Adapter file: src/features/project/adapters/create-with-slug.adapter.ts
+import { CreateProjectInstanceDto } from '../create-projectInstance.dto';
+
+type CreateProjectWithSlugDto = Omit<
+  CreateProjectInstanceDto,
+  'projectTypeId' | 'slug'
+> & {
+  slug: string;
+};
+
+export default adapter.json<CreateProjectWithSlugDto, any, any, CreateProjectInstanceDto>(
+  {
+    method: 'POST',
+    path: '/project',
+    target: 'ProjectInstanceService.create',
+  },
+  async (ctx) => {
+    const slug = ctx.helpers.slugify(ctx.body.name);
+    return {
+      ...ctx.body,
+      slug,
+      projectTypeId: 'cmhdupp4y0001luv07mgfu7pr',
+    };
+  },
+);
+```
+
+The generator will automatically create a DTO class with all properties from `CreateProjectWithSlugDto`, including proper validation decorators:
+
+```typescript
+// Generated: create-project-with-slug-input.dto.ts
+import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString, IsNumber, IsBoolean, IsArray } from 'class-validator';
+
+/**
+ * Input DTO for CreateProjectWithSlug adapter
+ * Generated from type: CreateProjectWithSlugDto
+ */
+export class CreateProjectWithSlugInputDto {
+  @ApiProperty({ type: 'string' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ type: 'string', required: false })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ type: 'string' })
+  @IsString()
+  slug: string;
+}
+```
+
 ---
 
 ## Factory Functions
@@ -31,6 +122,8 @@ adapter.json(config: AdapterConfig, handler: AdapterHandler): AdapterFactoryResu
 **Example:**
 
 ```typescript
+import { adapter } from '@tgraph/backend-generator/adapters';
+
 export default adapter.json(
   {
     method: 'POST',
@@ -39,7 +132,7 @@ export default adapter.json(
     auth: 'JwtAuthGuard',
   },
   async (ctx) => {
-    return { args: ctx.body };
+    return ctx.body; // Return DTO directly
   },
 );
 ```
@@ -64,6 +157,8 @@ adapter.multipart(config: AdapterConfig, handler: AdapterHandler): AdapterFactor
 **Example:**
 
 ```typescript
+import { adapter } from '@tgraph/backend-generator/adapters';
+
 export default adapter.multipart(
   {
     method: 'POST',
@@ -73,7 +168,7 @@ export default adapter.multipart(
   async (ctx) => {
     const file = Array.isArray(ctx.files) ? ctx.files[0] : ctx.files;
     const url = await ctx.helpers.upload.minio(file);
-    return { args: { avatarUrl: url } };
+    return { avatarUrl: url }; // Return DTO directly
   },
 );
 ```
@@ -103,14 +198,27 @@ adapter.response(
 **Example:**
 
 ```typescript
-return adapter.response(
-  201,
+import { adapter } from '@tgraph/backend-generator/adapters';
+
+export default adapter.json(
   {
-    success: true,
-    message: 'Created successfully',
+    method: 'POST',
+    path: '/webhook',
   },
-  {
-    'X-Request-Id': ctx.helpers.uuid(),
+  async (ctx) => {
+    // Process webhook
+    await processWebhook(ctx.body);
+    
+    return adapter.response(
+      201,
+      {
+        success: true,
+        message: 'Created successfully',
+      },
+      {
+        'X-Request-Id': ctx.helpers.uuid(),
+      },
+    );
   },
 );
 ```
