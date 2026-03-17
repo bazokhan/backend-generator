@@ -40,12 +40,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/trugraph/backend-generator.git"
+    "url": "https://github.com/bazokhan/backend-generator.git"
   },
   "bugs": {
-    "url": "https://github.com/trugraph/backend-generator/issues"
+    "url": "https://github.com/bazokhan/backend-generator/issues"
   },
-  "homepage": "https://github.com/trugraph/backend-generator#readme",
+  "homepage": "https://github.com/bazokhan/backend-generator#readme",
   "keywords": [
     "prisma",
     "nestjs",
