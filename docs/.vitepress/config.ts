@@ -4,7 +4,7 @@ export default defineConfig({
   title: 'TGraph',
   description: 'Transform your Prisma schema into production-ready NestJS APIs and React Admin dashboards',
 
-  base: '/',
+  base: '/backend-generator/',
 
   ignoreDeadLinks: [
     // Localhost links in examples are expected
