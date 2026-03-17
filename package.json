@@ -24,10 +24,9 @@
     "prepublishOnly": "npm test",
     "test": "jest",
     "format": "prettier --write .",
-    "release": "npm run build && npm test && node scripts/release.js",
-    "release:patch": "npm version patch && npm run release",
-    "release:minor": "npm version minor && npm run release",
-    "release:major": "npm version major && npm run release",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "npm run build && changeset publish",
     "docs:dev": "cd docs && npm run dev",
     "docs:build": "cd docs && npm run build",
     "docs:preview": "cd docs && npm run preview"
@@ -64,6 +63,7 @@
     "express": "^5.1.0"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.0",
     "@nestjs/common": "^11.1.8",
     "@nestjs/platform-express": "^11.1.8",
     "@nestjs/swagger": "^11.2.1",
