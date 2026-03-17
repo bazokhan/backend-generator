@@ -166,12 +166,45 @@ export class NestStaticGenerator implements IGenerator<StaticGeneratorOverrides,
       {
         name: 'feature-flag.guard',
         target: outputs.featureFlagGuard,
-        content: `import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+        content: `import { CanActivate, ExecutionContext, Injectable, SetMetadata } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+
+export const FEATURE_FLAG_KEY = 'feature_flag';
+
+/**
+ * Mark a controller or handler as requiring a specific feature flag.
+ * The feature must appear in the FEATURE_FLAGS env var (comma-separated list).
+ *
+ * @example
+ * \`\`\`ts
+ * @RequireFeature('new-dashboard')
+ * @Get('dashboard')
+ * getDashboard() { ... }
+ * \`\`\`
+ *
+ * Set env: FEATURE_FLAGS=new-dashboard,beta-search
+ */
+export const RequireFeature = (feature: string) => SetMetadata(FEATURE_FLAG_KEY, feature);
+
 @Injectable()
 export class FeatureFlagGuard implements CanActivate {
-  canActivate(_context: ExecutionContext): boolean {
-    // TODO: wire to your feature-flag service
-    return true;
+  constructor(private readonly reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const requiredFeature = this.reflector.getAllAndOverride<string>(FEATURE_FLAG_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    // No feature flag required — allow through
+    if (!requiredFeature) return true;
+
+    const enabledFeatures = (process.env['FEATURE_FLAGS'] ?? '')
+      .split(',')
+      .map((f) => f.trim())
+      .filter(Boolean);
+
+    return enabledFeatures.includes(requiredFeature);
   }
 }
 `,
@@ -206,15 +239,37 @@ export class FeatureFlagGuard implements CanActivate {
         target: outputs.auditInterceptor,
         content: `import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
+import type { Request, Response } from 'express';
 
+/**
+ * Logs every request as structured JSON: method, url, status, duration, user, timestamp.
+ * Register globally in AppModule.providers or per-controller with @UseInterceptors(AuditInterceptor).
+ *
+ * Output example:
+ *   {"type":"audit","method":"POST","url":"/tg-api/users","status":201,"duration":42,"user":"abc123","timestamp":"2024-01-01T00:00:00.000Z"}
+ */
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
-  intercept(_context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const request = context.switchToHttp().getRequest<Request>();
+    const { method, url } = request;
+    const user = (request as any).user?.id ?? 'anonymous';
     const started = Date.now();
+
     return next.handle().pipe(
       tap(() => {
-        // TODO: replace with your audit log sink
-        // console.log('Audit:', { duration: Date.now() - started });
+        const response = context.switchToHttp().getResponse<Response>();
+        console.log(
+          JSON.stringify({
+            type: 'audit',
+            method,
+            url,
+            status: response.statusCode,
+            duration: Date.now() - started,
+            user,
+            timestamp: new Date().toISOString(),
+          }),
+        );
       }),
     );
   }

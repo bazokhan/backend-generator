@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Basic CRUD
-parent: Recipes
-nav_order: 1
 ---
 
 # Basic CRUD Recipe

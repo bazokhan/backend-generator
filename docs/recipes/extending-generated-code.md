@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Extending Generated Code
-parent: Recipes
-nav_order: 4
 ---
 
 # Extending Generated Code Recipe

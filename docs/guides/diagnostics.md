@@ -1,8 +1,5 @@
 ---
-layout: default
 title: System Diagnostics
-parent: Guides
-nav_order: 5
 description: 'Using tgraph doctor to validate your environment and troubleshoot issues'
 ---
 

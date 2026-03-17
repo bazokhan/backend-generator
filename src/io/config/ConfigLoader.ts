@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { Config } from '@tg-scripts/types';
+import type { Config, Guard, UserConfig } from '@tg-scripts/types';
 import { supportedConfigs } from '../cli/config';
 
 const CONFIG_FILENAMES = ['tgraph.config.ts', 'tgraph.config.js'] as const;
@@ -29,16 +29,77 @@ export class ConfigLoader {
     this.configPath = options.configPath ?? '';
   }
 
+  private isUserConfig(obj: any): obj is UserConfig {
+    // UserConfig does NOT have 'input' + 'output' top-level keys
+    return typeof obj === 'object' && obj !== null && !('input' in obj && 'output' in obj);
+  }
+
+  private normalizeUserConfig(user: UserConfig): Config {
+    const srcRoot = user.srcRoot ?? 'src';
+    const dashboardEnabled = user.dashboard !== false;
+    const dashboardRoot =
+      dashboardEnabled && typeof user.dashboard === 'object' && user.dashboard?.root
+        ? user.dashboard.root
+        : `${srcRoot}/dashboard/src`;
+
+    return {
+      input: {
+        prisma: {
+          schemaPath: user.schemaPath ?? 'prisma/schema.prisma',
+          servicePath: user.prismaServicePath ?? `${srcRoot}/infrastructure/database/prisma.service.ts`,
+        },
+        dashboard: {
+          components: { form: {}, display: {} },
+        },
+      },
+      output: {
+        backend: {
+          root: srcRoot,
+          dtosPath: user.dtosPath ?? `${srcRoot}/dtos/generated`,
+          modulesPaths: user.modulesPaths ?? [`${srcRoot}/features`, `${srcRoot}/modules`, srcRoot],
+          guardsPath: `${srcRoot}/guards`,
+          decoratorsPath: `${srcRoot}/decorators`,
+          interceptorsPath: `${srcRoot}/interceptors`,
+          utilsPath: `${srcRoot}/utils`,
+          appModulePath: user.appModulePath ?? `${srcRoot}/app.module.ts`,
+        },
+        dashboard: {
+          enabled: dashboardEnabled,
+          updateDataProvider: true,
+          root: dashboardRoot,
+          swaggerJsonPath: `${dashboardRoot}/types/swagger.json`,
+          appComponentPath: `${dashboardRoot}/App.tsx`,
+          dataProviderPath: `${dashboardRoot}/providers/dataProvider.ts`,
+          resourcesPath: `${dashboardRoot}/resources`,
+          apiPath: `${dashboardRoot}/types/api.ts`,
+        },
+      },
+      api: {
+        suffix: user.apiSuffix ?? '',
+        prefix: user.apiPrefix ?? 'tg-api',
+        authenticationEnabled: user.authenticationEnabled ?? true,
+        requireAdmin: user.requireAdmin ?? true,
+        guards: (user.guards ?? []) as Guard[],
+        adminGuards: (user.adminGuards ?? []) as Guard[],
+      },
+      behavior: {
+        nonInteractive: user.nonInteractive ?? false,
+      },
+    };
+  }
+
   private loadFromFile(configPath: string): Config {
     delete require.cache[require.resolve(configPath)];
 
-    const loadedModule: { config?: Config; default?: Config } | Config = require(configPath);
+    const loadedModule: { config?: Config | UserConfig; default?: Config | UserConfig } | Config | UserConfig =
+      require(configPath);
 
-    return (
-      (loadedModule as { config?: Config }).config ||
-      (loadedModule as { default?: Config }).default ||
-      (loadedModule as Config)
-    );
+    const raw =
+      (loadedModule as { config?: Config | UserConfig }).config ||
+      (loadedModule as { default?: Config | UserConfig }).default ||
+      (loadedModule as Config | UserConfig);
+
+    return this.isUserConfig(raw) ? this.normalizeUserConfig(raw) : (raw as Config);
   }
 
   private logConfig(config: Config): void {

@@ -31,6 +31,3 @@ export const loadConfig = (): Config => new ConfigLoader().load();
 export const configFileExists = (): boolean => new ConfigLoader().exists();
 export const getConfigFilePath = (): string | null => new ConfigLoader().getConfigFilePath();
 
-// Export adapter runtime module for use in user code
-// Users can import with: import { adapter } from '@tgraph/backend-generator/runtime/adapters'
-export * from './runtime/adapters';

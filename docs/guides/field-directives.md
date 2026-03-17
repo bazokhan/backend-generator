@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Field Directives
-parent: Guides
-nav_order: 2
 ---
 
 # Field Directives

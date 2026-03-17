@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Naming Conventions
-parent: Guides
-nav_order: 3
 ---
 
 # Naming Conventions

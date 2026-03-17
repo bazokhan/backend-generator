@@ -15,15 +15,14 @@ __tmp__/
 *.tgz
 package/
 
-.jekyll-cache/
-_site/
+# docs (VitePress)
+docs/.vitepress/cache/
+docs/.vitepress/dist/
 
-# docs
-docs/_site/
-docs/.jekyll-cache/
-docs/.sass-cache/
-docs/.jekyll-metadata
-docs/Gemfile.lock
-docs/Gemfile.lock.1
-docs/Gemfile.lock.1.1
-docs/Gemfile.lock.1.1.1
+# examples — generated output and local DBs
+examples/*/generated/
+examples/*/*.db
+examples/*/*.db-journal
+examples/*/prisma/*.db
+examples/*/node_modules/
+examples/*/src/dashboard/node_modules/

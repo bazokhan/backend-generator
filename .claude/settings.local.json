@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /d/Trugraph/backend-generator/src/generator/**/*.ts)",
+      "Bash(find src:*)",
+      "Bash(find /d/Trugraph/backend-generator/src -type f -name \"*.ts\" -exec wc -l {} +)",
+      "Bash(wc -l docs/**/*.md)",
+      "Bash(grep -l \"describe\\\\|it\\(\" src/__tests__/*.spec.ts)",
+      "Bash(wc -l /d/Trugraph/backend-generator/src/parser/**/*.ts)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(ls -la /d/Trugraph/backend-generator/*.md)",
+      "Bash(node:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vitepress:*)"
+    ]
+  }
+}

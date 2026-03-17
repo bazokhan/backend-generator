@@ -1,19 +1,16 @@
 ---
-layout: default
-title: Configuration
-parent: API Reference
-nav_order: 4
+title: Configuration Reference
 ---
 
 # Configuration Reference
 
-Every generator consumes the shared `Config` interface exported from `@tgraph/backend-generator`. This page documents every property, default, and practical tip so you can tailor the toolkit to any workspace layout.
+Every generator consumes the `UserConfig` interface exported from `@tgraph/backend-generator`. This page documents every field, its default, and how values are inferred from `srcRoot`.
 
 ---
 
 ## Quick Start
 
-Run `tgraph init` inside your project to scaffold `tgraph.config.ts` with inline comments:
+Run `tgraph init` to scaffold `tgraph.config.ts`:
 
 ```bash
 tgraph init
@@ -23,333 +20,271 @@ Or create the file manually:
 
 ```typescript
 // tgraph.config.ts
-import type { Config } from '@tgraph/backend-generator';
+import type { UserConfig } from '@tgraph/backend-generator';
 
-export const config: Config = {
-  input: {
-    prisma: {
-      schemaPath: 'prisma/schema.prisma',
-      servicePath: 'src/infrastructure/database/prisma.service.ts',
-    },
-    dashboard: {
-      components: { form: {}, display: {} },
-    },
-  },
-  output: {
-    backend: {
-      root: 'src/features',
-      dtosPath: 'src/dtos/generated',
-      modulesPaths: ['src/features', 'src/modules', 'src'],
-      guardsPath: 'src/guards',
-      decoratorsPath: 'src/decorators',
-      interceptorsPath: 'src/interceptors',
-      utilsPath: 'src/utils',
-      appModulePath: 'src/app.module.ts',
-    },
-    dashboard: {
-      enabled: true,
-      updateDataProvider: true,
-      root: 'src/dashboard/src',
-      resourcesPath: 'src/dashboard/src/resources',
-      swaggerJsonPath: 'src/dashboard/src/types/swagger.json',
-      apiPath: 'src/dashboard/src/types/api.ts',
-      appComponentPath: 'src/dashboard/src/App.tsx',
-      dataProviderPath: 'src/dashboard/src/providers/dataProvider.ts',
-    },
-  },
-  api: {
-    suffix: 'Admin',
-    prefix: 'tg-api',
-    authenticationEnabled: true,
-    requireAdmin: true,
-    guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
-    adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
-  },
-  behavior: {
-    nonInteractive: false,
-  },
+export const config: UserConfig = {
+  schemaPath: 'prisma/schema.prisma',
+  srcRoot: 'src',
+  apiPrefix: 'tg-api',
+  apiSuffix: 'Admin',
+  authenticationEnabled: true,
+  requireAdmin: true,
+  guards: [{ name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' }],
+  adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
+  dashboard: { root: 'src/dashboard/src' },
+  nonInteractive: false,
 };
 ```
 
-You can export a default object or a named `config`; both are supported. Pass a different file via `tgraph api --config ./tgraph.public.config.ts` when you need multiple variants.
+Both `export default` and named `export const config` are supported.
 
 ---
 
-## Input
+## UserConfig Fields
 
-### Prisma Input
+### `schemaPath`
 
-| Property                   | Type     | Default                                         | Description                                                                                                                        |
-| -------------------------- | -------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `input.prisma.schemaPath`  | `string` | `prisma/schema.prisma`                          | Path to the Prisma schema file. Relative paths are resolved from the workspace root (the directory containing `tgraph.config.ts`). |
-| `input.prisma.servicePath` | `string` | `src/infrastructure/database/prisma.service.ts` | Location of the Nest `PrismaService` so generated services can import it with the correct relative path.                           |
+| Type | Default |
+|------|---------|
+| `string?` | `'prisma/schema.prisma'` |
 
-### Dashboard Input
-
-| Property                     | Type                 | Default                     | Description                                                                                                               |
-| ---------------------------- | -------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `input.dashboard.components` | `ComponentOverrides` | `{ form: {}, display: {} }` | Override default React Admin components. Used for custom styling or behavior. See Dashboard Settings section for details. |
+Path to your Prisma schema file. Resolved relative to the directory containing `tgraph.config.ts`.
 
 ---
 
-## Output → Backend
+### `prismaServicePath`
 
-| Property                          | Type       | Default                                  | Description                                                                                                                                       |
-| --------------------------------- | ---------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `output.backend.root`             | `string`   | `src/features`                           | Default directory for creating new modules when a model doesn't have an existing module.                                                          |
-| `output.backend.dtosPath`         | `string`   | `src/dtos/generated`                     | Folder that receives response DTOs when running `tgraph dtos`. It is wiped before regeneration, so point it to a dedicated `generated` directory. |
-| `output.backend.modulesPaths`     | `string[]` | `['src/features', 'src/modules', 'src']` | Ordered list of directories where `ModulePathResolver` looks for existing modules. Include monorepo paths such as `apps/api/src/features`.        |
-| `output.backend.guardsPath`       | `string`   | `src/guards`                             | Directory for guard files used by `NestStaticGenerator`.                                                                                          |
-| `output.backend.decoratorsPath`   | `string`   | `src/decorators`                         | Directory for decorator files used by `NestStaticGenerator`.                                                                                      |
-| `output.backend.interceptorsPath` | `string`   | `src/interceptors`                       | Directory for interceptor files used by `NestStaticGenerator`.                                                                                    |
-| `output.backend.utilsPath`        | `string`   | `src/utils`                              | Directory for utility files used by `NestStaticGenerator`.                                                                                        |
-| `output.backend.appModulePath`    | `string`   | `src/app.module.ts`                      | (Optional) Path to `app.module.ts`. Auto-discovered if not specified.                                                                             |
+| Type | Default |
+|------|---------|
+| `string?` | `'{srcRoot}/infrastructure/database/prisma.service.ts'` |
+
+Location of your `PrismaService`. Generated services import it using this path.
 
 ---
 
-## Output → Dashboard
+### `srcRoot`
 
-| Property                              | Type      | Default                                       | Description                                                                                |
-| ------------------------------------- | --------- | --------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `output.dashboard.enabled`            | `boolean` | `true`                                        | Whether to generate dashboard resources.                                                   |
-| `output.dashboard.updateDataProvider` | `boolean` | `true`                                        | Whether `ApiGenerator` should rewrite the endpoint map inside the dashboard data provider. |
-| `output.dashboard.root`               | `string`  | `src/dashboard/src`                           | Absolute or relative path to your React Admin app's `src` directory.                       |
-| `output.dashboard.resourcesPath`      | `string`  | `src/dashboard/src/resources`                 | Folder where the generator creates `<resource>/<page>.tsx` files.                          |
-| `output.dashboard.swaggerJsonPath`    | `string`  | `src/dashboard/src/types/swagger.json`        | Path to output the generated swagger.json file.                                            |
-| `output.dashboard.apiPath`            | `string`  | `src/dashboard/src/types/api.ts`              | Path to output the generated api.ts file.                                                  |
-| `output.dashboard.appComponentPath`   | `string`  | `src/dashboard/src/App.tsx`                   | (Optional) Path to App component file. Auto-discovered if not specified.                   |
-| `output.dashboard.dataProviderPath`   | `string`  | `src/dashboard/src/providers/dataProvider.ts` | (Optional) Path to data provider file. Auto-discovered if not specified.                   |
+| Type | Default |
+|------|---------|
+| `string?` | `'src'` |
+
+Root source directory. **All other path defaults are derived from this value.** Change it once and all inferred paths update automatically.
+
+```typescript
+srcRoot: 'src'
+// Inferred: appModulePath → 'src/app.module.ts'
+// Inferred: dtosPath → 'src/dtos/generated'
+// Inferred: modulesPaths → ['src/features', 'src/modules', 'src']
+```
 
 ---
 
-## API Settings
+### `apiPrefix`
 
-| Property                    | Type      | Default  | Description                                                                                                                                                                       |
-| --------------------------- | --------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `api.suffix`                | `string`  | `''`     | String appended to generated class and file names (e.g., `UserAdminService`, `user.admin.service.ts`). Use different suffixes when producing multiple variants (Admin vs Public). |
-| `api.prefix`                | `string`  | `tg-api` | Route prefix applied to every controller (e.g., `/tg-api/users`). Combined with `getApiEndpoint` to build dashboard endpoint maps.                                                |
-| `api.authenticationEnabled` | `boolean` | `true`   | Whether to add authentication guards to generated controllers. When `false`, no guards are imported or applied.                                                                   |
-| `api.requireAdmin`          | `boolean` | `true`   | Whether endpoints require admin role. When `true` and `authenticationEnabled` is `true`, guards from both `guards` and `adminGuards` arrays are applied.                          |
-| `api.guards`                | `Guard[]` | `[]`     | Base guards applied when `authenticationEnabled` is `true`. Each guard has `name` and `importPath` properties.                                                                    |
-| `api.adminGuards`           | `Guard[]` | `[]`     | Additional guards applied only when both `authenticationEnabled` and `requireAdmin` are `true`.                                                                                   |
+| Type | Default |
+|------|---------|
+| `string?` | `'tg-api'` |
 
-**Guard Interface:**
+Route prefix applied to every generated controller.
+
+```typescript
+apiPrefix: 'tg-api'
+// → GET /tg-api/users
+```
+
+---
+
+### `apiSuffix`
+
+| Type | Default |
+|------|---------|
+| `string?` | `''` |
+
+Suffix appended to generated class and file names.
+
+```typescript
+apiSuffix: 'Admin'
+// → class UserAdminController
+// → user.admin.service.ts
+// → CreateUserAdminDto
+```
+
+---
+
+### `authenticationEnabled`
+
+| Type | Default |
+|------|---------|
+| `boolean?` | `true` |
+
+Whether to add authentication guards to generated controllers. When `false`, no `@UseGuards()` decorators are emitted.
+
+---
+
+### `requireAdmin`
+
+| Type | Default |
+|------|---------|
+| `boolean?` | `true` |
+
+When `true` and `authenticationEnabled` is `true`, guards from both `guards` and `adminGuards` are applied.
+
+---
+
+### `guards`
+
+| Type | Default |
+|------|---------|
+| `Guard[]?` | `[]` |
+
+Base guards applied to all generated controllers when `authenticationEnabled` is `true`.
+
+```typescript
+guards: [
+  { name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' },
+]
+```
+
+**Guard interface:**
 
 ```typescript
 interface Guard {
-  name: string; // Guard class name, e.g., 'JwtAuthGuard'
-  importPath: string; // Import path, e.g., '@/guards/jwt-auth.guard'
+  name: string;       // Guard class name, e.g., 'JwtAuthGuard'
+  importPath: string; // Import path, e.g., '@/auth/jwt-auth.guard'
 }
 ```
 
-**Example configurations:**
+---
+
+### `adminGuards`
+
+| Type | Default |
+|------|---------|
+| `Guard[]?` | `[]` |
+
+Additional guards applied only when both `authenticationEnabled` and `requireAdmin` are `true`.
 
 ```typescript
-// Public API - no authentication
-api: {
-  suffix: 'Public',
-  prefix: 'api',
+adminGuards: [
+  { name: 'RolesGuard', importPath: '@/auth/roles.guard' },
+]
+```
+
+---
+
+### `dashboard`
+
+| Type | Default |
+|------|---------|
+| `false \| { root?: string }?` | `false` |
+
+Dashboard generation config. Set to `false` to skip. Provide `{ root }` to enable.
+
+```typescript
+// Disable
+dashboard: false
+
+// Enable with default root ('src/dashboard/src')
+dashboard: {}
+
+// Enable with custom root
+dashboard: { root: 'src/admin/src' }
+```
+
+---
+
+### `nonInteractive`
+
+| Type | Default |
+|------|---------|
+| `boolean?` | `false` |
+
+When `true`, all interactive prompts auto-confirm. Required for CI/CD pipelines.
+
+---
+
+### `appModulePath` *(override)*
+
+| Type | Default |
+|------|---------|
+| `string?` | `'{srcRoot}/app.module.ts'` |
+
+Override the auto-discovered `app.module.ts` path.
+
+---
+
+### `dtosPath` *(override)*
+
+| Type | Default |
+|------|---------|
+| `string?` | `'{srcRoot}/dtos/generated'` |
+
+Override the DTO output directory. This directory is wiped before regeneration.
+
+---
+
+### `modulesPaths` *(override)*
+
+| Type | Default |
+|------|---------|
+| `string[]?` | `['{srcRoot}/features', '{srcRoot}/modules', '{srcRoot}']` |
+
+Ordered list of directories where the generator looks for existing modules.
+
+---
+
+## Authentication Mode Examples
+
+### Public API
+
+```typescript
+export const config: UserConfig = {
+  schemaPath: 'prisma/schema.prisma',
+  srcRoot: 'src',
+  apiPrefix: 'api',
+  apiSuffix: '',
   authenticationEnabled: false,
   requireAdmin: false,
   guards: [],
-  adminGuards: [],
-}
+  dashboard: false,
+};
+```
 
-// User API - authentication but not admin-only
-api: {
-  suffix: '',
-  prefix: 'api',
+### Authenticated Users (JWT only)
+
+```typescript
+export const config: UserConfig = {
+  schemaPath: 'prisma/schema.prisma',
+  srcRoot: 'src',
+  apiPrefix: 'api',
+  apiSuffix: '',
   authenticationEnabled: true,
   requireAdmin: false,
-  guards: [
-    { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-  ],
-  adminGuards: [],
-}
+  guards: [{ name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' }],
+  dashboard: false,
+};
+```
 
-// Admin API - authentication with admin requirement
-api: {
-  suffix: 'Admin',
-  prefix: 'admin-api',
+### Admin API (JWT + role guard)
+
+```typescript
+export const config: UserConfig = {
+  schemaPath: 'prisma/schema.prisma',
+  srcRoot: 'src',
+  apiPrefix: 'admin-api',
+  apiSuffix: 'Admin',
   authenticationEnabled: true,
   requireAdmin: true,
-  guards: [
-    { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-  ],
-  adminGuards: [
-    { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
-  ],
-}
-```
-
-Use the `--public` CLI flag to temporarily override authentication settings without editing the config file:
-
-```bash
-tgraph api --public  # Generates controllers without any guards
-```
-
----
-
-## Behavior Flags
-
-| Property                  | Type      | Default | Description                                                                                                                                                                                  |
-| ------------------------- | --------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `behavior.nonInteractive` | `boolean` | `false` | When `true`, every prompt auto-confirms using `PromptUserOptions.defaultValue` (defaults to `true`). This is ideal for CI pipelines or scripted scaffolds where no manual input is possible. |
-
----
-
-## Component Overrides
-
-Component overrides are configured in `input.dashboard.components` and allow you to replace default React Admin components with custom implementations:
-
-```typescript
-interface ComponentImport {
-  name: string; // e.g., 'RichTextInput'
-  importPath: string; // e.g., '@/components/forms/RichTextInput'
-}
-
-interface ComponentOverrides {
-  form?: {
-    TextInput?: ComponentImport;
-    NumberInput?: ComponentImport;
-    BooleanInput?: ComponentImport;
-    DateTimeInput?: ComponentImport;
-    SelectInput?: ComponentImport;
-    ReferenceInput?: ComponentImport;
-    ReferenceArrayInput?: ComponentImport;
-    AutocompleteInput?: ComponentImport;
-    AutocompleteArrayInput?: ComponentImport;
-    JsonInput?: ComponentImport;
-    FileInput?: ComponentImport;
-    UrlInput?: ComponentImport;
-  };
-  display?: {
-    TextField?: ComponentImport;
-    NumberField?: ComponentImport;
-    BooleanField?: ComponentImport;
-    DateField?: ComponentImport;
-    DateTimeField?: ComponentImport;
-    SelectField?: ComponentImport;
-    ReferenceField?: ComponentImport;
-    JsonField?: ComponentImport;
-    FileField?: ComponentImport;
-    UrlField?: ComponentImport;
-  };
-}
-```
-
-**Example:**
-
-```typescript
-input: {
-  prisma: { schemaPath: 'prisma/schema.prisma', servicePath: 'src/infrastructure/database/prisma.service.ts' },
-  dashboard: {
-    components: {
-      form: {
-        TextInput: { name: 'RichTextInput', importPath: '@/components/forms/RichTextInput' },
-      },
-      display: {
-        TextField: { name: 'CustomTextField', importPath: '@/components/fields/TextField' },
-      },
-    },
-  },
-}
-```
-
-The generator automatically updates both the imports and JSX usage whenever it sees an override.
-
----
-
-## Multiple Configurations
-
-You can maintain separate configs for admin vs public APIs or for different workspaces:
-
-```typescript
-// tgraph.admin.config.ts
-export const config: Config = {
-  input: {
-    prisma: { schemaPath: 'prisma/schema.prisma', servicePath: 'src/infrastructure/database/prisma.service.ts' },
-    dashboard: { components: { form: {}, display: {} } },
-  },
-  output: {
-    backend: {
-      root: 'src/features',
-      dtosPath: 'src/dtos/generated',
-      modulesPaths: ['src/features'],
-      // ... other paths
-    },
-    dashboard: {
-      enabled: true,
-      updateDataProvider: true,
-      root: 'src/dashboard/src',
-      resourcesPath: 'src/dashboard/src/resources',
-      // ... other paths
-    },
-  },
-  api: {
-    suffix: 'Admin',
-    prefix: 'admin-api',
-    authenticationEnabled: true,
-    requireAdmin: true,
-    guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
-    adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
-  },
-  behavior: { nonInteractive: false },
-};
-
-// tgraph.public.config.ts
-export const config: Config = {
-  input: {
-    prisma: { schemaPath: 'prisma/schema.prisma', servicePath: 'src/infrastructure/database/prisma.service.ts' },
-    dashboard: { components: { form: {}, display: {} } },
-  },
-  output: {
-    backend: {
-      root: 'src/features',
-      dtosPath: 'src/dtos/generated/public',
-      modulesPaths: ['src/features'],
-      // ... other paths
-    },
-    dashboard: {
-      enabled: false,
-      updateDataProvider: false,
-      root: 'src/dashboard/src',
-      resourcesPath: 'src/dashboard/src/resources',
-      // ... other paths
-    },
-  },
-  api: {
-    suffix: 'Public',
-    prefix: 'api',
-    authenticationEnabled: false,
-    requireAdmin: false,
-    guards: [],
-    adminGuards: [],
-  },
-  behavior: { nonInteractive: false },
+  guards: [{ name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' }],
+  adminGuards: [{ name: 'RolesGuard', importPath: '@/auth/roles.guard' }],
+  dashboard: { root: 'src/dashboard/src' },
 };
 ```
 
-Run them explicitly:
-
-```bash
-tgraph api --config tgraph.admin.config.ts
-tgraph api --config tgraph.public.config.ts
-```
-
 ---
 
-## Tips
+## Related
 
-- Keep `output.backend.modulesPaths` ordered from most to least specific so the resolver finds modules in the right package.
-- Commit `tgraph.config.ts`—it documents paths for the whole team and keeps automated runs reproducible.
-- Run `tgraph doctor` to validate paths and configuration before triggering large generations.
-- Use `tgraph init` to generate a properly structured configuration file with helpful comments.
-
----
-
-## Related Docs
-
-- [Generators](./generators.md) – see how each section of the config is consumed.
-- [Utilities](./utilities.md) – path resolvers, config loader, and helpers that rely on these values.
-- [CLI Reference](../cli-reference.md) – flags that allow temporary overrides.
+- [CLI Reference](../cli-reference.md) — CLI flags that override config values
+- [Generators API](./generators.md) — how each config field is consumed
+- [Authentication Guards Guide](../guides/authentication-guards.md) — guard setup details

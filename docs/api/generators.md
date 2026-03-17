@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Generators
-parent: API Reference
-nav_order: 1
 ---
 
 # Generators API

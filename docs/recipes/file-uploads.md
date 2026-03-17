@@ -1,8 +1,5 @@
 ---
-layout: default
 title: File Uploads
-parent: Recipes
-nav_order: 2
 ---
 
 # File Upload Recipe

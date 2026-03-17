@@ -1,150 +1,108 @@
 ---
-layout: default
-title: Home
-nav_order: 1
-description: 'Transform your Prisma schema into production-ready NestJS APIs and React Admin dashboards'
-permalink: /
+layout: home
+title: TGraph Backend Generator
+
+hero:
+  name: TGraph
+  text: Prisma → NestJS + React Admin
+  tagline: Transform your Prisma schema into a complete, production-ready backend and admin dashboard with a single command.
+  image:
+    src: /logo.png
+    alt: TGraph
+  actions:
+    - theme: brand
+      text: Get Started
+      link: /getting-started
+    - theme: alt
+      text: Quick Start
+      link: /quick-start
+    - theme: alt
+      text: View on GitHub
+      link: https://github.com/trugraph/backend-generator
+
+features:
+  - icon: ⚡
+    title: One Command
+    details: Run `tgraph all` and get controllers, services, DTOs, and React Admin pages — all generated from your Prisma schema.
+  - icon: 🔒
+    title: Type-Safe End to End
+    details: Full TypeScript from database to frontend. Generated DTOs include class-validator decorators derived from schema constraints.
+  - icon: 🎛️
+    title: Field Directives
+    details: Annotate your Prisma fields with `@tg_format`, `@tg_upload`, `@tg_readonly` to control exactly how each field is rendered and validated.
+  - icon: 🛡️
+    title: Authentication Built In
+    details: Generated controllers respect your guards config — JWT, admin role, or any custom guard composition you define.
+  - icon: 🔄
+    title: Safe Regeneration
+    details: Auto-generated files use `.tg.` suffix and are safe to regenerate. Your custom code is never touched.
+  - icon: 📊
+    title: React Admin Dashboard
+    details: Full CRUD admin pages with relations, file uploads, autocomplete, and Studio (spreadsheet) views generated automatically.
 ---
-
-# TGraph Backend Generator
-
-Transform your Prisma schema into a complete NestJS backend and React Admin dashboard with a single command.
-
-## What is TGraph Backend Generator?
-
-TGraph Backend Generator is a powerful CLI toolkit that automatically produces production-ready code from your Prisma schema. It creates type-safe NestJS APIs, DTOs, services, controllers, and React Admin dashboard pages--all while preserving your custom code.
-
-## Features
-
-- **Full-Stack Generation**: Generate NestJS APIs and React Admin dashboards from Prisma schemas
-- **Type Safety**: End-to-end TypeScript types from database to frontend
-- **Smart Introspection**: Discovers your project structure and preserves manual code
-- **Field Directives**: Control generation behavior with schema comments (`@tg_format`, `@tg_upload`, `@tg_readonly`)
-- **Composable Architecture**: Use the CLI or embed generators in your build pipeline
-- **Safe Regeneration**: Auto-generated files are clearly marked and safe to regenerate
-- **Validation**: Automatic class-validator decorators from Prisma schema constraints
-- **Admin Authentication**: Generated endpoints respect authentication guards
-
-## Quick Links
-
-### Getting Started
-
-- [Installation & Setup](./getting-started.html)
-- [Quick Start Tutorial](./quick-start.html)
-
-### Guides
-
-- [Prisma Schema Setup](./guides/prisma-setup.html)
-- [Field Directives](./guides/field-directives.html)
-- [Naming Conventions](./guides/naming-conventions.html)
-- [Customization](./guides/customization.html)
-
-### Recipes
-
-- [Basic CRUD Generation](./recipes/basic-crud.html)
-- [File Upload Fields](./recipes/file-uploads.html)
-- [Custom Validation](./recipes/custom-validation.html)
-- [Extending Generated Code](./recipes/extending-generated-code.html)
-
-### Reference
-
-- [CLI Reference](./cli-reference.html)
-- [SDK Reference](./sdk-reference.html)
-- [API Documentation](./api/generators.html)
-
-### Contributing
-
-- [Architecture Overview](./architecture/overview.html)
-- [Philosophy & Principles](./architecture/philosophy.html)
-- [Contributing Guide](./contributing.html)
-- [Publishing Guide](./publishing.html)
-
-### Help
-
-- [Troubleshooting](./troubleshooting.html)
-- [LLM Integration Guide](./llm-guide.html) - For AI assistants
 
 ## Installation
 
 ```bash
-# Install as project dependency
 npm install --save-dev @tgraph/backend-generator
-
-# Or install globally
-npm install -g @tgraph/backend-generator
 ```
 
-## Basic Usage
+## Usage
 
 ```bash
+# Initialize config
+tgraph init
+
 # Generate everything
 tgraph all
 
-# Generate only API files
-tgraph api
-
-# Generate only dashboard
-tgraph dashboard
-
-# Generate only DTOs
-tgraph dtos
+# Or individually
+tgraph api        # NestJS controllers, services, DTOs
+tgraph dashboard  # React Admin pages
+tgraph dtos       # Response DTOs
+tgraph static     # Guards, interceptors, utilities
 ```
 
 ## Example
 
-Mark your Prisma models with `// @tg_form()`:
+Annotate your Prisma model:
 
 ```prisma
 // @tg_form()
+// @tg_label(name)
 model User {
-  id        String    @id @default(uuid())
-  firstName String
-  lastName  String
-  email     String    @unique
-  role      Role      @default(USER)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
-}
-
-enum Role {
-  USER
-  ADMIN
+  id        String   @id @default(uuid())
+  name      String
+  /// @tg_format(email)
+  email     String   @unique
+  /// @tg_format(password)
+  password  String
+  role      Role     @default(USER)
+  /// @tg_readonly
+  createdAt DateTime @default(now())
 }
 ```
 
-Run the generator:
+Configure once in `tgraph.config.ts`:
 
-```bash
-tgraph all
+```typescript
+import type { UserConfig } from '@tgraph/backend-generator';
+
+export const config: UserConfig = {
+  schemaPath: 'prisma/schema.prisma',
+  srcRoot: 'src',
+  apiPrefix: 'tg-api',
+  apiSuffix: 'Admin',
+  authenticationEnabled: true,
+  requireAdmin: true,
+  guards: [{ name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' }],
+  dashboard: { root: 'src/dashboard/src' },
+};
 ```
 
-You get:
+Run `tgraph all` and get:
 
-- NestJS controller with REST endpoints (`/tg-api/users`)
-- Service with CRUD operations
-- Create/Update DTOs with validation
-- React Admin List/Edit/Create/Show pages
-- Studio page for bulk editing
-
-## Philosophy
-
-TGraph Backend Generator embraces **convention over configuration**. It provides excellent defaults while remaining highly customizable. The generator:
-
-- **Preserves manual code**: Auto-generated sections are clearly bounded
-- **Follows best practices**: REST conventions, TypeScript standards, React Admin patterns
-- **Stays out of your way**: Generated files use a distinct `.tg.` suffix
-- **Enables incremental adoption**: Opt in per model with `@tg_form()`
-
-## Requirements
-
-- Node.js 18.0.0 or newer
-- A NestJS + React Admin project
-- Prisma schema
-
-## License
-
-ISC
-
----
-
-Ready to get started? Head to the [Getting Started Guide](./getting-started.html).
+- `src/features/user/user.admin.controller.ts` — REST endpoints with `@UseGuards(JwtAuthGuard)`
+- `src/features/user/user.admin.service.ts` — CRUD service with Prisma
+- `src/features/user/create-user.admin.dto.ts` — validated DTO with `@IsEmail()`
+- `src/dashboard/src/resources/users/` — List, Edit, Create, Show, Studio pages

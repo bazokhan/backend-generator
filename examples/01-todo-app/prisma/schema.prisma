@@ -1,0 +1,21 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+// @tg_form()
+model Todo {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  completed   Boolean  @default(false)
+  /// @tg_readonly
+  createdAt   DateTime @default(now())
+  /// @tg_readonly
+  updatedAt   DateTime @updatedAt
+}

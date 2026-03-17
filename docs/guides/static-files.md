@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Static Files Generation
-parent: Guides
-nav_order: 6
 ---
 
 # Static Files Generation
@@ -269,22 +266,20 @@ tgraph static --yes
 Static files are generated to directories specified in your `tgraph.config.ts`:
 
 ```typescript
-export const config: Config = {
-  output: {
-    backend: {
-      staticFiles: {
-        guards: 'src/guards',
-        decorators: 'src/decorators',
-        dtos: 'src/dtos',
-        interceptors: 'src/interceptors',
-        utils: 'src/utils',
-      },
-    },
-  },
+import type { UserConfig } from '@tgraph/backend-generator';
+
+export const config: UserConfig = {
+  srcRoot: 'src',
+  // Static files are generated to conventional paths derived from srcRoot:
+  // Guards      → src/guards/
+  // Decorators  → src/decorators/
+  // DTOs        → src/dtos/
+  // Interceptors → src/interceptors/
+  // Utils       → src/utils/
 };
 ```
 
-Adjust these paths to match your project structure. The generator will create directories if they don't exist.
+The generator creates directories automatically if they don't exist.
 
 ---
 
@@ -434,18 +429,16 @@ src/guards/admin-enhanced.guard.ts
 Configure guards in your `tgraph.config.ts`:
 
 ```typescript
-api: {
-  authentication: {
-    enabled: true,
-    requireAdmin: true,
-    guards: [
-      { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-    ],
-    adminGuards: [
-      { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
-    ],
-  },
-}
+export const config: UserConfig = {
+  authenticationEnabled: true,
+  requireAdmin: true,
+  guards: [
+    { name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' },
+  ],
+  adminGuards: [
+    { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
+  ],
+};
 ```
 
 Generated controllers will automatically import and apply these guards:

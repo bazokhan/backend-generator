@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Generated Output Reference
-nav_order: 7
-has_children: true
 ---
 
 # Generated Output Reference

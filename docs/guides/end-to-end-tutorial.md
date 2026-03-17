@@ -1,8 +1,5 @@
 ---
-layout: default
 title: End-to-End Tutorial
-parent: Guides
-nav_order: 1
 ---
 
 # End-to-End Tutorial

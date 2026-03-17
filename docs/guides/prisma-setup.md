@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Prisma Setup
-parent: Guides
-nav_order: 1
 ---
 
 # Prisma Schema Setup

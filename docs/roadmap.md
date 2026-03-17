@@ -1,7 +1,5 @@
 ---
-layout: default
 title: Roadmap
-nav_order: 80
 description: 'Milestone-based roadmap for the TGraph Backend Generator'
 ---
 

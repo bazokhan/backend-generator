@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Authentication Guards
-parent: Guides
-nav_order: 6
 ---
 
 # Authentication Guards Guide
@@ -20,33 +17,32 @@ TGraph allows you to configure which authentication guards are applied to genera
 
 ## Configuration
 
-Guards are configured in the `api.authentication` section of your config:
+Guards are configured directly in the flat `UserConfig`:
 
 ```typescript
-export const config: Config = {
-  // ... other config
+import type { UserConfig } from '@tgraph/backend-generator';
 
-  api: {
-    suffix: 'Admin',
-    prefix: 'tg-api',
-    authentication: {
-      // Whether to add authentication guards
-      enabled: true,
+export const config: UserConfig = {
+  schemaPath: 'prisma/schema.prisma',
+  srcRoot: 'src',
+  apiPrefix: 'tg-api',
+  apiSuffix: 'Admin',
 
-      // Whether endpoints require admin role
-      requireAdmin: true,
+  // Whether to add authentication guards to controllers
+  authenticationEnabled: true,
 
-      // Base guards (always applied when enabled)
-      guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
+  // Whether endpoints require admin role
+  requireAdmin: true,
 
-      // Admin guards (only applied when requireAdmin is true)
-      adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
-    },
-  },
+  // Base guards (always applied when authenticationEnabled is true)
+  guards: [{ name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' }],
+
+  // Admin guards (only applied when requireAdmin is also true)
+  adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
 };
 ```
 
-**New in v2:** The `adminGuards` array allows you to separate base authentication guards from admin-only authorization guards. When `requireAdmin` is `true`, guards from both arrays are combined and applied to controllers.
+The `adminGuards` array separates authentication from authorization guards. When `requireAdmin` is `true`, guards from both arrays are combined and applied to controllers.
 
 ## Guard Interface
 
@@ -63,21 +59,19 @@ interface Guard {
 
 ### Mode 1: Admin Only (Default)
 
-Requires JWT authentication AND admin role. Uses both `guards` and `adminGuards` arrays:
+Requires JWT authentication AND admin role. Both `guards` and `adminGuards` are applied:
 
 ```typescript
-api: {
-  authentication: {
-    enabled: true,
-    requireAdmin: true,
-    guards: [
-      { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-    ],
-    adminGuards: [
-      { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
-    ],
-  },
-}
+export const config: UserConfig = {
+  authenticationEnabled: true,
+  requireAdmin: true,
+  guards: [
+    { name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' },
+  ],
+  adminGuards: [
+    { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
+  ],
+};
 ```
 
 Generated controller:
@@ -92,21 +86,16 @@ export class UserAdminController {
 
 ### Mode 2: Authenticated Users
 
-Requires JWT authentication only (any authenticated user). Only `guards` are applied:
+Requires JWT authentication only. Only `guards` are applied:
 
 ```typescript
-api: {
-  authentication: {
-    enabled: true,
-    requireAdmin: false,
-    guards: [
-      { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-    ],
-    adminGuards: [
-      { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
-    ],
-  },
-}
+export const config: UserConfig = {
+  authenticationEnabled: true,
+  requireAdmin: false,
+  guards: [
+    { name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' },
+  ],
+};
 ```
 
 Generated controller:
@@ -114,7 +103,7 @@ Generated controller:
 ```typescript
 @Controller('api/users')
 @UseGuards(JwtAuthGuard)
-export class UserPublicController {
+export class UserController {
   // Only base guards are applied; adminGuards are ignored
 }
 ```
@@ -124,20 +113,18 @@ export class UserPublicController {
 No authentication required:
 
 ```typescript
-api: {
-  authentication: {
-    enabled: false,
-    requireAdmin: false,
-    guards: [],
-  },
-}
+export const config: UserConfig = {
+  authenticationEnabled: false,
+  requireAdmin: false,
+  guards: [],
+};
 ```
 
 Generated controller:
 
 ```typescript
 @Controller('api/users')
-export class UserPublicController {
+export class UserController {
   // No guards
 }
 ```
@@ -161,19 +148,19 @@ Useful for generating public endpoints without editing your config file.
 
 ### JWT + Admin Role
 
-Standard setup for admin APIs using separated guard configuration:
+Standard setup for admin APIs:
 
 ```typescript
-authentication: {
-  enabled: true,
+export const config: UserConfig = {
+  authenticationEnabled: true,
   requireAdmin: true,
   guards: [
-    { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+    { name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' },
   ],
   adminGuards: [
     { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
   ],
-}
+};
 ```
 
 **Result:** Both JwtAuthGuard and AdminGuard are applied to generated controllers.
@@ -183,69 +170,47 @@ authentication: {
 For authenticated user APIs (no admin requirement):
 
 ```typescript
-authentication: {
-  enabled: true,
+export const config: UserConfig = {
+  authenticationEnabled: true,
   requireAdmin: false,
   guards: [
-    { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+    { name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' },
   ],
-}
+};
 ```
 
 **Result:** Only JwtAuthGuard is applied; adminGuards are ignored.
 
 ### API Key Authentication
 
-Custom API key guard:
-
 ```typescript
-authentication: {
-  enabled: true,
+export const config: UserConfig = {
+  authenticationEnabled: true,
   requireAdmin: false,
   guards: [
     { name: 'ApiKeyGuard', importPath: '@/guards/api-key.guard' },
   ],
-}
+};
 ```
 
 ### Multiple Guards
 
-Combine multiple authentication and authorization guards:
-
 ```typescript
-authentication: {
-  enabled: true,
+export const config: UserConfig = {
+  authenticationEnabled: true,
   requireAdmin: true,
   guards: [
-    { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
+    { name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' },
     { name: 'TenantGuard', importPath: '@/guards/tenant.guard' },
   ],
   adminGuards: [
     { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
     { name: 'RoleGuard', importPath: '@/guards/role.guard' },
   ],
-}
+};
 ```
 
-**Result:** When `requireAdmin` is true, all four guards are applied. When false, only the two base guards are applied.
-
-### Legacy Format (Still Supported)
-
-You can still put all guards in a single array (backwards compatible):
-
-```typescript
-authentication: {
-  enabled: true,
-  requireAdmin: true,
-  guards: [
-    { name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' },
-    { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
-    { name: 'TenantGuard', importPath: '@/guards/tenant.guard' },
-  ],
-}
-```
-
-**Note:** The separated `adminGuards` approach is recommended for better flexibility when generating both admin and user APIs from the same schema.
+When `requireAdmin` is true, all four guards are applied. When false, only the two base guards are applied.
 
 ## Implementing Guards
 
@@ -370,45 +335,31 @@ Create two config files:
 **Admin API** (`tgraph.admin.config.ts`):
 
 ```typescript
-export const config: Config = {
-  input: {
-    schemaPath: 'prisma/schema.prisma',
-  },
-  api: {
-    suffix: 'Admin',
-    prefix: 'admin-api',
-    authentication: {
-      enabled: true,
-      requireAdmin: true,
-      guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
-      adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
-    },
-  },
-  // ... other config
+export const config: UserConfig = {
+  schemaPath: 'prisma/schema.prisma',
+  srcRoot: 'src',
+  apiSuffix: 'Admin',
+  apiPrefix: 'admin-api',
+  authenticationEnabled: true,
+  requireAdmin: true,
+  guards: [{ name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' }],
+  adminGuards: [{ name: 'AdminGuard', importPath: '@/guards/admin.guard' }],
+  dashboard: { root: 'src/dashboard/src' },
 };
 ```
 
 **Public API** (`tgraph.public.config.ts`):
 
 ```typescript
-export const config: Config = {
-  input: {
-    schemaPath: 'prisma/schema.prisma',
-  },
-  api: {
-    suffix: 'Public',
-    prefix: 'api',
-    authentication: {
-      enabled: true,
-      requireAdmin: false,
-      guards: [{ name: 'JwtAuthGuard', importPath: '@/guards/jwt-auth.guard' }],
-      adminGuards: [
-        // Defined but not used when requireAdmin is false
-        { name: 'AdminGuard', importPath: '@/guards/admin.guard' },
-      ],
-    },
-  },
-  // ... other config
+export const config: UserConfig = {
+  schemaPath: 'prisma/schema.prisma',
+  srcRoot: 'src',
+  apiSuffix: 'Public',
+  apiPrefix: 'api',
+  authenticationEnabled: true,
+  requireAdmin: false,
+  guards: [{ name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' }],
+  dashboard: false,
 };
 ```
 

@@ -1,8 +1,5 @@
 ---
-layout: default
 title: tgraph dtos
-parent: Generated Output Reference
-nav_order: 4
 ---
 
 # `tgraph dtos`

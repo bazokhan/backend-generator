@@ -3,7 +3,6 @@ export type CliCommand =
   | 'doctor'
   | 'preflight'
   | 'api'
-  | 'adapters'
   | 'dashboard'
   | 'dtos'
   | 'all'

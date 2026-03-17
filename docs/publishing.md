@@ -1,7 +1,5 @@
 ---
-layout: default
 title: Publishing
-nav_order: 11
 ---
 
 # Publishing Guide

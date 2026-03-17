@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Component Customization
-parent: Guides
-nav_order: 5
 ---
 
 # Component Customization Guide

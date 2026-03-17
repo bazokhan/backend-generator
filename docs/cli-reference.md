@@ -1,7 +1,5 @@
 ---
-layout: default
 title: CLI Reference
-nav_order: 6
 ---
 
 # CLI Reference
@@ -99,32 +97,38 @@ If a config file already exists:
 **Generated file structure:**
 
 ```typescript
-import type { Config } from '@tgraph/backend-generator';
+import type { UserConfig } from '@tgraph/backend-generator';
 
-export const config: Config = {
+export const config: UserConfig = {
   // Path to your Prisma schema file
   // Default: 'prisma/schema.prisma'
   schemaPath: 'prisma/schema.prisma',
 
-  // Path to your React Admin dashboard source directory
-  // Default: 'src/dashboard/src'
-  dashboardPath: 'src/dashboard/src',
+  // Root source directory (all paths derived from this)
+  // Default: 'src'
+  srcRoot: 'src',
 
-  // Path where DTO files will be generated
-  // Default: 'src/dtos/generated'
-  dtosPath: 'src/dtos/generated',
+  // API route prefix
+  // Default: 'tg-api'
+  apiPrefix: 'tg-api',
 
-  // Suffix for generated classes (e.g., UserTgService, UserTgController)
-  // Default: 'Tg'
-  suffix: 'Tg',
+  // Suffix for generated class names (e.g., 'Admin' → UserAdminService)
+  // Default: ''
+  apiSuffix: 'Admin',
 
-  // Generate admin-only endpoints with authentication guards
+  // Add authentication guards to controllers
   // Default: true
-  isAdmin: true,
+  authenticationEnabled: true,
 
-  // Automatically update data provider endpoint mappings
+  // Require admin role for all endpoints
   // Default: true
-  updateDataProvider: true,
+  requireAdmin: true,
+
+  // Guards applied to all controllers
+  guards: [{ name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' }],
+
+  // Dashboard config (false to disable)
+  dashboard: { root: 'src/dashboard/src' },
 
   // Skip interactive prompts (useful for CI)
   // Default: false
@@ -436,10 +440,6 @@ tgraph static [options]
 - `audit.interceptor` - Audit logging interceptor stub
 - `paginated-search.decorator` - Paginated search endpoint decorator
 - `paginated-search.util` - Pagination utility functions
-- `adapter.runtime` - Adapter runtime factory functions
-- `adapter.types` - Adapter TypeScript type definitions
-- `adapter.helpers` - Adapter helper utilities
-- `adapter.context` - Adapter context builder
 - `generate.swagger` - Swagger generation script template
 
 **What it generates:**

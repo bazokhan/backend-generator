@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Overview
-parent: Architecture
-nav_order: 1
 ---
 
 # Architecture Overview

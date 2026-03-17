@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Utilities
-parent: API Reference
-nav_order: 3
 ---
 
 # Utilities API
@@ -103,15 +100,15 @@ interface PreflightReport {
   dataProvider: PreflightPathReport;
   appComponent: PreflightPathReport;
   swagger: PreflightPathReport & { required: boolean };
-  modules: Array<{
+  modules: { 
     name: string;
     status: 'ready' | 'missing-directory' | 'missing-module-file';
     moduleType?: string;
     existingDirectory?: string;
     pendingDirectory?: string;
-  }>;
-  dashboardResources: Array<{ name: string; path: string; exists: boolean }>;
-  manualSteps: Array<{ message: string; severity: 'info' | 'warning' }>;
+  }[];
+  dashboardResources: {  name: string; path: string; exists: boolean }[];
+  manualSteps: {  message: string; severity: 'info' | 'warning' }[];
   hasWarnings: boolean;
 }
 ```

@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Dashboard Types Generation
-parent: Guides
-nav_order: 7
 ---
 
 # Dashboard Types Generation

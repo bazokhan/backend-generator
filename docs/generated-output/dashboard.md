@@ -1,8 +1,5 @@
 ---
-layout: default
 title: tgraph dashboard
-parent: Generated Output Reference
-nav_order: 3
 ---
 
 # `tgraph dashboard`

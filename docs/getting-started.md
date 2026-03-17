@@ -1,7 +1,5 @@
 ---
-layout: default
 title: Getting Started
-nav_order: 2
 ---
 
 # Getting Started
@@ -93,32 +91,38 @@ tgraph init
 This creates a `tgraph.config.ts` file in your project root with comprehensive inline documentation:
 
 ```typescript
-import type { Config } from '@tgraph/backend-generator';
+import type { UserConfig } from '@tgraph/backend-generator';
 
-export const config: Config = {
+export const config: UserConfig = {
   // Path to your Prisma schema file
   // Default: 'prisma/schema.prisma'
   schemaPath: 'prisma/schema.prisma',
 
-  // Path to your React Admin dashboard source directory
-  // Default: 'src/dashboard/src'
-  dashboardPath: 'src/dashboard/src',
+  // Root source directory — all output paths are derived from this
+  // Default: 'src'
+  srcRoot: 'src',
 
-  // Path where DTO files will be generated
-  // Default: 'src/dtos/generated'
-  dtosPath: 'src/dtos/generated',
+  // API route prefix (e.g., '/tg-api/users')
+  // Default: 'tg-api'
+  apiPrefix: 'tg-api',
 
-  // Suffix for generated classes (e.g., UserTgService, UserTgController)
-  // Default: 'Tg'
-  suffix: 'Tg',
+  // Suffix appended to generated class names (e.g., 'Admin' → UserAdminService)
+  // Default: ''
+  apiSuffix: 'Admin',
 
-  // Generate admin-only endpoints with authentication guards
+  // Add authentication guards to controllers
   // Default: true
-  isAdmin: true,
+  authenticationEnabled: true,
 
-  // Automatically update data provider endpoint mappings
+  // Require admin role for all endpoints
   // Default: true
-  updateDataProvider: true,
+  requireAdmin: true,
+
+  // Guards applied to all generated controllers
+  guards: [{ name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' }],
+
+  // Dashboard config — false to disable, or { root } to enable
+  dashboard: { root: 'src/dashboard/src' },
 
   // Skip interactive prompts (useful for CI)
   // Default: false
@@ -132,15 +136,18 @@ Customize these values for your project structure.
 
 ### Configuration Options
 
-| Option               | Type    | Default                  | Description                   |
-| -------------------- | ------- | ------------------------ | ----------------------------- |
-| `schemaPath`         | string  | `'prisma/schema.prisma'` | Path to your Prisma schema    |
-| `dashboardPath`      | string  | `'src/dashboard/src'`    | React Admin source directory  |
-| `dtosPath`           | string  | `'src/dtos/generated'`   | DTO output directory          |
-| `suffix`             | string  | `'Tg'`                   | Suffix for generated classes  |
-| `isAdmin`            | boolean | `true`                   | Generate admin-only endpoints |
-| `updateDataProvider` | boolean | `true`                   | Auto-update data provider     |
-| `nonInteractive`     | boolean | `false`                  | Skip interactive prompts      |
+| Option                 | Type                  | Default                  | Description                             |
+| ---------------------- | --------------------- | ------------------------ | --------------------------------------- |
+| `schemaPath`           | string                | `'prisma/schema.prisma'` | Path to your Prisma schema              |
+| `srcRoot`              | string                | `'src'`                  | Root source directory                   |
+| `apiPrefix`            | string                | `'tg-api'`               | API route prefix                        |
+| `apiSuffix`            | string                | `''`                     | Suffix for generated class names        |
+| `authenticationEnabled`| boolean               | `true`                   | Add authentication guards               |
+| `requireAdmin`         | boolean               | `true`                   | Require admin role for all endpoints    |
+| `guards`               | Guard[]               | `[]`                     | Guards applied to all controllers       |
+| `adminGuards`          | Guard[]               | `[]`                     | Extra guards when requireAdmin is true  |
+| `dashboard`            | false \| `{ root }`   | `false`                  | Dashboard config or false to disable    |
+| `nonInteractive`       | boolean               | `false`                  | Skip interactive prompts                |
 
 You can override these via CLI flags (see [CLI Reference](./cli-reference.md)).
 

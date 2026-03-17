@@ -1,0 +1,85 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// @tg_form()
+// @tg_label(name)
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  /// @tg_format(email)
+  email     String   @unique
+  /// @tg_format(password)
+  password  String
+  role      Role     @default(CUSTOMER)
+  /// @tg_readonly
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+// @tg_form()
+// @tg_label(name)
+model Category {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  products Product[]
+}
+
+// @tg_form()
+// @tg_label(name)
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  stock       Int       @default(0)
+  /// @tg_upload(image)
+  image       String?
+  category    Category  @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  /// @tg_readonly
+  createdAt   DateTime  @default(now())
+  orderItems  OrderItem[]
+}
+
+// @tg_form()
+model Order {
+  id        String      @id @default(uuid())
+  user      User        @relation(fields: [userId], references: [id])
+  userId    String
+  status    OrderStatus @default(PENDING)
+  total     Float
+  /// @tg_readonly
+  createdAt DateTime    @default(now())
+  items     OrderItem[]
+}
+
+// @tg_form()
+model OrderItem {
+  id        String  @id @default(uuid())
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int
+  price     Float
+}

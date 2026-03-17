@@ -1,8 +1,5 @@
 ---
-layout: default
 title: tgraph api
-parent: Generated Output Reference
-nav_order: 2
 ---
 
 # `tgraph api`

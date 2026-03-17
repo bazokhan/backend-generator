@@ -16,15 +16,7 @@ import { supportedCommands } from '../../parser/cli-parser/config';
 import { buildHelpText } from './utils';
 import type { CliCommand, CliParsedOptions, ParsedArguments } from '../../parser/cli-parser/types';
 import { CliParser } from '@tg-scripts/parser/cli-parser/CliParser';
-import { AdaptersGenerator } from '../../generator/adapters-generator/AdaptersGenerator';
-import { PrismaSchemaParser } from '@tg-scripts/parser/prisma-schema-parser/PrismaSchemaParser';
-import { PrismaRelationsParser } from '@tg-scripts/parser/prisma-relation-parser/PrismaRelationsParser';
-import { PrismaFieldParser } from '@tg-scripts/parser/prisma-field-parser/PrismaFieldParser';
-import { AdapterParser } from '@tg-scripts/parser/adapter-parser/AdapterParser';
-import { AdapterDtoGenerator } from '@tg-scripts/generator/adapter-dto-generator/AdapterDtoGenerator';
-import { AdapterValidator } from '../validation/AdapterValidator';
 import { ConfigFileGenerator } from '@tg-scripts/generator/config-file-generator/ConfigFileGenerator';
-import { ModulePathResolver } from '../module-path-resolver/ModulePathResolver';
 
 export class CommandLineInterface {
   private readonly configLoader: ConfigLoader;
@@ -617,30 +609,6 @@ export class CommandLineInterface {
         },
         api: async () => {
           await new ApiGenerator(mergedConfig).generate();
-        },
-        adapters: async () => {
-          const schema = fs.readFileSync(mergedConfig.input.prisma.schemaPath as string, 'utf8');
-          const schemaParser = new PrismaSchemaParser(new PrismaFieldParser(), new PrismaRelationsParser());
-          schemaParser.load(schema);
-          const models = schemaParser.parse().models;
-          const adapters = await new AdaptersGenerator(
-            new AdapterParser(),
-            new AdapterValidator(),
-            new AdapterDtoGenerator(),
-            new ModulePathResolver(),
-          ).generate({
-            models: models,
-          });
-          console.log(
-            Object.entries(adapters)
-              .map(([modelName, { adapters, dtos }]) => ({
-                modelName,
-                adapters,
-                dtos,
-              }))
-              .filter(({ adapters, dtos }) => adapters.length > 0 || dtos.length > 0)
-              .map(({ adapters, dtos, modelName }) => adapters?.[0]?.config),
-          );
         },
         dashboard: async () => {
           await new DashboardGenerator(mergedConfig).generate();

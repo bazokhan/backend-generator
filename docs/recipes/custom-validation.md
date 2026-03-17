@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Custom Validation
-parent: Recipes
-nav_order: 3
 ---
 
 # Custom Validation Recipe

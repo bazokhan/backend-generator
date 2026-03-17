@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Multiple APIs (Admin + Public)
-parent: Recipes
-nav_order: 6
 ---
 
 # Multiple APIs Recipe

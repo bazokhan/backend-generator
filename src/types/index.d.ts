@@ -109,6 +109,41 @@ export interface Config {
 }
 
 /**
+ * Simplified user-facing configuration. Write this in tgraph.config.ts.
+ * ConfigLoader normalizes it to the internal Config format with inferred defaults.
+ */
+export interface UserConfig {
+  /** Path to Prisma schema. Default: 'prisma/schema.prisma' */
+  schemaPath?: string;
+  /** Path to PrismaService file. Default: '{srcRoot}/infrastructure/database/prisma.service.ts' */
+  prismaServicePath?: string;
+  /** Root source directory. All output paths are derived from this. Default: 'src' */
+  srcRoot?: string;
+  /** API route prefix. Default: 'tg-api' */
+  apiPrefix?: string;
+  /** Suffix for generated class names (e.g., 'Admin' -> UserAdminService). Default: '' */
+  apiSuffix?: string;
+  /** Guards applied to all generated controllers. Default: [] */
+  guards?: Guard[];
+  /** Additional guards applied only when requireAdmin is true. Default: [] */
+  adminGuards?: Guard[];
+  /** Add authentication guards to controllers. Default: true */
+  authenticationEnabled?: boolean;
+  /** Require admin role for all endpoints. Default: true */
+  requireAdmin?: boolean;
+  /** Dashboard config. Set to false to disable, or provide { root } to enable. */
+  dashboard?: false | { root?: string };
+  /** Auto-confirm all CLI prompts (for CI/CD). Default: false */
+  nonInteractive?: boolean;
+  /** Override: path to app.module.ts. Default: '{srcRoot}/app.module.ts' */
+  appModulePath?: string;
+  /** Override: path to generated DTOs directory. Default: '{srcRoot}/dtos/generated' */
+  dtosPath?: string;
+  /** Override: paths to search for existing modules. Default: ['{srcRoot}/features', '{srcRoot}/modules', '{srcRoot}'] */
+  modulesPaths?: string[];
+}
+
+/**
  * Component import configuration for custom React Admin components
  */
 export interface ComponentImport {
@@ -237,19 +272,3 @@ export interface FieldDirective {
   serialize?(field: PrismaField): Record<string, unknown> | undefined;
 }
 
-// Re-export adapter types
-export type {
-  HttpMethod,
-  AdapterType,
-  AdapterConfig,
-  AdapterHelpers,
-  AdapterDI,
-  AdapterContext,
-  AdapterServiceCallResult,
-  AdapterDirectResponse,
-  AdapterResult,
-  AdapterHandler,
-  AdapterDefinition,
-  AdapterFactoryOptions,
-  AdapterFactoryResult,
-} from './adapter';

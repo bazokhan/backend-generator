@@ -1,8 +1,5 @@
 ---
-layout: default
 title: tgraph init
-parent: Generated Output Reference
-nav_order: 1
 ---
 
 # `tgraph init`

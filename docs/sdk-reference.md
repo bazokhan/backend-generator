@@ -1,7 +1,5 @@
 ---
-layout: default
 title: SDK Reference
-nav_order: 7
 ---
 
 # SDK Reference
@@ -232,7 +230,7 @@ new NestAppModuleUpdater();
 **Methods:**
 
 ```typescript
-update(modules: Array<{ name: string; path: string }>): Promise<void>
+update(modules: {  name: string; path: string }[]): Promise<void>
 ```
 
 **Example:**
@@ -300,7 +298,7 @@ new DataProviderEndpointGenerator();
 **Methods:**
 
 ```typescript
-update(resources: Array<{ name: string; endpoint: string }>): Promise<void>
+update(resources: {  name: string; endpoint: string }[]): Promise<void>
 ```
 
 **Example:**

@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Philosophy
-parent: Architecture
-nav_order: 2
 ---
 
 # Philosophy & Principles

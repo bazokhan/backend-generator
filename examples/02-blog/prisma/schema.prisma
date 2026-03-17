@@ -1,0 +1,48 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+// @tg_form()
+// @tg_label(name)
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  /// @tg_format(email)
+  email     String   @unique
+  /// @tg_format(password)
+  password  String
+  /// @tg_readonly
+  createdAt DateTime @default(now())
+  posts     Post[]
+}
+
+// @tg_form()
+// @tg_label(title)
+model Post {
+  id         String   @id @default(uuid())
+  title      String
+  content    String
+  published  Boolean  @default(false)
+  author     User     @relation(fields: [authorId], references: [id])
+  authorId   String
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+  /// @tg_upload(image)
+  coverImage String?
+  /// @tg_readonly
+  createdAt  DateTime @default(now())
+}
+
+// @tg_form()
+// @tg_label(name)
+model Category {
+  id    String @id @default(uuid())
+  name  String @unique
+  posts Post[]
+}
