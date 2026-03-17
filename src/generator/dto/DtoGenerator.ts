@@ -116,7 +116,7 @@ export class DtoGenerator {
       return targetPath;
     }
 
-    return relativePath;
+    return relativePath.replace(/\\/g, '/');
   }
 
   generate(): void {

@@ -281,7 +281,7 @@ model Post {
       generator.generate();
 
       expect(console.log).toHaveBeenCalledWith('🚀 Starting DTO generation...');
-      expect(console.log).toHaveBeenCalledWith('📁 Setting up output directory at src\\dtos\\generated...');
+      expect(console.log).toHaveBeenCalledWith('📁 Setting up output directory at src/dtos/generated...');
       expect(console.log).toHaveBeenCalledWith('📖 Parsing Prisma schema...');
       expect(console.log).toHaveBeenCalledWith('📝 Generating DTO files...');
       expect(console.log).toHaveBeenCalledWith('✅ Generated user-response.dto.ts');
@@ -1221,7 +1221,7 @@ model EnumModel {
       const logCalls = (console.log as jest.Mock).mock.calls.map((call) => call[0]);
 
       expect(logCalls).toContain('🚀 Starting DTO generation...');
-      expect(logCalls).toContain('📁 Setting up output directory at src\\dtos\\generated...');
+      expect(logCalls).toContain('📁 Setting up output directory at src/dtos/generated...');
       expect(logCalls).toContain('📖 Parsing Prisma schema...');
       expect(logCalls).toContain('   📋 Found model: User');
       expect(logCalls).toContain('   📋 Found model: Post');

@@ -194,7 +194,7 @@ export class DashboardGenerator {
       return targetPath;
     }
 
-    return relativePath;
+    return relativePath.replace(/\\/g, '/');
   }
 
   private updateAppComponent(): void {
