@@ -104,6 +104,12 @@ export class DtoGenerator {
   private setupOutputDirectory(): void {
     const displayPath = this.toWorkspaceRelative(this.outputAbsolutePath);
     console.log(`📁 Setting up output directory at ${displayPath}...`);
+    if (fs.existsSync(this.outputAbsolutePath)) {
+      fs.rmSync(this.outputAbsolutePath, {
+        recursive: true,
+        force: true,
+      });
+    }
     fs.mkdirSync(this.outputAbsolutePath, { recursive: true });
   }
 
