@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+### Patch Changes
+
+- 88fd42f: Fix `DtoGenerator` output directory setup to check for an existing directory, remove it safely, and recreate it before generation.
+
+  This restores expected behavior for cleanup and error propagation during DTO generation.
+
 ## 0.1.0
 
 ### Minor Changes
