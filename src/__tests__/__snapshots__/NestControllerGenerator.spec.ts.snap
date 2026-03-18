@@ -3,13 +3,9 @@
 exports[`Nest Admin Controller Generator All operations together should generate complete controller methods 1`] = `
 "
   @Get()
-  @PaginatedSearch<CustomFieldType>()
+  @PaginatedSearch()
   @ApiOperation({ summary: 'Get all customFieldTypes' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of all customFieldTypes',
-    type: PaginatedSearchResultDto<CustomFieldType>,
-  })
+  @ApiResponse({ status: 200, description: 'List of all customFieldTypes' })
   async getList(@Query() query: PaginatedSearchQueryDto) {
     const result = await this.customFieldTypeTgService.getList(query);
     return { data: result.data, total: result.total, page: result.page, limit: result.limit };
@@ -19,11 +15,7 @@ exports[`Nest Admin Controller Generator All operations together should generate
 
   @Get(':id')
   @ApiOperation({ summary: 'Get customFieldType by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldType found',
-    type: ApiResponseDto<CustomFieldType>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldType found' })
   @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
   async getOne(@Param('id') id: string) {
     const item = await this.customFieldTypeTgService.getOne(id);
@@ -34,11 +26,7 @@ exports[`Nest Admin Controller Generator All operations together should generate
 
   @Get('many')
   @ApiOperation({ summary: 'Get multiple customFieldTypes by IDs' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldTypes found',
-    type: ApiResponseDto<CustomFieldType[]>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldTypes found' })
   async getMany(@Query('ids') ids: string) {
     const idArray = ids.split(',').filter(id => id.trim());
     const result = await this.customFieldTypeTgService.getMany(idArray);
@@ -48,13 +36,9 @@ exports[`Nest Admin Controller Generator All operations together should generate
 
 
   @Get('reference/:target/:id')
-  @PaginatedSearch<CustomFieldType>()
+  @PaginatedSearch()
   @ApiOperation({ summary: 'Get customFieldTypes by reference' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldTypes found',
-    type: PaginatedSearchResultDto<CustomFieldType>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldTypes found' })
   async getManyReference(
     @Param('target') target: string,
     @Param('id') id: string,
@@ -73,11 +57,7 @@ exports[`Nest Admin Controller Generator All operations together should generate
 
   @Post()
   @ApiOperation({ summary: 'Create a new customFieldType' })
-  @ApiResponse({
-    status: 201,
-    description: 'CustomFieldType created successfully',
-    type: ApiResponseDto<CustomFieldType>,
-  })
+  @ApiResponse({ status: 201, description: 'CustomFieldType created successfully' })
   async create(@Body() dto: CreateCustomFieldTypeTgDto) {
     const item = await this.customFieldTypeTgService.create(dto);
     return { data: item, message: 'CustomFieldType created successfully' };
@@ -87,11 +67,7 @@ exports[`Nest Admin Controller Generator All operations together should generate
 
   @Put(':id')
   @ApiOperation({ summary: 'Update customFieldType' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldType updated successfully',
-    type: ApiResponseDto<CustomFieldType>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldType updated successfully' })
   @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
   async update(@Param('id') id: string, @Body() dto: UpdateCustomFieldTypeTgDto) {
     const item = await this.customFieldTypeTgService.update(id, dto);
@@ -102,11 +78,7 @@ exports[`Nest Admin Controller Generator All operations together should generate
 
   @Put('many')
   @ApiOperation({ summary: 'Update multiple customFieldTypes' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldTypes updated successfully',
-    type: ApiResponseDto<CustomFieldType[]>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldTypes updated successfully' })
   async updateMany(@Body() body: { ids: string[]; data: UpdateCustomFieldTypeTgDto }) {
     const result = await this.customFieldTypeTgService.updateMany(body.ids, body.data);
     return { data: result.data, message: 'CustomFieldTypes updated successfully' };
@@ -116,11 +88,7 @@ exports[`Nest Admin Controller Generator All operations together should generate
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete customFieldType' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldType deleted successfully',
-    type: ApiResponseDto<{ message: string }>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldType deleted successfully' })
   @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
   async deleteOne(@Param('id') id: string) {
     const result = await this.customFieldTypeTgService.deleteOne(id);
@@ -131,11 +99,7 @@ exports[`Nest Admin Controller Generator All operations together should generate
 
   @Delete('many')
   @ApiOperation({ summary: 'Delete multiple customFieldTypes' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldTypes deleted successfully',
-    type: ApiResponseDto<{ message: string }[]>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldTypes deleted successfully' })
   async deleteMany(@Body() body: { ids: string[] }) {
     const result = await this.customFieldTypeTgService.deleteMany(body.ids);
     return { data: result.data, message: 'CustomFieldTypes deleted successfully' };
@@ -146,13 +110,9 @@ exports[`Nest Admin Controller Generator All operations together should generate
 exports[`Nest Admin Controller Generator Integration - different model names should work for AuditLog model 1`] = `
 "
   @Get()
-  @PaginatedSearch<AuditLog>()
+  @PaginatedSearch()
   @ApiOperation({ summary: 'Get all auditLogs' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of all auditLogs',
-    type: PaginatedSearchResultDto<AuditLog>,
-  })
+  @ApiResponse({ status: 200, description: 'List of all auditLogs' })
   async getList(@Query() query: PaginatedSearchQueryDto) {
     const result = await this.auditLogTgService.getList(query);
     return { data: result.data, total: result.total, page: result.page, limit: result.limit };
@@ -163,13 +123,9 @@ exports[`Nest Admin Controller Generator Integration - different model names sho
 exports[`Nest Admin Controller Generator Integration - different model names should work for ProjectInstance model 1`] = `
 "
   @Get()
-  @PaginatedSearch<ProjectInstance>()
+  @PaginatedSearch()
   @ApiOperation({ summary: 'Get all projectInstances' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of all projectInstances',
-    type: PaginatedSearchResultDto<ProjectInstance>,
-  })
+  @ApiResponse({ status: 200, description: 'List of all projectInstances' })
   async getList(@Query() query: PaginatedSearchQueryDto) {
     const result = await this.projectInstanceTgService.getList(query);
     return { data: result.data, total: result.total, page: result.page, limit: result.limit };
@@ -180,13 +136,9 @@ exports[`Nest Admin Controller Generator Integration - different model names sho
 exports[`Nest Admin Controller Generator Integration - different model names should work for User model 1`] = `
 "
   @Get()
-  @PaginatedSearch<User>()
+  @PaginatedSearch()
   @ApiOperation({ summary: 'Get all users' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of all users',
-    type: PaginatedSearchResultDto<User>,
-  })
+  @ApiResponse({ status: 200, description: 'List of all users' })
   async getList(@Query() query: PaginatedSearchQueryDto) {
     const result = await this.userTgService.getList(query);
     return { data: result.data, total: result.total, page: result.page, limit: result.limit };
@@ -198,11 +150,7 @@ exports[`Nest Admin Controller Generator create should generate create method fo
 "
   @Post()
   @ApiOperation({ summary: 'Create a new customFieldType' })
-  @ApiResponse({
-    status: 201,
-    description: 'CustomFieldType created successfully',
-    type: ApiResponseDto<CustomFieldType>,
-  })
+  @ApiResponse({ status: 201, description: 'CustomFieldType created successfully' })
   async create(@Body() dto: CreateCustomFieldTypeTgDto) {
     const item = await this.customFieldTypeTgService.create(dto);
     return { data: item, message: 'CustomFieldType created successfully' };
@@ -214,11 +162,7 @@ exports[`Nest Admin Controller Generator deleteMany should generate deleteMany m
 "
   @Delete('many')
   @ApiOperation({ summary: 'Delete multiple customFieldTypes' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldTypes deleted successfully',
-    type: ApiResponseDto<{ message: string }[]>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldTypes deleted successfully' })
   async deleteMany(@Body() body: { ids: string[] }) {
     const result = await this.customFieldTypeTgService.deleteMany(body.ids);
     return { data: result.data, message: 'CustomFieldTypes deleted successfully' };
@@ -230,11 +174,7 @@ exports[`Nest Admin Controller Generator deleteOne should generate delete method
 "
   @Delete(':id')
   @ApiOperation({ summary: 'Delete customFieldType' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldType deleted successfully',
-    type: ApiResponseDto<{ message: string }>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldType deleted successfully' })
   @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
   async deleteOne(@Param('id') id: string) {
     const result = await this.customFieldTypeTgService.deleteOne(id);
@@ -246,13 +186,9 @@ exports[`Nest Admin Controller Generator deleteOne should generate delete method
 exports[`Nest Admin Controller Generator getList should generate getList method for any model 1`] = `
 "
   @Get()
-  @PaginatedSearch<CustomFieldType>()
+  @PaginatedSearch()
   @ApiOperation({ summary: 'Get all customFieldTypes' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of all customFieldTypes',
-    type: PaginatedSearchResultDto<CustomFieldType>,
-  })
+  @ApiResponse({ status: 200, description: 'List of all customFieldTypes' })
   async getList(@Query() query: PaginatedSearchQueryDto) {
     const result = await this.customFieldTypeTgService.getList(query);
     return { data: result.data, total: result.total, page: result.page, limit: result.limit };
@@ -264,11 +200,7 @@ exports[`Nest Admin Controller Generator getMany should generate getMany method 
 "
   @Get('many')
   @ApiOperation({ summary: 'Get multiple customFieldTypes by IDs' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldTypes found',
-    type: ApiResponseDto<CustomFieldType[]>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldTypes found' })
   async getMany(@Query('ids') ids: string) {
     const idArray = ids.split(',').filter(id => id.trim());
     const result = await this.customFieldTypeTgService.getMany(idArray);
@@ -280,13 +212,9 @@ exports[`Nest Admin Controller Generator getMany should generate getMany method 
 exports[`Nest Admin Controller Generator getManyReference should generate getManyReference method for any model 1`] = `
 "
   @Get('reference/:target/:id')
-  @PaginatedSearch<CustomFieldType>()
+  @PaginatedSearch()
   @ApiOperation({ summary: 'Get customFieldTypes by reference' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldTypes found',
-    type: PaginatedSearchResultDto<CustomFieldType>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldTypes found' })
   async getManyReference(
     @Param('target') target: string,
     @Param('id') id: string,
@@ -307,11 +235,7 @@ exports[`Nest Admin Controller Generator getOne should generate getOne method fo
 "
   @Get(':id')
   @ApiOperation({ summary: 'Get customFieldType by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldType found',
-    type: ApiResponseDto<CustomFieldType>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldType found' })
   @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
   async getOne(@Param('id') id: string) {
     const item = await this.customFieldTypeTgService.getOne(id);
@@ -324,11 +248,7 @@ exports[`Nest Admin Controller Generator update should generate update method fo
 "
   @Put(':id')
   @ApiOperation({ summary: 'Update customFieldType' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldType updated successfully',
-    type: ApiResponseDto<CustomFieldType>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldType updated successfully' })
   @ApiResponse({ status: 404, description: 'CustomFieldType not found' })
   async update(@Param('id') id: string, @Body() dto: UpdateCustomFieldTypeTgDto) {
     const item = await this.customFieldTypeTgService.update(id, dto);
@@ -341,11 +261,7 @@ exports[`Nest Admin Controller Generator updateMany should generate updateMany m
 "
   @Put('many')
   @ApiOperation({ summary: 'Update multiple customFieldTypes' })
-  @ApiResponse({
-    status: 200,
-    description: 'CustomFieldTypes updated successfully',
-    type: ApiResponseDto<CustomFieldType[]>,
-  })
+  @ApiResponse({ status: 200, description: 'CustomFieldTypes updated successfully' })
   async updateMany(@Body() body: { ids: string[]; data: UpdateCustomFieldTypeTgDto }) {
     const result = await this.customFieldTypeTgService.updateMany(body.ids, body.data);
     return { data: result.data, message: 'CustomFieldTypes updated successfully' };
