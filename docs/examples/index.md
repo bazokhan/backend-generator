@@ -4,19 +4,23 @@ title: Examples
 
 # Examples
 
-Three self-contained NestJS project skeletons that demonstrate TGraph from schema to running API. Each example contains only the **starting state** — you run `tgraph all` to generate the full API and dashboard.
+Three self-contained NestJS project skeletons that demonstrate TGraph from schema to running API. Each example contains only the **starting state** — you run `tgraph` commands to generate the full API and dashboard.
 
 ## Getting Started with Examples
 
 Clone the repository and navigate to any example:
 
 ```bash
-git clone https://github.com/trugraph/backend-generator.git
+git clone https://github.com/bazokhan/backend-generator.git
 cd backend-generator/examples/01-todo-app
 npm install
 ```
 
-Then follow the README in each example directory.
+Then follow the README in each example directory, or the detailed step-by-step guide linked below.
+
+::: tip Dashboard scaffolding is automatic
+For examples with a dashboard (02, 03), you do **not** need to manually create a Vite/React project. Running `tgraph all` or `tgraph dashboard` automatically scaffolds `package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`, and `src/main.tsx` for you — only once, and only if they don't already exist.
+:::
 
 ---
 
@@ -42,7 +46,7 @@ model Todo {
 }
 ```
 
-Run `tgraph api` → get a full CRUD REST API with pagination and Swagger docs.
+Run `tgraph all` → get a full CRUD REST API with pagination and Swagger docs.
 
 ---
 

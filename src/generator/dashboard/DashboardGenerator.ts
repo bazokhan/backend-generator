@@ -9,6 +9,7 @@ import { PrismaFieldParser } from '../../parser/prisma-field-parser/PrismaFieldP
 import { PrismaRelationsParser } from '../../parser/prisma-relation-parser/PrismaRelationsParser';
 import { PrismaSchemaParser } from '../../parser/prisma-schema-parser/PrismaSchemaParser';
 import { ReactComponentsGenerator } from '../react-components-generator/ReactComponentsGenerator';
+import { DashboardScaffolder } from './DashboardScaffolder';
 import { getResourceName } from '../utils/naming';
 
 export class DashboardGenerator {
@@ -301,6 +302,7 @@ export class DashboardGenerator {
     console.log('🚀 Starting dashboard page generation...');
 
     try {
+      new DashboardScaffolder(this.config).scaffold();
       this.parseSchema();
       await this.generateCRUDPages();
       this.generateFieldDirectiveConfig();

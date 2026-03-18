@@ -12,31 +12,41 @@ Full showcase. Five models, role-based access control (ADMIN/CUSTOMER), file upl
 - React Admin dashboard requiring admin login
 - Seed data script for quick setup
 
-## Setup
+## Quick Start
+
+```bash
+npm install
+cp .env.example .env
+npx prisma migrate dev --name init
+npx tgraph all
+npm run seed
+npm run build && npm run start
+```
+
+API at **http://localhost:3003**, Swagger at **http://localhost:3003/api**
+
+## Step by Step
+
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-For the dashboard:
+For the dashboard (after running `tgraph all`):
 
 ```bash
 cd src/dashboard && npm install && cd ../..
 ```
 
-## Step 1: Database Migration
+### 2. Set up the database
 
 ```bash
+cp .env.example .env
 npx prisma migrate dev --name init
 ```
 
-## Step 2: Generate Static Files
-
-```bash
-npx tgraph static --include paginated-search-query.dto,paginated-search-result.dto,api-response.dto,pagination.interceptor,paginated-search.decorator,paginated-search.util
-```
-
-## Step 3: Generate API + Dashboard
+### 3. Generate API + Dashboard
 
 ```bash
 npx tgraph all
@@ -48,7 +58,7 @@ This generates for all 5 models (User, Category, Product, Order, OrderItem):
 - Create/Update DTOs with validation
 - React Admin pages with relation support
 
-## Step 4: Seed the Database
+### 4. Seed the Database
 
 ```bash
 npm run seed
@@ -65,7 +75,7 @@ Creates:
 npm run start:dev
 ```
 
-API at `http://localhost:3000`, Swagger at `http://localhost:3000/api`
+API at `http://localhost:3003`, Swagger at `http://localhost:3003/api`
 
 ## Step 6: Start the Dashboard
 

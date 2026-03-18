@@ -5,6 +5,9 @@ import { PrismaService } from './infrastructure/database/prisma.service';
 import { AuthModule } from './auth/auth.module';
 
 // AUTO-GENERATED IMPORTS START
+import { UserModule } from './user/user.module';
+import { PostModule } from './post/post.module';
+import { CategoryModule } from './category/category.module';
 // AUTO-GENERATED IMPORTS END
 
 @Module({
@@ -15,8 +18,11 @@ import { AuthModule } from './auth/auth.module';
       signOptions: { expiresIn: '7d' },
     }),
     AuthModule,
-    // AUTO-GENERATED MODULE IMPORTS START
-    // AUTO-GENERATED MODULE IMPORTS END
+    // AUTO-GENERATED MODULES START
+    UserModule,
+    PostModule,
+    CategoryModule,
+    // AUTO-GENERATED MODULES END
   ],
   providers: [PrismaService],
   exports: [PrismaService],

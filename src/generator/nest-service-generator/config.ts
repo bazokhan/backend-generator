@@ -14,11 +14,9 @@ export const getList = (camelCaseName: string, searchableFields: string, default
 
 export const getOne = (pascalCaseName: string, camelCaseName: string) => `
   async getOne(id: string, select?: any, include?: any) {
-    const item = await this.prisma.${camelCaseName}.findUnique({
-      where: { id },
-      select: select ?? this.getSelectFields(),
-      ...(include && { include }),
-    });
+    const queryOptions: any = { where: { id } };
+    if (include) { queryOptions.include = include; } else { queryOptions.select = select ?? this.getSelectFields(); }
+    const item = await this.prisma.${camelCaseName}.findUnique(queryOptions);
 
     if (!item) {
       throw new NotFoundException('${pascalCaseName} not found');
@@ -30,11 +28,9 @@ export const getOne = (pascalCaseName: string, camelCaseName: string) => `
 
 export const getMany = (camelCaseName: string) => `
   async getMany(ids: string[], select?: any, include?: any) {
-    const items = await this.prisma.${camelCaseName}.findMany({
-      where: { id: { in: ids } },
-      select: select ?? this.getSelectFields(),
-      ...(include && { include }),
-    });
+    const queryOptions: any = { where: { id: { in: ids } } };
+    if (include) { queryOptions.include = include; } else { queryOptions.select = select ?? this.getSelectFields(); }
+    const items = await this.prisma.${camelCaseName}.findMany(queryOptions);
 
     return { data: items };
   }
@@ -65,11 +61,9 @@ export const create = (
     // Check unique constraints
     ${uniqueChecks}
 
-    const item = await this.prisma.${camelCaseName}.create({
-      data: dto,
-      select: select ?? this.getSelectFields(),
-      ...(include && { include }),
-    });
+    const createOptions: any = { data: dto };
+    if (include) { createOptions.include = include; } else { createOptions.select = select ?? this.getSelectFields(); }
+    const item = await this.prisma.${camelCaseName}.create(createOptions);
 
     return item;
   }
@@ -90,12 +84,9 @@ export const update = (
     // Check unique constraints for update
     ${uniqueChecks}
 
-    const item = await this.prisma.${camelCaseName}.update({
-      where: { id },
-      data: dto,
-      select: select ?? this.getSelectFields(),
-      ...(include && { include }),
-    });
+    const updateOptions: any = { where: { id }, data: dto };
+    if (include) { updateOptions.include = include; } else { updateOptions.select = select ?? this.getSelectFields(); }
+    const item = await this.prisma.${camelCaseName}.update(updateOptions);
 
     return item;
   }

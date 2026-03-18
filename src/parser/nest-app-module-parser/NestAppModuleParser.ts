@@ -46,7 +46,11 @@ export class NestAppModuleParser implements IParser {
       return { tokens: [], moduleBounds: null, importsBounds: null };
     }
 
-    const existingTokens = parseStringToArray(importsBounds.content);
+    // Strip the auto-generated block before parsing so those tokens
+    // aren't treated as "manual" entries on subsequent runs (prevents duplicates).
+    const autoGenPattern = /\/\/ AUTO-GENERATED MODULES START[\s\S]*?\/\/ AUTO-GENERATED MODULES END/;
+    const contentOutsideAutoGen = importsBounds.content.replace(autoGenPattern, '');
+    const existingTokens = parseStringToArray(contentOutsideAutoGen);
     const filteredTokens = existingTokens.filter((token) => !token.startsWith('//'));
     return { tokens: filteredTokens, moduleBounds, importsBounds };
   }

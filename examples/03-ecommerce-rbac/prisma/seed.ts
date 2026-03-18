@@ -1,4 +1,4 @@
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '../src/generated/prisma';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -36,35 +36,14 @@ async function main() {
   console.log('Created categories:', electronics.name, clothing.name);
 
   // Create products
-  await prisma.product.createMany({
-    skipDuplicates: true,
-    data: [
-      {
-        id: 'prod-1',
-        name: 'Laptop Pro 15"',
-        description: 'High-performance laptop for professionals',
-        price: 1299.99,
-        stock: 50,
-        categoryId: electronics.id,
-      },
-      {
-        id: 'prod-2',
-        name: 'Wireless Headphones',
-        description: 'Noise-cancelling over-ear headphones',
-        price: 249.99,
-        stock: 100,
-        categoryId: electronics.id,
-      },
-      {
-        id: 'prod-3',
-        name: 'Classic T-Shirt',
-        description: '100% cotton unisex t-shirt',
-        price: 29.99,
-        stock: 200,
-        categoryId: clothing.id,
-      },
-    ],
-  });
+  const products = [
+    { id: 'prod-1', name: 'Laptop Pro 15"', description: 'High-performance laptop for professionals', price: 1299.99, stock: 50, categoryId: electronics.id },
+    { id: 'prod-2', name: 'Wireless Headphones', description: 'Noise-cancelling over-ear headphones', price: 249.99, stock: 100, categoryId: electronics.id },
+    { id: 'prod-3', name: 'Classic T-Shirt', description: '100% cotton unisex t-shirt', price: 29.99, stock: 200, categoryId: clothing.id },
+  ];
+  for (const product of products) {
+    await prisma.product.upsert({ where: { id: product.id }, update: {}, create: product });
+  }
 
   console.log('Created products');
   console.log('\nSeed complete!');

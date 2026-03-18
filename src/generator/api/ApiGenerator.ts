@@ -92,12 +92,23 @@ export class ApiGenerator {
 
   private createModuleFile(model: PrismaModel, modulePath: string): string {
     const camelCaseName = toCamelCase(model.name);
-    const content = this.moduleFileGenerator.generate(model);
 
-    const filePath = path.join(modulePath, `${camelCaseName}.module.ts`);
-    fs.writeFileSync(filePath, content);
-    console.log(`📄 Created module file: ${filePath}`);
-    return filePath;
+    // Compute relative path from module file to PrismaService
+    const moduleFilePath = path.join(modulePath, `${camelCaseName}.module.ts`);
+    const prismaServiceAbsPath = path.join(this.workspaceRoot, this.config.input.prisma.servicePath as string);
+    let prismaServiceImportPath = path
+      .relative(modulePath, prismaServiceAbsPath)
+      .replace(/\\/g, '/')
+      .replace(/\.ts$/, '');
+    if (!prismaServiceImportPath.startsWith('.')) {
+      prismaServiceImportPath = './' + prismaServiceImportPath;
+    }
+
+    const content = this.moduleFileGenerator.generate(model, { prismaServiceImportPath });
+
+    fs.writeFileSync(moduleFilePath, content);
+    console.log(`📄 Created module file: ${moduleFilePath}`);
+    return moduleFilePath;
   }
 
   private async findModules(): Promise<void> {
@@ -236,9 +247,11 @@ export class ApiGenerator {
       return;
     }
 
+    const authEnabled = this.config.api.authenticationEnabled as boolean;
+    const requireAdmin = this.config.api.requireAdmin as boolean;
+
     const available = [
-      'admin.guard',
-      'is-admin.decorator',
+      ...(authEnabled && requireAdmin ? ['admin.guard', 'is-admin.decorator'] : []),
       'paginated-search-query.dto',
       'paginated-search-result.dto',
       'api-response.dto',
@@ -433,6 +446,21 @@ export class ApiGenerator {
 
     moduleContent = this.moduleUpdater.addToArrayInModule(moduleContent, 'controllers', [controllerClassName]);
     moduleContent = this.moduleUpdater.addToArrayInModule(moduleContent, 'providers', [serviceClassName]);
+
+    // Ensure PrismaService is imported and registered as a provider
+    if (!moduleContent.includes('PrismaService')) {
+      const prismaServiceAbsPath = path.join(this.workspaceRoot, this.config.input.prisma.servicePath as string);
+      let prismaImportPath = path
+        .relative(model.modulePath, prismaServiceAbsPath)
+        .replace(/\\/g, '/')
+        .replace(/\.ts$/, '');
+      if (!prismaImportPath.startsWith('.')) {
+        prismaImportPath = './' + prismaImportPath;
+      }
+      const prismaImport = `import { PrismaService } from '${prismaImportPath}';`;
+      moduleContent = this.moduleUpdater.addImportsToModule(moduleContent, [prismaImport]);
+      moduleContent = this.moduleUpdater.addToArrayInModule(moduleContent, 'providers', ['PrismaService']);
+    }
 
     fs.writeFileSync(modulePath, moduleContent);
     console.log(`✅ Updated module: ${modulePath}`);

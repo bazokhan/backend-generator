@@ -10,5 +10,6 @@ export const config: UserConfig = {
   guards: [{ name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' }],
   adminGuards: [{ name: 'RolesGuard', importPath: '@/auth/roles.guard' }],
   dashboard: { root: 'src/dashboard/src' },
+  dtosPath: 'src/dtos',
   nonInteractive: true,
 };

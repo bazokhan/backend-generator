@@ -12,8 +12,8 @@
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
-    "@nestjs/jwt": "^10.2.0",
-    "@nestjs/passport": "^10.0.3",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/passport": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.0.0",
     "@prisma/client": "^6.0.0",
@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
-    "@tgraph/backend-generator": "^0.0.3",
+    "@tgraph/backend-generator": "file:../../",
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^20.0.0",
     "@types/passport-jwt": "^4.0.1",

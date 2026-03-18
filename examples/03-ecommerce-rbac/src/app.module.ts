@@ -5,6 +5,11 @@ import { PrismaService } from './infrastructure/database/prisma.service';
 import { AuthModule } from './auth/auth.module';
 
 // AUTO-GENERATED IMPORTS START
+import { UserModule } from './user/user.module';
+import { CategoryModule } from './category/category.module';
+import { ProductModule } from './product/product.module';
+import { OrderModule } from './order/order.module';
+import { OrderItemModule } from './order-item/orderItem.module';
 // AUTO-GENERATED IMPORTS END
 
 @Module({
@@ -15,8 +20,13 @@ import { AuthModule } from './auth/auth.module';
       signOptions: { expiresIn: '7d' },
     }),
     AuthModule,
-    // AUTO-GENERATED MODULE IMPORTS START
-    // AUTO-GENERATED MODULE IMPORTS END
+    // AUTO-GENERATED MODULES START
+    UserModule,
+    CategoryModule,
+    ProductModule,
+    OrderModule,
+    OrderItemModule,
+    // AUTO-GENERATED MODULES END
   ],
   providers: [PrismaService],
   exports: [PrismaService],

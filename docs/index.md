@@ -102,7 +102,7 @@ export const config: UserConfig = {
 
 Run `tgraph all` and get:
 
-- `src/features/user/user.admin.controller.ts` — REST endpoints with `@UseGuards(JwtAuthGuard)`
-- `src/features/user/user.admin.service.ts` — CRUD service with Prisma
-- `src/features/user/create-user.admin.dto.ts` — validated DTO with `@IsEmail()`
+- `src/user/user.admin.controller.ts` — REST endpoints with `@UseGuards(JwtAuthGuard)`
+- `src/user/user.admin.service.ts` — CRUD service with Prisma
+- `src/user/create-user.admin.dto.ts` — validated DTO with `@IsEmail()`
 - `src/dashboard/src/resources/users/` — List, Edit, Create, Show, Studio pages

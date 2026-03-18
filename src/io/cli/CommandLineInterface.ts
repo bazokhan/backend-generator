@@ -102,7 +102,9 @@ export class CommandLineInterface {
         return;
       case 'all':
         await new ApiGenerator(config).generate();
-        await new DashboardGenerator(config).generate();
+        if (config.output.dashboard.enabled) {
+          await new DashboardGenerator(config).generate();
+        }
         new DtoGenerator(config).generate();
         return;
       default:
@@ -618,7 +620,9 @@ export class CommandLineInterface {
         },
         all: async () => {
           await new ApiGenerator(mergedConfig).generate();
-          await new DashboardGenerator(mergedConfig).generate();
+          if (mergedConfig.output.dashboard.enabled) {
+            await new DashboardGenerator(mergedConfig).generate();
+          }
           new DtoGenerator(mergedConfig).generate();
         },
         static: async () => {

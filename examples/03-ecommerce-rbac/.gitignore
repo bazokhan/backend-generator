@@ -1,0 +1,5 @@
+node_modules/
+dist/
+generated/
+src/dashboard/node_modules/
+src/dashboard/dist/

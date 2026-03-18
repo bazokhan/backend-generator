@@ -59,26 +59,23 @@ your-project/
 │   └── schema.prisma
 ├── src/
 │   ├── app.module.ts
-│   ├── features/          # Feature modules
-│   │   ├── user/
-│   │   │   ├── user.module.ts
-│   │   │   ├── user.service.ts
-│   │   │   └── ...
+│   ├── user/              # Generated feature module
+│   │   ├── user.module.ts
+│   │   ├── user.tg.service.ts
 │   │   └── ...
 │   └── infrastructure/    # Infrastructure modules
 │       └── ...
 └── src/dashboard/src/     # React Admin dashboard
     ├── App.tsx
     └── providers/
-        └── dataProvider.ts
+        └── authProvider.ts
 ```
 
-The generator looks for modules in:
+The generator outputs modules alongside the rest of `src/`:
 
-- `src/features/<module-name>/`
-- `src/infrastructure/<module-name>/`
+- `src/<module-name>/` — e.g., `src/user/`, `src/post/`
 
-If a module doesn't exist, the CLI will prompt you to create it.
+If a module directory doesn't exist, the CLI will create it automatically.
 
 ## Configuration
 
@@ -192,7 +189,7 @@ After generation, you should see:
 ### Backend Files
 
 ```
-src/features/user/
+src/user/
 ├── create-user.tg.dto.ts      # Create DTO
 ├── update-user.tg.dto.ts      # Update DTO
 ├── user.tg.service.ts         # CRUD service
@@ -269,7 +266,7 @@ Do you want to create the module directory for User? (y/n):
 Answer `y` to scaffold the module automatically, or create it manually:
 
 ```bash
-mkdir -p src/features/user
+mkdir -p src/user
 ```
 
 ### Permission Errors

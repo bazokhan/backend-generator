@@ -9,5 +9,6 @@ export const config: UserConfig = {
   requireAdmin: false,
   guards: [],
   dashboard: false,
+  dtosPath: 'src/dtos',
   nonInteractive: true,
 };

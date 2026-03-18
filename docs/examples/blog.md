@@ -4,15 +4,212 @@ title: Blog Example
 
 # Example 02: Blog
 
-**Source:** [`examples/02-blog/`](https://github.com/trugraph/backend-generator/tree/main/examples/02-blog)
+**Source:** [`examples/02-blog/`](https://github.com/bazokhan/backend-generator/tree/main/examples/02-blog)
 
 Multiple related models, JWT authentication, and a React Admin dashboard — all generated from a Prisma schema.
 
-## What You'll Build
+## What This Demonstrates
 
-- REST API for User, Post, Category with `@UseGuards(JwtAuthGuard)`
-- React Admin dashboard with relation pickers, file uploads, and auth
-- Login endpoint at `POST /auth/login`
+- Multiple models with relations (`Post → User`, `Post → Category`)
+- `// @tg_label(name)` — sets the display field for relation pickers in the dashboard
+- `/// @tg_format(email)` — adds `@IsEmail()` validation to the DTO
+- `/// @tg_format(password)` — marks a field as a password (masked in forms)
+- `/// @tg_upload(image)` — generates `FileInput` / `ImageField` in the dashboard
+- JWT authentication with `JwtAuthGuard` on all generated endpoints
+- **Automatic dashboard scaffolding** — `tgraph all` creates the full Vite/React project for you
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) 18 or higher
+- [npm](https://www.npmjs.com/) 9 or higher
+- NestJS CLI: `npm install -g @nestjs/cli`
+
+## Step-by-Step Setup
+
+### 1. Navigate to the example
+
+```bash
+cd examples/02-blog
+```
+
+### 2. Install backend dependencies
+
+```bash
+npm install
+```
+
+### 3. Set up the database
+
+```bash
+npx prisma migrate dev --name init
+```
+
+This creates `prisma/dev.db` and generates the Prisma Client from the schema.
+
+### 4. Generate the API and dashboard
+
+```bash
+npx tgraph all
+```
+
+This does three things in sequence:
+
+1. **Scaffolds the dashboard project** — creates `src/dashboard/package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`, and `src/main.tsx` if they don't exist yet. Running this command again is safe — existing files are never overwritten.
+2. **Generates the NestJS API** — controllers, services, and DTOs for User, Post, and Category.
+3. **Generates the React Admin dashboard** — List, Edit, Create, Show, and Studio pages for each model.
+
+### 5. Install dashboard dependencies
+
+Now that `src/dashboard/package.json` exists, install its dependencies:
+
+```bash
+cd src/dashboard && npm install && cd ../..
+```
+
+### 6. Seed the database
+
+The User endpoints require a valid JWT, so you can't create the first user through the API directly. Use the seed script instead:
+
+```bash
+npm run seed
+```
+
+This creates:
+
+```
+✅ Created user: admin@example.com
+
+Login at http://localhost:5173 with:
+  Email:    admin@example.com
+  Password: admin123
+```
+
+### 7. Start the backend
+
+```bash
+npm run start:dev
+```
+
+```
+Server running at http://localhost:3002
+Swagger UI at http://localhost:3002/api
+```
+
+### 8. Start the dashboard (new terminal)
+
+```bash
+cd src/dashboard && npm run dev
+```
+
+```
+  VITE v5.x.x  ready in 300ms
+  ➜  Local:   http://localhost:5173/
+```
+
+## Verify It Works
+
+### Test the API
+
+Log in via the auth endpoint:
+
+```bash
+curl -X POST http://localhost:3002/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com", "password": "admin123"}'
+```
+
+Expected response:
+
+```json
+{
+  "access_token": "eyJ...",
+  "user": { "id": "...", "email": "admin@example.com", "name": "Admin" }
+}
+```
+
+Use the token to call a protected endpoint:
+
+```bash
+TOKEN="eyJ..."
+
+# Create a category
+curl -X POST http://localhost:3002/tg-api/categoriesAdmin \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Technology"}'
+
+# List categories
+curl http://localhost:3002/tg-api/categoriesAdmin \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Test the dashboard
+
+1. Open **[http://localhost:5173](http://localhost:5173)**
+2. Log in with `admin@example.com` / `admin123`
+3. Navigate to **Users**, **Posts**, or **Categories**
+4. Create, edit, and delete records — changes appear in real time
+
+## Project Structure
+
+Before running `tgraph all`:
+
+```
+examples/02-blog/
+├── .env                              ← DATABASE_URL + JWT_SECRET
+├── .env.example
+├── prisma/
+│   ├── schema.prisma
+│   └── seed.ts                       ← creates admin user
+├── src/
+│   ├── app.module.ts
+│   ├── main.ts                       ← CORS enabled for dashboard
+│   ├── auth/                         ← hand-written JWT auth
+│   │   ├── auth.controller.ts        ← POST /auth/login
+│   │   ├── auth.module.ts
+│   │   ├── auth.service.ts
+│   │   ├── jwt-auth.guard.ts
+│   │   └── jwt.strategy.ts
+│   ├── infrastructure/database/
+│   │   └── prisma.service.ts
+│   └── dashboard/src/
+│       ├── App.tsx                   ← pre-written with httpClient + authProvider
+│       └── providers/
+│           └── authProvider.ts       ← hand-written JWT login flow
+```
+
+After running `tgraph all`:
+
+```
+src/
+├── user/                             ← generated by tgraph all
+│   ├── user.admin.tg.controller.ts
+│   ├── user.admin.tg.service.ts
+│   ├── create-user.admin.tg.dto.ts
+│   └── update-user.admin.tg.dto.ts
+├── post/                             ← generated by tgraph all
+├── category/                         ← generated by tgraph all
+└── dashboard/
+    ├── package.json                  ← scaffolded by tgraph
+    ├── tsconfig.json                 ← scaffolded by tgraph
+    ├── vite.config.ts                ← scaffolded by tgraph
+    ├── index.html                    ← scaffolded by tgraph
+    └── src/
+        ├── main.tsx                  ← scaffolded by tgraph
+        ├── App.tsx                   ← updated with User/Post/Category resources
+        ├── providers/
+        │   ├── authProvider.ts       ← hand-written (not overwritten)
+        │   └── fieldDirectives.generated.ts ← generated
+        └── resources/
+            ├── users/
+            │   ├── UserList.tsx
+            │   ├── UserEdit.tsx
+            │   ├── UserCreate.tsx
+            │   ├── UserShow.tsx
+            │   └── UserStudio.tsx
+            ├── posts/                ← ReferenceInput for author + category
+            └── categories/
+```
 
 ## Schema
 
@@ -26,35 +223,36 @@ model User {
   email     String   @unique
   /// @tg_format(password)
   password  String
+  /// @tg_readonly
+  createdAt DateTime @default(now())
   posts     Post[]
 }
 
 // @tg_form()
 // @tg_label(title)
 model Post {
+  id         String   @id @default(uuid())
   title      String
   content    String
+  published  Boolean  @default(false)
   author     User     @relation(fields: [authorId], references: [id])
   authorId   String
   category   Category @relation(fields: [categoryId], references: [id])
   categoryId String
   /// @tg_upload(image)
   coverImage String?
+  /// @tg_readonly
+  createdAt  DateTime @default(now())
 }
 
 // @tg_form()
 // @tg_label(name)
 model Category {
+  id    String @id @default(uuid())
   name  String @unique
   posts Post[]
 }
 ```
-
-Key directives:
-- `// @tg_label(name)` — sets the display field for `ReferenceInput` in React Admin
-- `/// @tg_format(email)` — adds `@IsEmail()` to the DTO
-- `/// @tg_format(password)` — marks as password field (masked in forms)
-- `/// @tg_upload(image)` — generates `FileInput` / `ImageField` in the dashboard
 
 ## Config
 
@@ -72,86 +270,76 @@ export const config: UserConfig = {
 };
 ```
 
-## Quick Start
-
-```bash
-cd examples/02-blog
-npm install && cd src/dashboard && npm install && cd ../..
-npx prisma migrate dev --name init
-npx tgraph static --include paginated-search-query.dto,paginated-search-result.dto,api-response.dto,pagination.interceptor,paginated-search.decorator,paginated-search.util
-npx tgraph all
-npm run start:dev
-```
-
-In a second terminal:
-
-```bash
-cd src/dashboard && npm run dev
-```
-
-## Create a User
-
-```bash
-curl -X POST http://localhost:3000/tg-api/users \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Jane", "email": "jane@example.com", "password": "secret123"}'
-```
-
-Then log in at **http://localhost:5173** with those credentials.
-
-## Generated Files
-
-After `tgraph all`:
-
-```
-src/features/
-├── user/
-│   ├── user.admin.tg.controller.ts
-│   ├── user.admin.tg.service.ts
-│   ├── create-user.admin.tg.dto.ts   ← @IsEmail() on email field
-│   └── update-user.admin.tg.dto.ts
-├── post/
-│   ├── post.admin.tg.controller.ts
-│   └── ...
-└── category/
-    └── ...
-
-src/dashboard/src/
-├── App.tsx                            ← updated with User/Post/Category resources
-└── resources/
-    ├── users/
-    │   ├── UserList.tsx
-    │   ├── UserEdit.tsx
-    │   ├── UserCreate.tsx
-    │   ├── UserShow.tsx
-    │   └── UserStudio.tsx
-    ├── posts/                         ← ReferenceInput for author + category
-    └── categories/
-```
-
-## What Makes This Interesting
+## Key Concepts
 
 ### Relation Support
 
-The `Post` model has two relations. The generated `PostEdit.tsx` renders:
+The `Post` model has two foreign keys. The generated `PostCreate.tsx` and `PostEdit.tsx` render:
 
 ```tsx
 <ReferenceInput source="authorId" reference="users">
-  <AutocompleteInput optionText="name" />  {/* @tg_label(name) */}
+  <AutocompleteInput optionText="name" />  {/* @tg_label(name) on User */}
 </ReferenceInput>
 
 <ReferenceInput source="categoryId" reference="categories">
-  <AutocompleteInput optionText="name" />
+  <AutocompleteInput optionText="name" />  {/* @tg_label(name) on Category */}
 </ReferenceInput>
 ```
+
+The `optionText` field name comes from `// @tg_label(name)` on the referenced model. Without this directive, the id is displayed instead.
 
 ### File Upload
 
 The `/// @tg_upload(image)` directive on `coverImage` generates:
 
 ```tsx
+// In PostCreate.tsx / PostEdit.tsx
 <FileInput source="coverImage" accept="image/*">
   <ImageField source="src" />
 </FileInput>
+
+// In PostList.tsx / PostShow.tsx
+<ImageField source="coverImage" />
 ```
+
+### JWT Authentication
+
+All generated endpoints use the guard from `tgraph.config.ts`:
+
+```typescript
+guards: [{ name: 'JwtAuthGuard', importPath: '@/auth/jwt-auth.guard' }]
+```
+
+Generated controller header:
+
+```typescript
+@Controller('tg-api/usersAdmin')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class UserAdminController { ... }
+```
+
+The dashboard's `httpClient` attaches the stored token automatically:
+
+```typescript
+const httpClient = (url: string, options: any = {}) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    options.headers = new Headers(options.headers);
+    options.headers.set('Authorization', `Bearer ${token}`);
+  }
+  // ...
+};
+```
+
+### Dashboard Scaffold (automatic)
+
+`tgraph all` (or `tgraph dashboard`) automatically creates the Vite/React project structure if it doesn't exist yet. You never need to run `npm create vite` manually. The scaffold is idempotent — running it again simply skips files that already exist.
+
+## Regenerating After Schema Changes
+
+```bash
+npx tgraph all
+```
+
+Safe to run multiple times. Only `.tg.`-suffixed files are regenerated. The scaffold files (`package.json`, `App.tsx`, etc.) are skipped once they exist.
